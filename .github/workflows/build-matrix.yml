@@ -122,8 +122,7 @@ jobs:
           restore-keys: |
             tauri-deps-${{ matrix.platform }}-
 
-      - name: Build app (pull request)
-        if: github.event_name == 'pull_request'
+      - name: Build app
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -131,33 +130,11 @@ jobs:
           set -euo pipefail
           npx tauri build --ci --config src-tauri/tauri.ci.conf.json ${{ matrix.args }} 2>&1 | tee "build-${{ matrix.label }}.log"
 
-      - name: Print build logs on failure (PR)
-        if: failure() && github.event_name == 'pull_request'
+      - name: Print build logs on failure
+        if: failure()
         shell: bash
         run: |
-          echo "=== BUILD LOG (PR) ==="
-          if [ -f "build-${{ matrix.label }}.log" ]; then
-            tail -n 200 "build-${{ matrix.label }}.log"
-          else
-            echo "Log file not found"
-          fi
-
-      - name: Build app (signed)
-        if: github.event_name != 'pull_request'
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: |
-          set -euo pipefail
-          npx tauri build --ci ${{ matrix.args }} 2>&1 | tee "build-${{ matrix.label }}.log"
-
-      - name: Print build logs on failure (Signed)
-        if: failure() && github.event_name != 'pull_request'
-        shell: bash
-        run: |
-          echo "=== BUILD LOG (SIGNED) ==="
+          echo "=== BUILD LOG ==="
           if [ -f "build-${{ matrix.label }}.log" ]; then
             tail -n 200 "build-${{ matrix.label }}.log"
           else
