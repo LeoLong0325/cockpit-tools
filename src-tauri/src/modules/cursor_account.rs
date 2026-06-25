@@ -2008,17 +2008,102 @@ const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT: &str = "USAGE_EVENT_KIND_FREE_CREDIT"
 const CURSOR_FILTERED_USAGE_EVENTS_URL: &str =
     "https://cursor.com/api/dashboard/get-filtered-usage-events";
 
+fn parse_usage_timestamp_ms(value: &serde_json::Value) -> Option<i64> {
+    if let Some(n) = value.as_i64() {
+        return Some(if n > 1_000_000_000_000 {
+            n
+        } else {
+            n * 1000
+        });
+    }
+    if let Some(n) = value.as_u64() {
+        let n = n as i64;
+        return Some(if n > 1_000_000_000_000 {
+            n
+        } else {
+            n * 1000
+        });
+    }
+    if let Some(text) = value.as_str() {
+        let trimmed = text.trim();
+        if trimmed.is_empty() {
+            return None;
+        }
+        if let Ok(n) = trimmed.parse::<i64>() {
+            return Some(if n > 1_000_000_000_000 {
+                n
+            } else {
+                n * 1000
+            });
+        }
+        if let Ok(n) = trimmed.parse::<f64>() {
+            let n = n as i64;
+            return Some(if n > 1_000_000_000_000 {
+                n
+            } else {
+                n * 1000
+            });
+        }
+        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(trimmed) {
+            return Some(dt.timestamp_millis());
+        }
+    }
+    None
+}
+
 fn resolve_billing_cycle_range_ms(usage_raw: &serde_json::Value) -> (String, String) {
-    let end_ms = usage_raw
+    let now_ms = chrono::Utc::now().timestamp_millis();
+    let cycle_end_ms = usage_raw
         .get("billingCycleEnd")
         .or_else(|| usage_raw.get("billing_cycle_end"))
-        .and_then(|value| value.as_str())
-        .and_then(|text| chrono::DateTime::parse_from_rfc3339(text).ok())
-        .map(|value| value.timestamp_millis())
-        .unwrap_or_else(|| chrono::Utc::now().timestamp_millis());
+        .and_then(parse_usage_timestamp_ms)
+        .unwrap_or(now_ms);
+    let end_ms = now_ms.min(cycle_end_ms);
 
-    let start_ms = end_ms - 30_i64 * 24 * 60 * 60 * 1000;
+    let default_start_ms = end_ms - 30_i64 * 24 * 60 * 60 * 1000;
+    let start_ms = usage_raw
+        .get("billingCycleStart")
+        .or_else(|| usage_raw.get("billing_cycle_start"))
+        .and_then(parse_usage_timestamp_ms)
+        .unwrap_or(default_start_ms)
+        .min(end_ms);
+
     (start_ms.to_string(), end_ms.to_string())
+}
+
+fn parse_dollar_string_to_cents(text: &str) -> i64 {
+    let cleaned = text.trim().replace(',', "").replace('$', "");
+    if cleaned.is_empty() {
+        return 0;
+    }
+    if let Ok(value) = cleaned.parse::<f64>() {
+        return (value * 100.0).round() as i64;
+    }
+    0
+}
+
+fn free_credit_event_cents(event: &serde_json::Value) -> i64 {
+    if let Some(token) = event
+        .get("tokenUsage")
+        .or_else(|| event.get("token_usage"))
+    {
+        if let Some(cents) = json_get_i64(token, &["totalCents", "total_cents"]) {
+            if cents > 0 {
+                return cents;
+            }
+        }
+    }
+    if let Some(text) = event
+        .get("usageBasedCosts")
+        .or_else(|| event.get("usage_based_costs"))
+        .and_then(|value| value.as_str())
+    {
+        let parsed = parse_dollar_string_to_cents(text);
+        if parsed > 0 {
+            return parsed;
+        }
+    }
+    0
 }
 
 fn sum_free_credit_cents_from_events_page(root: &serde_json::Value) -> (i64, i32) {
@@ -2038,13 +2123,12 @@ fn sum_free_credit_cents_from_events_page(root: &serde_json::Value) -> (i64, i32
             if kind != CURSOR_USAGE_EVENT_KIND_FREE_CREDIT {
                 continue;
             }
-            count += 1;
-            let token = event
-                .get("tokenUsage")
-                .or_else(|| event.get("token_usage"));
-            if let Some(token) = token {
-                sum += json_get_i64(token, &["totalCents", "total_cents"]).unwrap_or(0);
+            let cents = free_credit_event_cents(event);
+            if cents <= 0 {
+                continue;
             }
+            count += 1;
+            sum += cents;
         }
     }
     (sum, count)
@@ -2744,7 +2828,6 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
                     ));
                 }
                 Ok(None) => {
-                    account.cursor_free_credit_usage_raw = None;
                     logger::log_info(&format!(
                         "[Cursor Refresh] 无 FREE_CREDIT 用量事件: id={}",
                         account.id

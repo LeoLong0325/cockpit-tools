@@ -160,6 +160,15 @@ export function hasCursorModelUsage(model: CursorModelUsage): boolean {
   ].some((value) => parseTokenCount(value) > 0);
 }
 
+function parseUsageCostCents(value: string | null | undefined): number {
+  if (!value) return 0;
+  const cleaned = value.trim().replace(/,/g, '').replace(/^\$/, '');
+  if (!cleaned) return 0;
+  const parsed = Number(cleaned);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.round(parsed * 100);
+}
+
 export function aggregateFreeCreditUsage(
   events: CursorUsageEventDisplay[],
 ): CursorModelUsage | null {
@@ -176,13 +185,22 @@ export function aggregateFreeCreditUsage(
 
   freeCreditEvents.forEach((event) => {
     const tokenUsage = event.tokenUsage;
-    if (!tokenUsage) return;
-    inputTokens += tokenUsage.inputTokens ?? 0;
-    outputTokens += tokenUsage.outputTokens ?? 0;
-    cacheWriteTokens += tokenUsage.cacheWriteTokens ?? 0;
-    cacheReadTokens += tokenUsage.cacheReadTokens ?? 0;
-    totalCents += tokenUsage.totalCents ?? 0;
+    let eventCents = tokenUsage?.totalCents ?? 0;
+    if (eventCents <= 0) {
+      eventCents = parseUsageCostCents(event.usageBasedCosts);
+    }
+    if (eventCents <= 0) return;
+
+    if (tokenUsage) {
+      inputTokens += tokenUsage.inputTokens ?? 0;
+      outputTokens += tokenUsage.outputTokens ?? 0;
+      cacheWriteTokens += tokenUsage.cacheWriteTokens ?? 0;
+      cacheReadTokens += tokenUsage.cacheReadTokens ?? 0;
+    }
+    totalCents += eventCents;
   });
+
+  if (totalCents <= 0) return null;
 
   return {
     model_intent: CURSOR_USAGE_EVENT_KIND_FREE_CREDIT,

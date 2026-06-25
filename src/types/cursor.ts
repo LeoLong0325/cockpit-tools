@@ -850,6 +850,23 @@ export function getCursorFreeCreditUsedCents(account: CursorAccount): number | n
   return parseCentsValue(root.usedCents ?? root.used_cents);
 }
 
+function deriveCursorGrantUsedCents(grants: CursorCreditGrants): number | null {
+  return (
+    grants.usedCents ??
+    (grants.totalCents != null && grants.remainingCents != null
+      ? Math.max(0, grants.totalCents - grants.remainingCents)
+      : null)
+  );
+}
+
+function shouldFallbackToFreeCreditUsed(
+  grantUsed: number | null,
+  freeCreditUsed: number | null,
+): boolean {
+  if (freeCreditUsed == null || freeCreditUsed <= 0) return false;
+  return grantUsed == null || grantUsed <= 0;
+}
+
 export interface CursorCreditGrantsQuotaDisplay {
   usedCents: number;
   totalCents: number;
@@ -861,14 +878,14 @@ export function resolveCursorCreditGrantsQuotaDisplay(
   account: CursorAccount,
 ): CursorCreditGrantsQuotaDisplay | null {
   const grants = getCursorCreditGrants(account);
+  const freeCreditUsed = getCursorFreeCreditUsedCents(account);
 
   if (grants) {
     const total = grants.totalCents;
-    const used =
-      grants.usedCents ??
-      (total != null && grants.remainingCents != null
-        ? Math.max(0, total - grants.remainingCents)
-        : null);
+    const grantDerivedUsed = deriveCursorGrantUsedCents(grants);
+    const used = shouldFallbackToFreeCreditUsed(grantDerivedUsed, freeCreditUsed)
+      ? freeCreditUsed
+      : grantDerivedUsed;
     const effectiveTotal = total ?? used ?? 0;
     const percentage =
       total != null && total > 0 && used != null
@@ -883,7 +900,6 @@ export function resolveCursorCreditGrantsQuotaDisplay(
     };
   }
 
-  const freeCreditUsed = getCursorFreeCreditUsedCents(account);
   if (freeCreditUsed == null) return null;
 
   const total = freeCreditUsed;
