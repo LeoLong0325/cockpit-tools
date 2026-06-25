@@ -21,6 +21,7 @@ import { GlobalModal } from './components/GlobalModal';
 import { TopCenterPromoBanner } from './components/TopCenterPromoBanner';
 import type { QuickSettingsType } from './components/QuickSettingsPopover';
 import { Page } from './types/navigation';
+import { isEnabledPage } from './types/platform';
 import { useAutoRefresh } from './hooks/useAutoRefresh';
 import { useEasterEggTrigger } from './hooks/useEasterEggTrigger';
 import { useGlobalModal } from './hooks/useGlobalModal';
@@ -79,44 +80,9 @@ const CodexAccountsPage = lazy(() =>
 const CodexApiServicePage = lazy(() =>
   import('./pages/CodexApiServicePage').then((module) => ({ default: module.CodexApiServicePage })),
 );
-const ClaudeAccountsPage = lazy(() =>
-  import('./pages/ClaudeAccountsPage').then((module) => ({ default: module.ClaudeAccountsPage })),
-);
-const GitHubCopilotAccountsPage = lazy(() =>
-  import('./pages/GitHubCopilotAccountsPage').then((module) => ({
-    default: module.GitHubCopilotAccountsPage,
-  })),
-);
-const WindsurfAccountsPage = lazy(() =>
-  import('./pages/WindsurfAccountsPage').then((module) => ({ default: module.WindsurfAccountsPage })),
-);
-const KiroAccountsPage = lazy(() =>
-  import('./pages/KiroAccountsPage').then((module) => ({ default: module.KiroAccountsPage })),
-);
 const CursorAccountsPage = lazy(() =>
   import('./pages/CursorAccountsPage').then((module) => ({ default: module.CursorAccountsPage })),
 );
-const GeminiAccountsPage = lazy(() =>
-  import('./pages/GeminiAccountsPage').then((module) => ({ default: module.GeminiAccountsPage })),
-);
-const CodebuddyAccountsPage = lazy(() =>
-  import('./pages/CodebuddyAccountsPage').then((module) => ({ default: module.CodebuddyAccountsPage })),
-);
-const CodebuddyCnAccountsPage = lazy(() =>
-  import('./pages/CodebuddyCnAccountsPage').then((module) => ({ default: module.CodebuddyCnAccountsPage })),
-);
-const QoderAccountsPage = lazy(() =>
-  import('./pages/QoderAccountsPage').then((module) => ({ default: module.QoderAccountsPage })),
-);
-const TraeAccountsPage = lazy(() =>
-  import('./pages/TraeAccountsPage').then((module) => ({ default: module.TraeAccountsPage })),
-);
-const WorkbuddyAccountsPage = lazy(() =>
-  import('./pages/WorkbuddyAccountsPage').then((module) => ({ default: module.WorkbuddyAccountsPage })),
-);
-const ZedAccountsPage = lazy(() =>
-  import('./pages/ZedAccountsPage').then((module) => ({ default: module.ZedAccountsPage })),
-);;
 const WakeupTasksPage = lazy(() =>
   import('./pages/WakeupTasksPage').then((module) => ({ default: module.WakeupTasksPage })),
 );
@@ -525,7 +491,15 @@ function MainApp() {
   const sideNavClassicFirstSyncDone = useSideNavLayoutStore((state) => state.classicFirstSyncDone);
   const markSideNavClassicFirstSyncDone = useSideNavLayoutStore((state) => state.markClassicFirstSyncDone);
   const syncSidebarEntriesFromDashboard = usePlatformLayoutStore((state) => state.syncSidebarEntriesFromDashboard);
-  const [page, setPage] = useState<Page>('dashboard');
+  const [page, setPageState] = useState<Page>('dashboard');
+  const setPage = useCallback((next: Page) => {
+    setPageState(isEnabledPage(next) ? next : 'dashboard');
+  }, []);
+  useEffect(() => {
+    if (!isEnabledPage(page)) {
+      setPageState('dashboard');
+    }
+  }, [page]);
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [updateNotificationKey, setUpdateNotificationKey] = useState(0);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
@@ -3579,20 +3553,8 @@ function MainApp() {
           {page === 'api-relay' && <ApiKeyFunPage />}
           {page === 'overview' && <AccountsPage onNavigate={setPage} />}
           {page === 'codex' && <CodexAccountsPage />}
-          {page === 'claude' && <ClaudeAccountsPage subPlatform="desktop" />}
-          {page === 'claude-cli' && <ClaudeAccountsPage subPlatform="cli" />}
           {page === 'codex-api-service' && <CodexApiServicePage />}
-          {page === 'github-copilot' && <GitHubCopilotAccountsPage />}
-          {page === 'windsurf' && <WindsurfAccountsPage />}
-          {page === 'kiro' && <KiroAccountsPage />}
           {page === 'cursor' && <CursorAccountsPage />}
-          {page === 'gemini' && <GeminiAccountsPage />}
-          {page === 'codebuddy' && <CodebuddyAccountsPage />}
-          {page === 'codebuddy-cn' && <CodebuddyCnAccountsPage />}
-          {page === 'qoder' && <QoderAccountsPage />}
-          {page === 'trae' && <TraeAccountsPage />}
-          {page === 'workbuddy' && <WorkbuddyAccountsPage />}
-          {page === 'zed' && <ZedAccountsPage />}
           {page === 'instances' && <InstancesPage onNavigate={setPage} />}
           {page === 'wakeup' && <WakeupTasksPage onNavigate={setPage} />}
           {page === 'verification' && <WakeupVerificationPage onNavigate={setPage} />}

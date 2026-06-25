@@ -1,5 +1,6 @@
 import { Page } from './navigation';
 
+/** Full union kept for legacy persisted data / transfer payloads. */
 export type PlatformId =
   | 'antigravity'
   | 'antigravity_ide'
@@ -17,23 +18,17 @@ export type PlatformId =
   | 'trae'
   | 'workbuddy';
 
-export const ALL_PLATFORM_IDS: PlatformId[] = [
-  'claude_manager',
-  'codex',
+/** Lite build: only Cursor, Codex, and Antigravity are shipped in the UI. */
+export const ENABLED_PLATFORM_IDS = [
   'antigravity',
   'antigravity_ide',
-  'zed',
-  'github-copilot',
-  'windsurf',
-  'kiro',
+  'codex',
   'cursor',
-  'gemini',
-  'codebuddy',
-  'codebuddy_cn',
-  'qoder',
-  'trae',
-  'workbuddy',
-];
+] as const satisfies readonly PlatformId[];
+
+export type EnabledPlatformId = (typeof ENABLED_PLATFORM_IDS)[number];
+
+export const ALL_PLATFORM_IDS: PlatformId[] = [...ENABLED_PLATFORM_IDS];
 
 export const MENU_HIDDEN_PLATFORM_IDS: PlatformId[] = [];
 
@@ -41,8 +36,32 @@ export const MENU_VISIBLE_PLATFORM_IDS: PlatformId[] = ALL_PLATFORM_IDS.filter(
   (platformId) => !MENU_HIDDEN_PLATFORM_IDS.includes(platformId),
 );
 
+export function isEnabledPlatform(platformId: PlatformId): platformId is EnabledPlatformId {
+  return (ENABLED_PLATFORM_IDS as readonly PlatformId[]).includes(platformId);
+}
+
 export function isMenuVisiblePlatform(platformId: PlatformId): boolean {
-  return !MENU_HIDDEN_PLATFORM_IDS.includes(platformId);
+  return isEnabledPlatform(platformId) && !MENU_HIDDEN_PLATFORM_IDS.includes(platformId);
+}
+
+export const ENABLED_PAGES: Page[] = [
+  'dashboard',
+  'overview',
+  'codex',
+  'codex-api-service',
+  'codex-instances',
+  'cursor',
+  'settings',
+  'manual',
+  'instances',
+  'wakeup',
+  'verification',
+  '2fa',
+  'api-relay',
+];
+
+export function isEnabledPage(page: Page): boolean {
+  return ENABLED_PAGES.includes(page);
 }
 
 export const PLATFORM_PAGE_MAP: Record<PlatformId, Page> = {

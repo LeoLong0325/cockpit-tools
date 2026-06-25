@@ -4,21 +4,8 @@ import { ALL_PLATFORM_IDS, PlatformId } from '../types/platform';
 import { CLASSIC_SIDEBAR_ENTRY_LIMIT } from './useSideNavLayoutStore';
 
 const PLATFORM_LAYOUT_STORAGE_KEY = 'agtools.platform_layout.v1';
-const LEGACY_TRAY_CORE_IDS: PlatformId[] = ['antigravity', 'codex', 'github-copilot', 'windsurf'];
-const TRAY_MIGRATED_PLATFORM_IDS: PlatformId[] = [
-  'antigravity_ide',
-  'claude_manager',
-  'zed',
-  'kiro',
-  'cursor',
-  'gemini',
-  'codebuddy',
-  'codebuddy_cn',
-  'qoder',
-  'trae',
-  'workbuddy',
-];
-const DEFAULT_CODEBUDDY_GROUP_ID = 'codebuddy-suite';
+const LEGACY_TRAY_CORE_IDS: PlatformId[] = ['antigravity', 'codex', 'cursor'];
+const TRAY_MIGRATED_PLATFORM_IDS: PlatformId[] = ['antigravity_ide'];
 const DEFAULT_ANTIGRAVITY_GROUP_ID = 'antigravity-suite';
 
 const PLATFORM_ENTRY_PREFIX = 'platform:';
@@ -269,14 +256,6 @@ function defaultPlatformGroups(): PlatformLayoutGroup[] {
         { platformId: 'antigravity_ide', name: 'Antigravity IDE' },
       ],
     },
-    {
-      id: DEFAULT_CODEBUDDY_GROUP_ID,
-      name: 'CodeBuddy',
-      platformIds: ['codebuddy', 'codebuddy_cn', 'workbuddy'],
-      defaultPlatformId: 'codebuddy',
-      iconKind: 'platform',
-      iconPlatformId: 'codebuddy',
-    },
   ];
 }
 
@@ -317,7 +296,7 @@ function defaultSidebarEntryIds(
 }
 
 function defaultSidebarPlatformIds(): PlatformId[] {
-  return ['claude_manager', 'codex', 'antigravity', 'zed', 'github-copilot'];
+  return ['cursor', 'codex', 'antigravity'];
 }
 
 function normalizeHidden(hidden: PlatformId[]): PlatformId[] {

@@ -85,7 +85,7 @@ import { CodebuddyIcon } from '../components/icons/CodebuddyIcon';
 import { QoderIcon } from '../components/icons/QoderIcon';
 import { TraeIcon } from '../components/icons/TraeIcon';
 import { WorkbuddyIcon } from '../components/icons/WorkbuddyIcon';
-import { PlatformId, PLATFORM_PAGE_MAP } from '../types/platform';
+import { isEnabledPlatform, PlatformId, PLATFORM_PAGE_MAP } from '../types/platform';
 import { getPlatformLabel, renderPlatformIcon } from '../utils/platformMeta';
 import { setAntigravityRuntimeTargetFromPlatform } from '../utils/antigravityRuntimeTarget';
 import { ManualHelpIconButton } from '../components/ManualHelpIconButton';
@@ -311,7 +311,7 @@ export function DashboardPage({
           return false;
         }
         return resolveEntryPlatformIds(entryId, platformGroups).some(
-          (platformId) => !remoteHiddenPlatformSet.has(platformId),
+          (platformId) => isEnabledPlatform(platformId) && !remoteHiddenPlatformSet.has(platformId),
         );
       }),
     [orderedEntryIds, hiddenEntrySet, platformGroups, remoteHiddenPlatformSet],
@@ -382,7 +382,6 @@ export function DashboardPage({
   const {
     accounts: claudeAccounts,
     currentAccountId: claudeCurrentId,
-    fetchAccounts: fetchClaudeAccounts,
     switchAccount: switchClaudeAccount,
   } = useClaudeAccountStore();
 
@@ -390,7 +389,6 @@ export function DashboardPage({
   const {
     accounts: githubCopilotAccounts,
     currentAccountId: githubCopilotCurrentId,
-    fetchAccounts: fetchGitHubCopilotAccounts,
     switchAccount: switchGitHubCopilotAccount,
   } = useGitHubCopilotAccountStore();
 
@@ -398,7 +396,6 @@ export function DashboardPage({
   const {
     accounts: windsurfAccounts,
     currentAccountId: windsurfCurrentId,
-    fetchAccounts: fetchWindsurfAccounts,
     switchAccount: switchWindsurfAccount,
   } = useWindsurfAccountStore();
 
@@ -406,7 +403,6 @@ export function DashboardPage({
   const {
     accounts: kiroAccounts,
     currentAccountId: kiroCurrentId,
-    fetchAccounts: fetchKiroAccounts,
     switchAccount: switchKiroAccount,
   } = useKiroAccountStore();
 
@@ -422,49 +418,42 @@ export function DashboardPage({
   const {
     accounts: geminiAccounts,
     currentAccountId: geminiCurrentId,
-    fetchAccounts: fetchGeminiAccounts,
     switchAccount: switchGeminiAccount,
   } = useGeminiAccountStore();
 
   const {
     accounts: codebuddyAccounts,
     currentAccountId: codebuddyCurrentId,
-    fetchAccounts: fetchCodebuddyAccounts,
     switchAccount: switchCodebuddyAccount,
   } = useCodebuddyAccountStore();
 
   const {
     accounts: codebuddyCnAccounts,
     currentAccountId: codebuddyCnCurrentId,
-    fetchAccounts: fetchCodebuddyCnAccounts,
     switchAccount: switchCodebuddyCnAccount,
   } = useCodebuddyCnAccountStore();
 
   const {
     accounts: qoderAccounts,
     currentAccountId: qoderCurrentId,
-    fetchAccounts: fetchQoderAccounts,
     switchAccount: switchQoderAccount,
   } = useQoderAccountStore();
 
   const {
     accounts: traeAccounts,
     currentAccountId: traeCurrentId,
-    fetchAccounts: fetchTraeAccounts,
     switchAccount: switchTraeAccount,
   } = useTraeAccountStore();
 
   const {
     accounts: workbuddyAccounts,
     currentAccountId: workbuddyCurrentId,
-    fetchAccounts: fetchWorkbuddyAccounts,
     switchAccount: switchWorkbuddyAccount,
   } = useWorkbuddyAccountStore();
 
   const {
     accounts: zedAccounts,
     currentAccountId: zedCurrentId,
-    fetchAccounts: fetchZedAccounts,
     switchAccount: switchZedAccount,
   } = useZedAccountStore();
 
@@ -508,18 +497,7 @@ export function DashboardPage({
     const deferredTasks: Array<() => Promise<unknown>> = [
       fetchCodexAccounts,
       fetchCodexCurrent,
-      fetchClaudeAccounts,
-      fetchZedAccounts,
-      fetchGitHubCopilotAccounts,
-      fetchWindsurfAccounts,
-      fetchKiroAccounts,
       fetchCursorAccounts,
-      fetchGeminiAccounts,
-      fetchCodebuddyAccounts,
-      fetchCodebuddyCnAccounts,
-      fetchQoderAccounts,
-      fetchTraeAccounts,
-      fetchWorkbuddyAccounts,
     ];
 
     const loadDeferredPlatforms = () => {
