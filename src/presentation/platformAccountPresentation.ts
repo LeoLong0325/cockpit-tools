@@ -69,14 +69,13 @@ import {
 } from "../types/windsurf";
 import {
   formatCursorUsageDollars,
-  formatCursorCreditGrantsValue,
   getCursorAccountDisplayEmail,
-  getCursorCreditGrants,
   getCursorOnDemandSummary,
   getCursorPlanDisplayName,
   getCursorPlanBadgeClass,
   getCursorUsage,
   isCursorAccountBanned,
+  resolveCursorCreditGrantsQuotaDisplay,
 } from "../types/cursor";
 import {
   getGeminiAccountDisplayEmail,
@@ -1572,26 +1571,16 @@ export function buildCursorAccountPresentation(
     });
   }
 
-  const creditGrants = getCursorCreditGrants(account);
-  if (creditGrants) {
-    const remaining = creditGrants.remainingCents;
-    const total = creditGrants.totalCents;
-    const used =
-      creditGrants.usedCents ??
-      (total != null && remaining != null ? Math.max(0, total - remaining) : null);
-    const rawPercent =
-      total != null && total > 0 && used != null
-        ? (used / total) * 100
-        : 0;
-    const creditPercent = normalizeCursorUsagePercent(rawPercent) ?? 0;
-    const valueText = formatCursorCreditGrantsValue(used, total);
+  const creditGrantsDisplay = resolveCursorCreditGrantsQuotaDisplay(account);
+  if (creditGrantsDisplay) {
+    const creditPercent = normalizeCursorUsagePercent(creditGrantsDisplay.percentage) ?? 0;
 
     quotaItems.push({
       key: "credits",
       label: t("cursor.quota.credits", "Credits"),
       percentage: creditPercent,
-      quotaClass: getCursorUsageQuotaClass(creditPercent),
-      valueText,
+      quotaClass: "gold",
+      valueText: creditGrantsDisplay.valueText,
     });
   }
 

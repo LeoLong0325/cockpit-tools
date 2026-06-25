@@ -15,6 +15,7 @@ export interface CursorAccount {
   cursor_auth_raw?: unknown;
   cursor_usage_raw?: unknown;
   cursor_credit_grants_raw?: unknown;
+  cursor_free_credit_usage_raw?: unknown;
   cursor_referral_raw?: unknown;
 
   status?: string | null;
@@ -840,4 +841,63 @@ export function getCursorCreditGrants(
 
 export function hasCursorCreditGrants(account: CursorAccount): boolean {
   return getCursorCreditGrants(account) != null;
+}
+
+export function getCursorFreeCreditUsedCents(account: CursorAccount): number | null {
+  const raw = account.cursor_free_credit_usage_raw;
+  if (!raw || typeof raw !== 'object') return null;
+  const root = raw as Record<string, unknown>;
+  return parseCentsValue(root.usedCents ?? root.used_cents);
+}
+
+export interface CursorCreditGrantsQuotaDisplay {
+  usedCents: number;
+  totalCents: number;
+  valueText: string;
+  percentage: number;
+}
+
+export function resolveCursorCreditGrantsQuotaDisplay(
+  account: CursorAccount,
+): CursorCreditGrantsQuotaDisplay | null {
+  const grants = getCursorCreditGrants(account);
+
+  if (grants) {
+    const total = grants.totalCents;
+    const used =
+      grants.usedCents ??
+      (total != null && grants.remainingCents != null
+        ? Math.max(0, total - grants.remainingCents)
+        : null);
+    const effectiveTotal = total ?? used ?? 0;
+    const percentage =
+      total != null && total > 0 && used != null
+        ? Math.min(100, Math.max(0, (used / total) * 100))
+        : 0;
+
+    return {
+      usedCents: used ?? 0,
+      totalCents: effectiveTotal,
+      valueText: formatCursorCreditGrantsValue(used, total),
+      percentage,
+    };
+  }
+
+  const freeCreditUsed = getCursorFreeCreditUsedCents(account);
+  if (freeCreditUsed == null) return null;
+
+  const total = freeCreditUsed;
+  const percentage =
+    total > 0 ? Math.min(100, Math.max(0, (freeCreditUsed / total) * 100)) : 0;
+
+  return {
+    usedCents: freeCreditUsed,
+    totalCents: total,
+    valueText: formatCursorCreditGrantsValue(freeCreditUsed, total),
+    percentage,
+  };
+}
+
+export function shouldShowCursorCreditGrantsQuota(account: CursorAccount): boolean {
+  return resolveCursorCreditGrantsQuotaDisplay(account) != null;
 }

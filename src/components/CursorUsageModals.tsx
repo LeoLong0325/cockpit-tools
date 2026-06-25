@@ -24,7 +24,6 @@ function formatTokenCount(value: string | number | null | undefined): string {
 }
 
 function formatEventTimestamp(timestamp: string): string {
-  if (!timestamp) return '—';
   const ms = Number(timestamp);
   const date = Number.isFinite(ms) ? new Date(ms) : new Date(timestamp);
   if (Number.isNaN(date.getTime())) return '—';

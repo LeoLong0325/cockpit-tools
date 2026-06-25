@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { CursorAccount } from '../types/cursor';
+import { parseCursorUsageEvents, type CursorUsageEventDisplay } from '../types/cursorUsage';
 
 export interface CursorOAuthLoginStartResponse {
   loginId: string;
@@ -113,6 +114,47 @@ export async function fetchCursorUserAnalytics(
     startDate: String(startDate),
     endDate: String(endDate),
   });
+}
+
+export async function fetchAllCursorUsageEvents(
+  accountId: string,
+  startDate: number,
+  endDate: number,
+  teamId = 0,
+  pageSize = 500,
+): Promise<unknown> {
+  let page = 1;
+  let totalCount = 0;
+  const usageEventsDisplay: CursorUsageEventDisplay[] = [];
+
+  while (true) {
+    const raw = await fetchCursorUsageEvents(
+      accountId,
+      startDate,
+      endDate,
+      page,
+      pageSize,
+      teamId,
+    );
+    const parsed = parseCursorUsageEvents(raw);
+    if (!parsed) break;
+
+    totalCount = parsed.totalUsageEventsCount;
+    usageEventsDisplay.push(...parsed.usageEventsDisplay);
+
+    if (
+      parsed.usageEventsDisplay.length === 0
+      || usageEventsDisplay.length >= totalCount
+    ) {
+      break;
+    }
+    page += 1;
+  }
+
+  return {
+    totalUsageEventsCount: totalCount,
+    usageEventsDisplay,
+  };
 }
 
 export async function updateCursorAccountTags(accountId: string, tags: string[]): Promise<CursorAccount> {

@@ -774,6 +774,9 @@ fn apply_payload(
     if payload.cursor_credit_grants_raw.is_some() {
         account.cursor_credit_grants_raw = payload.cursor_credit_grants_raw;
     }
+    if payload.cursor_free_credit_usage_raw.is_some() {
+        account.cursor_free_credit_usage_raw = payload.cursor_free_credit_usage_raw;
+    }
     if let Some(auth_id) = resolved_auth_id {
         account.auth_id = Some(auth_id.clone());
         upsert_cursor_auth_raw_string(account, "authId", Some(auth_id));
@@ -853,6 +856,7 @@ pub fn upsert_account(payload: CursorImportPayload) -> Result<CursorAccount, Str
         cursor_usage_raw: payload.cursor_usage_raw.clone(),
         cursor_credit_grants_raw: payload.cursor_credit_grants_raw.clone(),
         cursor_referral_raw: None,
+        cursor_free_credit_usage_raw: payload.cursor_free_credit_usage_raw.clone(),
         status: payload.status.clone(),
         status_reason: payload.status_reason.clone(),
         quota_query_last_error: None,
@@ -1018,6 +1022,8 @@ fn payload_from_import_value(raw: Value) -> Result<CursorImportPayload, String> 
         .or_else(|| clone_object_value(obj.get("cursorUsageRaw")));
     let cursor_credit_grants_raw = clone_object_value(obj.get("cursor_credit_grants_raw"))
         .or_else(|| clone_object_value(obj.get("cursorCreditGrantsRaw")));
+    let cursor_free_credit_usage_raw = clone_object_value(obj.get("cursor_free_credit_usage_raw"))
+        .or_else(|| clone_object_value(obj.get("cursorFreeCreditUsageRaw")));
     let auth_id = extract_string(obj, &["auth_id", "authId", "workos_id", "workosId"])
         .or_else(|| extract_auth_id_from_raw_value(cursor_auth_raw.as_ref()))
         .or_else(|| extract_auth_id_from_access_token(access_token.as_str()));
@@ -1034,6 +1040,7 @@ fn payload_from_import_value(raw: Value) -> Result<CursorImportPayload, String> 
         cursor_auth_raw,
         cursor_usage_raw,
         cursor_credit_grants_raw,
+        cursor_free_credit_usage_raw,
         status,
         status_reason,
     })
@@ -1343,6 +1350,7 @@ pub fn read_local_cursor_auth() -> Result<Option<CursorImportPayload>, String> {
         cursor_auth_raw: Some(Value::Object(auth_raw)),
         cursor_usage_raw: None,
         cursor_credit_grants_raw: None,
+        cursor_free_credit_usage_raw: None,
         status: None,
         status_reason: None,
     }))
@@ -1696,6 +1704,7 @@ fn build_payload_from_workos_session_token(
         cursor_auth_raw: Some(Value::Object(auth_raw)),
         cursor_usage_raw: None,
         cursor_credit_grants_raw: None,
+        cursor_free_credit_usage_raw: None,
         status: None,
         status_reason: None,
     }
@@ -1993,6 +2002,165 @@ async fn post_dashboard_json_with_client(
 
     serde_json::from_str::<serde_json::Value>(&body)
         .map_err(|e| format!("解析 Cursor dashboard JSON 失败: {}", e))
+}
+
+const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT: &str = "USAGE_EVENT_KIND_FREE_CREDIT";
+const CURSOR_FILTERED_USAGE_EVENTS_URL: &str =
+    "https://cursor.com/api/dashboard/get-filtered-usage-events";
+
+fn resolve_billing_cycle_range_ms(usage_raw: &serde_json::Value) -> (String, String) {
+    let end_ms = usage_raw
+        .get("billingCycleEnd")
+        .or_else(|| usage_raw.get("billing_cycle_end"))
+        .and_then(|value| value.as_str())
+        .and_then(|text| chrono::DateTime::parse_from_rfc3339(text).ok())
+        .map(|value| value.timestamp_millis())
+        .unwrap_or_else(|| chrono::Utc::now().timestamp_millis());
+
+    let start_ms = end_ms - 30_i64 * 24 * 60 * 60 * 1000;
+    (start_ms.to_string(), end_ms.to_string())
+}
+
+fn sum_free_credit_cents_from_events_page(root: &serde_json::Value) -> (i64, i32) {
+    let events = root
+        .get("usageEventsDisplay")
+        .or_else(|| root.get("usage_events_display"))
+        .and_then(|value| value.as_array());
+
+    let mut sum = 0_i64;
+    let mut count = 0_i32;
+    if let Some(events) = events {
+        for event in events {
+            let kind = event
+                .get("kind")
+                .and_then(|value| value.as_str())
+                .unwrap_or("");
+            if kind != CURSOR_USAGE_EVENT_KIND_FREE_CREDIT {
+                continue;
+            }
+            count += 1;
+            let token = event
+                .get("tokenUsage")
+                .or_else(|| event.get("token_usage"));
+            if let Some(token) = token {
+                sum += json_get_i64(token, &["totalCents", "total_cents"]).unwrap_or(0);
+            }
+        }
+    }
+    (sum, count)
+}
+
+async fn post_dashboard_json_body_with_client(
+    client: &reqwest::Client,
+    account: &CursorAccount,
+    url: &str,
+    referer: &str,
+    body: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let cookie = account_dashboard_cookie(account)?;
+    let response = client
+        .post(url)
+        .header("Accept", "application/json")
+        .header("Content-Type", "application/json")
+        .header("Cookie", &cookie)
+        .header("Origin", "https://cursor.com")
+        .header("Referer", referer)
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        )
+        .json(&body)
+        .timeout(std::time::Duration::from_secs(40))
+        .send()
+        .await
+        .map_err(|e| format!("请求 Cursor dashboard API 失败: {}", e))?;
+
+    let status = response.status().as_u16();
+    if status == 401 || status == 403 {
+        return Err(format!(
+            "Cursor 会话已过期或未认证，请重新导入账号 (HTTP {})",
+            status
+        ));
+    }
+    if status != 200 {
+        return Err(format!("Cursor dashboard API 返回异常状态码: {}", status));
+    }
+
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("读取 Cursor dashboard 响应失败: {}", e))?;
+
+    serde_json::from_str::<serde_json::Value>(&body)
+        .map_err(|e| format!("解析 Cursor dashboard JSON 失败: {}", e))
+}
+
+async fn fetch_free_credit_usage_with_client(
+    client: &reqwest::Client,
+    account: &CursorAccount,
+    usage_raw: &serde_json::Value,
+) -> Result<Option<serde_json::Value>, String> {
+    let (start_date, end_date) = resolve_billing_cycle_range_ms(usage_raw);
+    let page_size = 500_i32;
+    let mut page = 1_i32;
+    let mut used_cents = 0_i64;
+    let mut free_credit_event_count = 0_i32;
+    let mut fetched_events = 0_i32;
+    let mut total_events = 0_i32;
+
+    loop {
+        let body = serde_json::json!({
+            "teamId": 0,
+            "startDate": start_date,
+            "endDate": end_date,
+            "page": page,
+            "pageSize": page_size
+        });
+        let response = post_dashboard_json_body_with_client(
+            client,
+            account,
+            CURSOR_FILTERED_USAGE_EVENTS_URL,
+            "https://cursor.com/dashboard",
+            body,
+        )
+        .await?;
+
+        let page_total = json_get_i64(
+            &response,
+            &["totalUsageEventsCount", "total_usage_events_count"],
+        )
+        .unwrap_or(0) as i32;
+        if page == 1 {
+            total_events = page_total;
+        }
+
+        let events = response
+            .get("usageEventsDisplay")
+            .or_else(|| response.get("usage_events_display"))
+            .and_then(|value| value.as_array());
+        let page_event_count = events.map(|items| items.len() as i32).unwrap_or(0);
+        fetched_events += page_event_count;
+
+        let (page_sum, page_count) = sum_free_credit_cents_from_events_page(&response);
+        used_cents += page_sum;
+        free_credit_event_count += page_count;
+
+        if page_event_count == 0 || fetched_events >= total_events || total_events == 0 {
+            break;
+        }
+        page += 1;
+    }
+
+    if free_credit_event_count == 0 {
+        return Ok(None);
+    }
+
+    Ok(Some(serde_json::json!({
+        "usedCents": used_cents,
+        "startDate": start_date,
+        "endDate": end_date,
+        "eventCount": free_credit_event_count,
+    })))
 }
 
 fn account_dashboard_cookie(account: &CursorAccount) -> Result<String, String> {
@@ -2562,6 +2730,33 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
                 "[Cursor Refresh] 赠送额度拉取失败: id={}, error={}",
                 account.id, err
             ));
+        }
+    }
+
+    if usage_refreshed {
+        if let Some(usage_raw) = account.cursor_usage_raw.as_ref() {
+            match fetch_free_credit_usage_with_client(&client, &account, usage_raw).await {
+                Ok(Some(snapshot)) => {
+                    account.cursor_free_credit_usage_raw = Some(snapshot);
+                    logger::log_info(&format!(
+                        "[Cursor Refresh] FREE_CREDIT 用量拉取成功: id={}",
+                        account.id
+                    ));
+                }
+                Ok(None) => {
+                    account.cursor_free_credit_usage_raw = None;
+                    logger::log_info(&format!(
+                        "[Cursor Refresh] 无 FREE_CREDIT 用量事件: id={}",
+                        account.id
+                    ));
+                }
+                Err(err) => {
+                    logger::log_warn(&format!(
+                        "[Cursor Refresh] FREE_CREDIT 用量拉取失败: id={}, error={}",
+                        account.id, err
+                    ));
+                }
+            }
         }
     }
 

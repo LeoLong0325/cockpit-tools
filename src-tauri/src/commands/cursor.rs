@@ -123,6 +123,7 @@ pub async fn add_cursor_account_with_token(
             cursor_auth_raw: None,
             cursor_usage_raw: None,
             cursor_credit_grants_raw: None,
+            cursor_free_credit_usage_raw: None,
             status: None,
             status_reason: None,
         };

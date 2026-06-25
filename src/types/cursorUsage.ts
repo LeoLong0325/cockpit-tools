@@ -43,6 +43,8 @@ export interface CursorUserAnalyticsData {
 
 export type CursorUsagePeriod = '7days' | '30days' | 'thisMonth' | 'custom';
 
+export const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT = 'USAGE_EVENT_KIND_FREE_CREDIT';
+
 function pickString(obj: Record<string, unknown>, ...keys: string[]): string {
   for (const key of keys) {
     const value = obj[key];
@@ -142,6 +144,89 @@ export function parseCursorUsageEvents(raw: unknown): CursorFilteredUsageEventsD
   };
 }
 
+function parseTokenCount(value: string | number | null | undefined): number {
+  if (value == null || value === '') return 0;
+  const num = typeof value === 'number' ? value : Number(String(value).replace(/,/g, ''));
+  return Number.isFinite(num) ? num : 0;
+}
+
+export function hasCursorModelUsage(model: CursorModelUsage): boolean {
+  if (model.total_cents > 0) return true;
+  return [
+    model.input_tokens,
+    model.output_tokens,
+    model.cache_write_tokens,
+    model.cache_read_tokens,
+  ].some((value) => parseTokenCount(value) > 0);
+}
+
+export function aggregateFreeCreditUsage(
+  events: CursorUsageEventDisplay[],
+): CursorModelUsage | null {
+  const freeCreditEvents = events.filter(
+    (event) => event.kind === CURSOR_USAGE_EVENT_KIND_FREE_CREDIT,
+  );
+  if (freeCreditEvents.length === 0) return null;
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cacheWriteTokens = 0;
+  let cacheReadTokens = 0;
+  let totalCents = 0;
+
+  freeCreditEvents.forEach((event) => {
+    const tokenUsage = event.tokenUsage;
+    if (!tokenUsage) return;
+    inputTokens += tokenUsage.inputTokens ?? 0;
+    outputTokens += tokenUsage.outputTokens ?? 0;
+    cacheWriteTokens += tokenUsage.cacheWriteTokens ?? 0;
+    cacheReadTokens += tokenUsage.cacheReadTokens ?? 0;
+    totalCents += tokenUsage.totalCents ?? 0;
+  });
+
+  return {
+    model_intent: CURSOR_USAGE_EVENT_KIND_FREE_CREDIT,
+    input_tokens: String(inputTokens),
+    output_tokens: String(outputTokens),
+    cache_write_tokens: String(cacheWriteTokens),
+    cache_read_tokens: String(cacheReadTokens),
+    total_cents: totalCents,
+  };
+}
+
+export function resolveFreeCreditUsage(
+  aggregations: CursorModelUsage[],
+  events: CursorUsageEventDisplay[],
+): CursorModelUsage | null {
+  const fromAggregated = aggregations.find(
+    (item) => item.model_intent === CURSOR_USAGE_EVENT_KIND_FREE_CREDIT,
+  );
+  if (fromAggregated && hasCursorModelUsage(fromAggregated)) {
+    return fromAggregated;
+  }
+
+  const fromEvents = aggregateFreeCreditUsage(events);
+  if (fromEvents && hasCursorModelUsage(fromEvents)) {
+    return fromEvents;
+  }
+
+  return null;
+}
+
+export function buildUsageModelBreakdown(
+  aggregations: CursorModelUsage[],
+  freeCredit: CursorModelUsage | null,
+): CursorModelUsage[] {
+  const regular = aggregations.filter(
+    (item) => item.model_intent !== CURSOR_USAGE_EVENT_KIND_FREE_CREDIT,
+  );
+  return freeCredit ? [...regular, freeCredit] : regular;
+}
+
+export function isCursorFreeCreditModelIntent(modelIntent: string): boolean {
+  return modelIntent === CURSOR_USAGE_EVENT_KIND_FREE_CREDIT;
+}
+
 export function parseCursorUserAnalytics(raw: unknown): CursorUserAnalyticsData | null {
   if (!raw || typeof raw !== 'object') return null;
   const root = raw as Record<string, unknown>;
@@ -173,6 +258,7 @@ export function getCursorUsageEventKindLabel(kind: string): string {
     USAGE_EVENT_KIND_ERRORED_NOT_CHARGED: '错误未计费',
     USAGE_EVENT_KIND_PAID: '付费使用',
     USAGE_EVENT_KIND_FREE: '免费使用',
+    USAGE_EVENT_KIND_FREE_CREDIT: '赠送额度',
   };
   return map[kind] || kind;
 }

@@ -47,11 +47,10 @@ import {
   getCursorAccountDisplayEmail,
   getCursorOnDemandSummary,
   getCursorUsage,
-  getCursorCreditGrants,
   getCursorReferralStatus,
   hasCursorReferralEligibility,
   formatCursorUsageDollars,
-  formatCursorCreditGrantsValue,
+  resolveCursorCreditGrantsQuotaDisplay,
   hasCursorQuotaData,
   isCursorAccountBanned,
   isCursorAccountPastDue,
@@ -437,25 +436,14 @@ export function CursorAccountsPage() {
 
   const resolveCreditGrantsQuota = useCallback(
     (account: CursorAccount) => {
-      const credits = getCursorCreditGrants(account);
-      if (!credits) return null;
+      const display = resolveCursorCreditGrantsQuotaDisplay(account);
+      if (!display) return null;
 
-      const remaining = credits.remainingCents;
-      const total = credits.totalCents;
-      const used =
-        credits.usedCents ??
-        (total != null && remaining != null ? Math.max(0, total - remaining) : null);
-      const rawPct =
-        total != null && total > 0 && used != null
-          ? (used / total) * 100
-          : 0;
-      const pct = normalizeCursorPercent(rawPct);
-      const valueText = formatCursorCreditGrantsValue(used, total);
-
+      const pct = normalizeCursorPercent(display.percentage);
       return {
         percentage: pct.bar,
-        quotaClass: 'gold',
-        valueText,
+        quotaClass: 'gold' as const,
+        valueText: display.valueText,
       };
     },
     [],
