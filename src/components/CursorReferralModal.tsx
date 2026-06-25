@@ -82,8 +82,8 @@ export function CursorReferralModal(props: CursorReferralModalProps) {
                 <thead>
                   <tr>
                     <th>{t('cursor.referral.code', '邀请码')}</th>
-                    <th>{t('cursor.referral.invitedCount', '本周期邀请人数')}</th>
-                    <th>{t('cursor.referral.rewardAmount', '已获得奖励')}</th>
+                    <th>{t('cursor.referral.rewardsThisCycle', '本周期奖励次数')}</th>
+                    <th>{t('cursor.referral.cycleCredit', '本周期奖励额度')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -106,17 +106,34 @@ export function CursorReferralModal(props: CursorReferralModalProps) {
                       </div>
                     </td>
                     <td>
-                      {formatReferralCount(
-                        status.rewardsEarnedThisCycle,
-                        status.maxRewardsPerCycle,
-                      )}
+                      <div className="cursor-referral-reward-cell">
+                        <span>
+                          {formatReferralCount(
+                            status.rewardsEarnedThisCycle,
+                            status.maxRewardsPerCycle,
+                          )}
+                        </span>
+                        {status.invitedReferrals != null ? (
+                          <span className="cursor-referral-subtext">
+                            {t('cursor.referral.invitedCountHint', {
+                              count: status.invitedReferrals,
+                              defaultValue: '已邀请 {{count}} 人',
+                            })}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td>
                       <div className="cursor-referral-reward-cell">
-                        <span>{formatCursorUsageDollars(cycleCredit ?? lifetimeCredit)}</span>
+                        <span>{formatCursorUsageDollars(cycleCredit)}</span>
                         {lifetimeCredit != null &&
                         cycleCredit != null &&
                         lifetimeCredit !== cycleCredit ? (
+                          <span className="cursor-referral-subtext">
+                            {t('cursor.referral.lifetimeReward', '累计')}:{' '}
+                            {formatCursorUsageDollars(lifetimeCredit)}
+                          </span>
+                        ) : lifetimeCredit != null && cycleCredit == null ? (
                           <span className="cursor-referral-subtext">
                             {t('cursor.referral.lifetimeReward', '累计')}:{' '}
                             {formatCursorUsageDollars(lifetimeCredit)}

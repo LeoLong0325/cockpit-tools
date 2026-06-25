@@ -1,5 +1,5 @@
 import { Check, Copy, Download, Eye, EyeOff, FolderOpen, X } from 'lucide-react';
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModalErrorMessage } from './ModalErrorMessage';
 import { useEscClose } from '../hooks/useEscClose';
@@ -73,6 +73,31 @@ export function maskJsonPreviewContent(jsonContent: string): string {
   }
 }
 
+function preventTextareaEdit(event: SyntheticEvent) {
+  event.preventDefault();
+}
+
+export function ExportJsonPreviewTextarea(props: {
+  value: string;
+  className?: string;
+}) {
+  const { value, className = 'export-json-textarea' } = props;
+
+  return (
+    <textarea
+      className={className}
+      spellCheck={false}
+      value={value}
+      onChange={() => {}}
+      onBeforeInput={preventTextareaEdit}
+      onPaste={preventTextareaEdit}
+      onCut={preventTextareaEdit}
+      onDrop={preventTextareaEdit}
+      aria-readonly="true"
+    />
+  );
+}
+
 export function ExportJsonModal(props: ExportJsonModalProps) {
   const {
     isOpen,
@@ -105,7 +130,7 @@ export function ExportJsonModal(props: ExportJsonModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay export-json-modal-overlay" onClick={onClose}>
       <div className="modal export-json-modal" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <h2>{title}</h2>
@@ -128,7 +153,9 @@ export function ExportJsonModal(props: ExportJsonModalProps) {
               <div className="export-json-actions">
                 <button className="btn btn-secondary btn-sm" onClick={onToggleHidden}>
                   {hidden ? <Eye size={14} /> : <EyeOff size={14} />}
-                  {hidden ? t('common.preview', '预览') : t('common.close', '关闭')}
+                  {hidden
+                    ? t('common.shared.export.showSensitive', '显示')
+                    : t('common.shared.export.hideSensitive', '隐藏')}
                 </button>
                 <button className="btn btn-secondary btn-sm" onClick={onCopyJson}>
                   {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -140,10 +167,7 @@ export function ExportJsonModal(props: ExportJsonModalProps) {
                 </button>
               </div>
 
-              <textarea
-                className="export-json-textarea"
-                readOnly
-                spellCheck={false}
+              <ExportJsonPreviewTextarea
                 value={hidden ? maskedContent : jsonContent}
               />
 

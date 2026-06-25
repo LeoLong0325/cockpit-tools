@@ -49,7 +49,9 @@
       },
       "export": {
         "title": "Export",
-        "copyFailed": "Copy failed, please copy manually"
+        "copyFailed": "Copy failed, please copy manually",
+        "hideSensitive": "Hide",
+        "showSensitive": "Show"
       },
       "filter": {
         "all": "All ({{count}})",
@@ -3948,6 +3950,9 @@
       "code": "Referral Code",
       "link": "Referral Link",
       "invitedCount": "Referrals This Cycle",
+      "rewardsThisCycle": "Rewards This Cycle",
+      "cycleCredit": "Credit This Cycle",
+      "invitedCountHint": "{{count}} invited",
       "rewardAmount": "Credit Earned",
       "lifetimeReward": "Lifetime",
       "copyLink": "Copy Link",

@@ -749,6 +749,10 @@
   max-width: 980px;
 }
 
+.export-json-modal-overlay {
+  z-index: 13100;
+}
+
 .export-json-modal-body {
   display: flex;
   flex-direction: column;
@@ -949,6 +953,20 @@
   font-size: 12px;
   line-height: 1.5;
   resize: vertical;
+  cursor: text;
+  caret-color: var(--text-primary);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.export-json-textarea::selection {
+  background: rgba(37, 99, 235, 0.35);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .export-json-textarea::selection {
+  background: rgba(96, 165, 250, 0.45);
+  color: var(--text-primary);
 }
 
 .export-json-textarea:focus {

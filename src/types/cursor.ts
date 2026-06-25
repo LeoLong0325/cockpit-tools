@@ -487,18 +487,79 @@ export type CursorReferralStatus = {
   eligible: boolean;
   referralCode: string | null;
   referralLink: string | null;
+  /** Rewards earned this billing cycle (matches Cursor "rewardedReferrals"). */
   rewardsEarnedThisCycle: number | null;
   maxRewardsPerCycle: number | null;
+  /** People invited this cycle (API: invitedReferrals). */
+  invitedReferrals: number | null;
   creditEarnedThisCycleCents: number | null;
   lifetimeCreditEarnedCents: number | null;
 };
 
+function buildReferralLinkFromRoot(
+  root: Record<string, unknown>,
+  code: string | null,
+): string | null {
+  const urlPath = pickString(root, 'urlPath', 'url_path');
+  if (urlPath) {
+    if (urlPath.startsWith('http://') || urlPath.startsWith('https://')) {
+      return urlPath;
+    }
+    return `https://cursor.com${urlPath.startsWith('/') ? urlPath : `/${urlPath}`}`;
+  }
+
+  const existing = pickString(
+    root,
+    'referralLink',
+    'referral_link',
+    'referralUrl',
+    'referral_url',
+    'link',
+    'url',
+  );
+  if (existing) {
+    if (existing.startsWith('http://') || existing.startsWith('https://')) {
+      return existing;
+    }
+    return `https://cursor.com${existing.startsWith('/') ? existing : `/${existing}`}`;
+  }
+
+  return buildReferralLink(code, null);
+}
+
+function inferMaxRewardsPerCycle(root: Record<string, unknown>): number {
+  const explicit = pickNumber(
+    root,
+    'maxRewardsPerBillingCycle',
+    'maxRewardsPerCycle',
+    'maxReferralsPerCycle',
+    'redemptionCapPerCycle',
+    'monthlyRewardCap',
+    'maxRewards',
+  );
+  if (explicit != null && explicit > 0) {
+    return explicit;
+  }
+
+  const description = pickString(root, 'description');
+  if (description) {
+    const match =
+      description.match(/(?:valid for|up to)\s+(\d+)\s+rewards?/i) ??
+      description.match(/(\d+)\s+rewards?\s+per\s+(?:month|billing cycle)/i);
+    if (match) {
+      return Number(match[1]);
+    }
+  }
+
+  return 10;
+}
+
 function extractReferralCode(value: Record<string, unknown>): string | null {
   const direct = pickString(
     value,
+    'code',
     'referralCode',
     'referral_code',
-    'code',
     'p2pReferralCode',
     'p2p_referral_code',
   );
@@ -512,10 +573,12 @@ function extractReferralCode(value: Record<string, unknown>): string | null {
     'referralUrl',
     'referral_url',
     'link',
+    'urlPath',
+    'url_path',
   );
   if (!link) return null;
   try {
-    const url = new URL(link);
+    const url = new URL(link.startsWith('http') ? link : `https://cursor.com${link.startsWith('/') ? link : `/${link}`}`);
     const code = url.searchParams.get('code');
     return code?.trim() || null;
   } catch {
@@ -537,15 +600,14 @@ export function getCursorReferralStatus(
   if (!raw || typeof raw !== 'object') return null;
 
   const root = raw as Record<string, unknown>;
-  const eligibleFlag = pickBoolean(root, 'eligible', 'isEligible');
+  const eligibleFlag = pickBoolean(root, 'isEligible', 'eligible');
   const referralCode = extractReferralCode(root);
-  const referralLink = buildReferralLink(
-    referralCode,
-    pickString(root, 'referralLink', 'referral_link', 'referralUrl', 'referral_url', 'link'),
-  );
+  const referralLink = buildReferralLinkFromRoot(root, referralCode);
 
   const rewardsEarnedThisCycle = pickNumber(
     root,
+    'rewardedReferrals',
+    'invitedRewardEarned',
     'rewardsEarnedThisBillingCycle',
     'rewardsEarnedThisCycle',
     'rewardsEarnedThisCycleCount',
@@ -554,16 +616,16 @@ export function getCursorReferralStatus(
     'referralCountThisCycle',
     'rewardsEarned',
   );
-  const maxRewardsPerCycle = pickNumber(
+  const maxRewardsPerCycle = inferMaxRewardsPerCycle(root);
+  const invitedReferrals = pickNumber(
     root,
-    'maxRewardsPerBillingCycle',
-    'maxRewardsPerCycle',
-    'maxReferralsPerCycle',
-    'referralLimitPerCycle',
-    'maxRewards',
+    'invitedReferrals',
+    'successfulReferrals',
+    'invitedSignedUp',
   );
   const creditEarnedThisCycleCents = pickNumber(
     root,
+    'cycleCreditCentsEarned',
     'creditEarnedThisBillingCycleCents',
     'creditEarnedThisCycleCents',
     'billingCycleCreditEarnedCents',
@@ -572,6 +634,7 @@ export function getCursorReferralStatus(
   );
   const lifetimeCreditEarnedCents = pickNumber(
     root,
+    'totalCreditCentsEarned',
     'lifetimeCreditEarnedCents',
     'totalCreditEarnedCents',
     'lifetimeCreditCents',
@@ -590,6 +653,7 @@ export function getCursorReferralStatus(
     referralLink,
     rewardsEarnedThisCycle,
     maxRewardsPerCycle,
+    invitedReferrals,
     creditEarnedThisCycleCents,
     lifetimeCreditEarnedCents,
   };

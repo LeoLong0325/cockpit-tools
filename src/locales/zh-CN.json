@@ -49,7 +49,9 @@
       },
       "export": {
         "title": "导出",
-        "copyFailed": "复制失败，请手动复制"
+        "copyFailed": "复制失败，请手动复制",
+        "hideSensitive": "隐藏",
+        "showSensitive": "显示"
       },
       "filter": {
         "all": "全部 ({{count}})",
@@ -3948,6 +3950,9 @@
       "code": "邀请码",
       "link": "邀请链接",
       "invitedCount": "本周期邀请人数",
+      "rewardsThisCycle": "本周期奖励次数",
+      "cycleCredit": "本周期奖励额度",
+      "invitedCountHint": "已邀请 {{count}} 人",
       "rewardAmount": "已获得奖励",
       "lifetimeReward": "累计",
       "copyLink": "复制链接",

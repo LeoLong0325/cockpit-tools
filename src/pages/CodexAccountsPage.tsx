@@ -60,6 +60,7 @@ import * as codexLocalAccessService from "../services/codexLocalAccessService";
 import { TagEditModal } from "../components/TagEditModal";
 import {
   ExportJsonModal,
+  ExportJsonPreviewTextarea,
   maskJsonPreviewContent,
 } from "../components/ExportJsonModal";
 import {
@@ -1854,8 +1855,8 @@ export function CodexAccountsPage() {
           >
             {exportJsonHidden ? <Eye size={14} /> : <EyeOff size={14} />}
             {exportJsonHidden
-              ? t("common.preview", "预览")
-              : t("common.close", "关闭")}
+              ? t("common.shared.export.showSensitive", "显示")
+              : t("common.shared.export.hideSensitive", "隐藏")}
           </button>
           <button
             className="btn btn-primary btn-sm"
@@ -1908,10 +1909,8 @@ export function CodexAccountsPage() {
                 </div>
               </div>
 
-              <textarea
+              <ExportJsonPreviewTextarea
                 className="export-json-textarea export-json-card-textarea"
-                readOnly
-                spellCheck={false}
                 value={
                   exportJsonHidden
                     ? maskJsonPreviewContent(document.jsonContent)
