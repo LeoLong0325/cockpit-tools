@@ -3643,6 +3643,19 @@
     "dashboard": {
       "viewHome": "查看主頁",
       "openFailed": "打開主頁失敗: {{error}}"
+    },
+    "referral": {
+      "view": "查看邀請獎勵",
+      "title": "邀請獎勵",
+      "code": "邀請碼",
+      "link": "邀請連結",
+      "invitedCount": "本週期邀請人數",
+      "rewardAmount": "已獲得獎勵",
+      "lifetimeReward": "累計",
+      "copyLink": "複製連結",
+      "copied": "已複製",
+      "loadFailed": "載入邀請獎勵失敗: {{error}}",
+      "empty": "暫無邀請獎勵資料"
     }
   },
   "breakout": {

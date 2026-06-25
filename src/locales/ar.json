@@ -3689,6 +3689,19 @@
     "dashboard": {
       "viewHome": "عرض لوحة التحكم",
       "openFailed": "تعذر فتح لوحة التحكم: {{error}}"
+    },
+    "referral": {
+      "view": "View Referrals",
+      "title": "Referral Rewards",
+      "code": "Referral Code",
+      "link": "Referral Link",
+      "invitedCount": "Referrals This Cycle",
+      "rewardAmount": "Credit Earned",
+      "lifetimeReward": "Lifetime",
+      "copyLink": "Copy Link",
+      "copied": "Copied",
+      "loadFailed": "Failed to load referral status: {{error}}",
+      "empty": "No referral data available"
     }
   },
   "breakout": {

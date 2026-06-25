@@ -15,6 +15,7 @@ export interface CursorAccount {
   cursor_auth_raw?: unknown;
   cursor_usage_raw?: unknown;
   cursor_credit_grants_raw?: unknown;
+  cursor_referral_raw?: unknown;
 
   status?: string | null;
   status_reason?: string | null;
@@ -283,6 +284,18 @@ function pickBoolean(obj: unknown, ...candidateKeys: string[]): boolean | null {
   return null;
 }
 
+function pickString(obj: unknown, ...candidateKeys: string[]): string | null {
+  if (obj == null || typeof obj !== 'object') return null;
+  const o = obj as Record<string, unknown>;
+  for (const key of candidateKeys) {
+    const val = o[key];
+    if (typeof val === 'string' && val.trim()) {
+      return val.trim();
+    }
+  }
+  return null;
+}
+
 export function getCursorUsage(account: CursorAccount): CursorUsage {
   const raw = account.cursor_usage_raw;
   if (!raw || typeof raw !== 'object') {
@@ -429,14 +442,14 @@ export function formatCursorUsageDollars(cents: number | null | undefined): stri
 }
 
 export function formatCursorCreditGrantsValue(
-  remainingCents: number | null | undefined,
+  usedCents: number | null | undefined,
   totalCents: number | null | undefined,
 ): string {
-  if (remainingCents != null && totalCents != null) {
-    return `$${Math.round(remainingCents / 100)} / $${Math.round(totalCents / 100)}`;
+  if (usedCents != null && totalCents != null) {
+    return `$${Math.round(usedCents / 100)} / $${Math.round(totalCents / 100)}`;
   }
-  if (remainingCents != null) {
-    return `$${Math.round(remainingCents / 100)}`;
+  if (usedCents != null) {
+    return `$${Math.round(usedCents / 100)}`;
   }
   if (totalCents != null) {
     return `$${Math.round(totalCents / 100)}`;
@@ -467,7 +480,124 @@ export type CursorCreditGrants = {
   totalCents: number | null;
   usedCents: number | null;
   expiresAt: number | null;
+  exhausted?: boolean;
 };
+
+export type CursorReferralStatus = {
+  eligible: boolean;
+  referralCode: string | null;
+  referralLink: string | null;
+  rewardsEarnedThisCycle: number | null;
+  maxRewardsPerCycle: number | null;
+  creditEarnedThisCycleCents: number | null;
+  lifetimeCreditEarnedCents: number | null;
+};
+
+function extractReferralCode(value: Record<string, unknown>): string | null {
+  const direct = pickString(
+    value,
+    'referralCode',
+    'referral_code',
+    'code',
+    'p2pReferralCode',
+    'p2p_referral_code',
+  );
+  if (direct) {
+    return direct;
+  }
+  const link = pickString(
+    value,
+    'referralLink',
+    'referral_link',
+    'referralUrl',
+    'referral_url',
+    'link',
+  );
+  if (!link) return null;
+  try {
+    const url = new URL(link);
+    const code = url.searchParams.get('code');
+    return code?.trim() || null;
+  } catch {
+    const match = link.match(/[?&]code=([^&]+)/i);
+    return match?.[1]?.trim() || null;
+  }
+}
+
+function buildReferralLink(code: string | null, existing: string | null): string | null {
+  if (existing) return existing;
+  if (!code) return null;
+  return `https://cursor.com/referral?code=${encodeURIComponent(code)}`;
+}
+
+export function getCursorReferralStatus(
+  account: CursorAccount,
+): CursorReferralStatus | null {
+  const raw = account.cursor_referral_raw;
+  if (!raw || typeof raw !== 'object') return null;
+
+  const root = raw as Record<string, unknown>;
+  const eligibleFlag = pickBoolean(root, 'eligible', 'isEligible');
+  const referralCode = extractReferralCode(root);
+  const referralLink = buildReferralLink(
+    referralCode,
+    pickString(root, 'referralLink', 'referral_link', 'referralUrl', 'referral_url', 'link'),
+  );
+
+  const rewardsEarnedThisCycle = pickNumber(
+    root,
+    'rewardsEarnedThisBillingCycle',
+    'rewardsEarnedThisCycle',
+    'rewardsEarnedThisCycleCount',
+    'numReferralsThisCycle',
+    'referralsThisCycle',
+    'referralCountThisCycle',
+    'rewardsEarned',
+  );
+  const maxRewardsPerCycle = pickNumber(
+    root,
+    'maxRewardsPerBillingCycle',
+    'maxRewardsPerCycle',
+    'maxReferralsPerCycle',
+    'referralLimitPerCycle',
+    'maxRewards',
+  );
+  const creditEarnedThisCycleCents = pickNumber(
+    root,
+    'creditEarnedThisBillingCycleCents',
+    'creditEarnedThisCycleCents',
+    'billingCycleCreditEarnedCents',
+    'creditEarnedThisCycle',
+    'cycleCreditEarnedCents',
+  );
+  const lifetimeCreditEarnedCents = pickNumber(
+    root,
+    'lifetimeCreditEarnedCents',
+    'totalCreditEarnedCents',
+    'lifetimeCreditCents',
+    'totalLifetimeCreditCents',
+  );
+
+  const eligible =
+    eligibleFlag === true ||
+    (eligibleFlag !== false && (referralCode != null || referralLink != null));
+
+  if (!eligible) return null;
+
+  return {
+    eligible: true,
+    referralCode,
+    referralLink,
+    rewardsEarnedThisCycle,
+    maxRewardsPerCycle,
+    creditEarnedThisCycleCents,
+    lifetimeCreditEarnedCents,
+  };
+}
+
+export function hasCursorReferralEligibility(account: CursorAccount): boolean {
+  return getCursorReferralStatus(account)?.eligible === true;
+}
 
 function parseCentsValue(value: unknown): number | null {
   if (value == null) return null;
@@ -595,19 +725,52 @@ export function getCursorCreditGrants(
         balance.expiry_date,
     );
 
+  const historical =
+    root.historical === true ||
+    (balance as Record<string, unknown>).historical === true;
+  const peak =
+    root.peak && typeof root.peak === 'object'
+      ? (root.peak as Record<string, unknown>)
+      : null;
+  const peakTotalCents = peak
+    ? parseCentsValue(
+        peak.totalCents ?? peak.total_cents ?? peak.grantTotalCents,
+      )
+    : null;
+  const peakUsedCents = peak
+    ? parseCentsValue(peak.usedCents ?? peak.used_cents ?? peak.grantUsedCents)
+    : null;
+
+  let resolvedTotal = totalCents ?? peakTotalCents;
+  let resolvedUsed = usedCents ?? peakUsedCents;
+  let resolvedRemaining = remainingCents;
+  if (historical && resolvedTotal != null) {
+    resolvedRemaining = 0;
+    resolvedUsed = resolvedUsed ?? resolvedTotal;
+  }
+
   const hasGrants =
     hasCreditGrants === true ||
-    (totalCents != null && totalCents > 0) ||
-    (remainingCents != null && remainingCents > 0);
+    historical ||
+    (resolvedTotal != null && resolvedTotal > 0) ||
+    (resolvedRemaining != null && resolvedRemaining > 0);
 
   if (!hasGrants) return null;
 
+  const exhausted =
+    historical ||
+    (resolvedTotal != null &&
+      resolvedTotal > 0 &&
+      (resolvedRemaining ?? 0) <= 0 &&
+      (resolvedUsed ?? 0) >= resolvedTotal);
+
   return {
     hasGrants: true,
-    remainingCents,
-    totalCents,
-    usedCents,
+    remainingCents: resolvedRemaining,
+    totalCents: resolvedTotal,
+    usedCents: resolvedUsed,
     expiresAt,
+    exhausted,
   };
 }
 

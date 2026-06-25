@@ -3643,6 +3643,19 @@
     "dashboard": {
       "viewHome": "Voir le tableau de bord",
       "openFailed": "Impossible d’ouvrir le tableau de bord : {{error}}"
+    },
+    "referral": {
+      "view": "View Referrals",
+      "title": "Referral Rewards",
+      "code": "Referral Code",
+      "link": "Referral Link",
+      "invitedCount": "Referrals This Cycle",
+      "rewardAmount": "Credit Earned",
+      "lifetimeReward": "Lifetime",
+      "copyLink": "Copy Link",
+      "copied": "Copied",
+      "loadFailed": "Failed to load referral status: {{error}}",
+      "empty": "No referral data available"
     }
   },
   "breakout": {

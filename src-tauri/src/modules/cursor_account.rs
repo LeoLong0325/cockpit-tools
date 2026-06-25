@@ -852,6 +852,7 @@ pub fn upsert_account(payload: CursorImportPayload) -> Result<CursorAccount, Str
         cursor_auth_raw: payload.cursor_auth_raw.clone(),
         cursor_usage_raw: payload.cursor_usage_raw.clone(),
         cursor_credit_grants_raw: payload.cursor_credit_grants_raw.clone(),
+        cursor_referral_raw: None,
         status: payload.status.clone(),
         status_reason: payload.status_reason.clone(),
         quota_query_last_error: None,
@@ -1118,25 +1119,110 @@ pub fn export_accounts(account_ids: &[String]) -> Result<String, String> {
 
     let export_items: Vec<Value> = accounts
         .into_iter()
-        .map(|account| {
-            let mut value = serde_json::to_value(&account).unwrap_or(Value::Null);
-            if let Value::Object(obj) = &mut value {
-                if let Some(workos_token) = read_workos_session_token(&account) {
-                    obj.insert(
-                        "workos_cursor_session_token".to_string(),
-                        Value::String(workos_token),
-                    );
-                }
-                obj.insert(
-                    "token".to_string(),
-                    Value::String(account.access_token.clone()),
-                );
-            }
-            value
-        })
+        .map(build_cursor_export_item)
         .collect();
 
-    serde_json::to_string_pretty(&export_items).map_err(|e| format!("序列化失败: {}", e))
+    if export_items.is_empty() {
+        return Err("未找到可导出的账号".to_string());
+    }
+
+    let payload = if export_items.len() == 1 {
+        export_items.into_iter().next().unwrap_or(Value::Null)
+    } else {
+        Value::Array(export_items)
+    };
+
+    serde_json::to_string_pretty(&payload).map_err(|e| format!("序列化失败: {}", e))
+}
+
+fn build_cursor_export_item(account: CursorAccount) -> Value {
+    let mut obj = serde_json::Map::new();
+    let email = account.email.trim();
+    if !email.is_empty() && !email.eq_ignore_ascii_case("unknown") {
+        obj.insert("email".to_string(), Value::String(email.to_string()));
+    }
+    obj.insert(
+        "token".to_string(),
+        Value::String(account.access_token.clone()),
+    );
+    obj.insert(
+        "access_token".to_string(),
+        Value::String(account.access_token.clone()),
+    );
+    if let Some(refresh_token) = normalize_non_empty(account.refresh_token.as_deref()) {
+        obj.insert("refresh_token".to_string(), Value::String(refresh_token));
+    }
+    if let Some(workos_token) = read_workos_session_token(&account) {
+        obj.insert(
+            "workos_cursor_session_token".to_string(),
+            Value::String(workos_token),
+        );
+    }
+    if let Some(membership_type) = normalize_non_empty(account.membership_type.as_deref()) {
+        obj.insert(
+            "membership_type".to_string(),
+            Value::String(membership_type),
+        );
+    }
+    Value::Object(obj)
+}
+
+fn build_cursor_dashboard_init_script(workos_token: &str) -> String {
+    let token_json =
+        serde_json::to_string(workos_token).unwrap_or_else(|_| "\"\"".to_string());
+    format!(
+        r#"(function() {{
+  try {{
+    const token = {token_json};
+    document.cookie = 'generaltranslation.locale-routing-enabled=true; domain=.cursor.com; path=/';
+    document.cookie = 'NEXT_LOCALE=cn; domain=.cursor.com; path=/';
+    document.cookie = 'WorkosCursorSessionToken=' + token + '; domain=.cursor.com; path=/';
+    if (!window.location.pathname.includes('/dashboard')) {{
+      window.location.replace('https://cursor.com/cn/dashboard');
+    }}
+  }} catch (error) {{
+    console.error('[cockpit-tools] Failed to inject Cursor session cookie', error);
+  }}
+}})();"#,
+        token_json = token_json
+    )
+}
+
+pub async fn open_cursor_dashboard(
+    app: &tauri::AppHandle,
+    account_id: &str,
+) -> Result<(), String> {
+    use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+
+    let account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
+    let workos_token = read_workos_session_token(&account)
+        .ok_or_else(|| "无法解析 WorkOS Session Token，请重新导入账号".to_string())?;
+
+    if let Some(existing_window) = app.get_webview_window("cursor_dashboard") {
+        let _ = existing_window.close();
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+
+    let init_script = build_cursor_dashboard_init_script(&workos_token);
+
+    WebviewWindowBuilder::new(
+        app,
+        "cursor_dashboard",
+        WebviewUrl::External(
+            "https://cursor.com/cn"
+                .parse()
+                .map_err(|e| format!("无效的 Dashboard URL: {}", e))?,
+        ),
+    )
+    .title("Cursor Dashboard")
+    .inner_size(1200.0, 800.0)
+    .resizable(true)
+    .user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36")
+    .initialization_script(&init_script)
+    .build()
+    .map_err(|e| format!("打开 Cursor 主页失败: {}", e))?;
+
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -1364,6 +1450,8 @@ const CURSOR_CREDIT_GRANTS_BALANCE_URL: &str =
     "https://cursor.com/api/dashboard/get-credit-grants-balance";
 const CURSOR_CLIENT_VISIBLE_CREDIT_GRANTS_URL: &str =
     "https://cursor.com/api/dashboard/get-client-visible-credit-grants";
+const CURSOR_P2P_REFERRAL_STATUS_URL: &str =
+    "https://cursor.com/api/dashboard/get-p2p-referral-status";
 const CURSOR_GET_USER_META_URL: &str = "https://api2.cursor.sh/aiserver.v1.AuthService/GetUserMeta";
 const CURSOR_FULL_STRIPE_PROFILE_URL: &str = "https://api2.cursor.sh/auth/full_stripe_profile";
 const CURSOR_STRIPE_PROFILE_URL: &str = "https://api2.cursor.sh/auth/stripe_profile";
@@ -1638,45 +1726,6 @@ pub async fn add_account_with_workos_token(
     upsert_account(payload)
 }
 
-pub async fn open_cursor_dashboard(
-    app: &tauri::AppHandle,
-    account_id: &str,
-) -> Result<(), String> {
-    use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
-
-    let account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
-    let workos_token = read_workos_session_token(&account)
-        .ok_or_else(|| "无法解析 WorkOS Session Token，请重新导入账号".to_string())?;
-
-    if let Some(existing_window) = app.get_webview_window("cursor_dashboard") {
-        let _ = existing_window.close();
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-    }
-
-    WebviewWindowBuilder::new(
-        app,
-        "cursor_dashboard",
-        WebviewUrl::External(
-            "https://cursor.com/dashboard"
-                .parse()
-                .map_err(|e| format!("无效的 Dashboard URL: {}", e))?,
-        ),
-    )
-    .title("Cursor Dashboard")
-    .inner_size(1200.0, 800.0)
-    .resizable(true)
-    .initialization_script(&format!(
-        r#"
-        document.cookie = 'WorkosCursorSessionToken={}; domain=.cursor.com; path=/; secure; samesite=none';
-        "#,
-        workos_token
-    ))
-    .build()
-    .map_err(|e| format!("打开 Cursor 主页失败: {}", e))?;
-
-    Ok(())
-}
-
 fn resolve_membership_from_stripe_profile(profile: &CursorStripeProfileResponse) -> Option<String> {
     let membership = normalize_non_empty(profile.membership_type.as_deref());
     let individual = normalize_non_empty(profile.individual_membership_type.as_deref());
@@ -1905,6 +1954,7 @@ async fn post_dashboard_json_with_client(
     client: &reqwest::Client,
     access_token: &str,
     url: &str,
+    referer: &str,
 ) -> Result<serde_json::Value, String> {
     let cookie = build_session_cookie(access_token)
         .ok_or_else(|| "无法从 accessToken 解析 WorkOS 用户 ID".to_string())?;
@@ -1915,7 +1965,7 @@ async fn post_dashboard_json_with_client(
         .header("Content-Type", "application/json")
         .header("Cookie", &cookie)
         .header("Origin", "https://cursor.com")
-        .header("Referer", "https://cursor.com/dashboard")
+        .header("Referer", referer)
         .header(
             "User-Agent",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
@@ -1927,7 +1977,10 @@ async fn post_dashboard_json_with_client(
 
     let status = response.status().as_u16();
     if status == 401 || status == 403 {
-        return Err("Cursor 会话已过期或未认证，请重新导入账号".to_string());
+        return Err(format!(
+            "Cursor 会话已过期或未认证，请重新导入账号 (HTTP {})",
+            status
+        ));
     }
     if status != 200 {
         return Err(format!("Cursor dashboard API 返回异常状态码: {}", status));
@@ -1942,6 +1995,262 @@ async fn post_dashboard_json_with_client(
         .map_err(|e| format!("解析 Cursor dashboard JSON 失败: {}", e))
 }
 
+fn json_get_i64(value: &serde_json::Value, keys: &[&str]) -> Option<i64> {
+    let obj = value.as_object()?;
+    for key in keys {
+        let Some(raw) = obj.get(*key) else {
+            continue;
+        };
+        if let Some(n) = raw.as_i64() {
+            return Some(n);
+        }
+        if let Some(n) = raw.as_u64() {
+            return Some(n as i64);
+        }
+        if let Some(text) = raw.as_str() {
+            if let Ok(n) = text.trim().parse::<i64>() {
+                return Some(n);
+            }
+        }
+    }
+    None
+}
+
+fn json_get_bool(value: &serde_json::Value, keys: &[&str]) -> Option<bool> {
+    let obj = value.as_object()?;
+    for key in keys {
+        if let Some(raw) = obj.get(*key) {
+            if let Some(flag) = raw.as_bool() {
+                return Some(flag);
+            }
+        }
+    }
+    None
+}
+
+fn credit_grants_balance_node(root: &serde_json::Value) -> &serde_json::Value {
+    root.get("balance")
+        .filter(|value| value.is_object())
+        .unwrap_or(root)
+}
+
+fn extract_credit_grants_metrics(root: &serde_json::Value) -> (Option<i64>, Option<i64>, Option<i64>) {
+    let balance = credit_grants_balance_node(root);
+    let total = json_get_i64(
+        balance,
+        &[
+            "totalCents",
+            "total_cents",
+            "grantTotalCents",
+            "grant_total_cents",
+        ],
+    );
+    let used = json_get_i64(
+        balance,
+        &["usedCents", "used_cents", "grantUsedCents", "grant_used_cents"],
+    );
+    let remaining = json_get_i64(
+        balance,
+        &[
+            "remainingCents",
+            "remaining_cents",
+            "balanceCents",
+            "balance_cents",
+        ],
+    )
+    .or_else(|| {
+        total.zip(used)
+            .map(|(total_cents, used_cents)| (total_cents - used_cents).max(0))
+    });
+    (total, used, remaining)
+}
+
+fn credit_grants_has_active_display(root: &serde_json::Value) -> bool {
+    let balance = credit_grants_balance_node(root);
+    if json_get_bool(
+        balance,
+        &["hasCreditGrants", "has_credit_grants"],
+    ) == Some(true)
+    {
+        return true;
+    }
+    let (total, used, remaining) = extract_credit_grants_metrics(root);
+    if remaining.unwrap_or(0) > 0 {
+        return true;
+    }
+    if total.unwrap_or(0) > 0 && used.unwrap_or(0) < total.unwrap_or(0) {
+        return true;
+    }
+    false
+}
+
+fn build_credit_grants_peak(total: i64, used: Option<i64>) -> serde_json::Value {
+    serde_json::json!({
+        "totalCents": total,
+        "usedCents": used.unwrap_or(total).max(0),
+    })
+}
+
+fn resolve_credit_grants_peak(
+    previous: Option<&serde_json::Value>,
+    fresh: &serde_json::Value,
+) -> Option<serde_json::Value> {
+    if let Some(peak) = fresh.get("peak").filter(|value| value.is_object()) {
+        let total = json_get_i64(peak, &["totalCents", "total_cents"]).unwrap_or(0);
+        if total > 0 {
+            return Some(peak.clone());
+        }
+    }
+    if let Some(previous) = previous {
+        if let Some(peak) = previous.get("peak").filter(|value| value.is_object()) {
+            let total = json_get_i64(peak, &["totalCents", "total_cents"]).unwrap_or(0);
+            if total > 0 {
+                return Some(peak.clone());
+            }
+        }
+    }
+
+    for source in [Some(fresh), previous] {
+        let Some(source) = source else { continue };
+        let (total, used, _) = extract_credit_grants_metrics(source);
+        if total.unwrap_or(0) > 0 {
+            return Some(build_credit_grants_peak(
+                total.unwrap_or(0),
+                used.or(total),
+            ));
+        }
+    }
+    None
+}
+
+fn merge_credit_grants_preserving_history(
+    previous: Option<&serde_json::Value>,
+    fresh: serde_json::Value,
+) -> serde_json::Value {
+    let peak = resolve_credit_grants_peak(previous, &fresh);
+
+    if credit_grants_has_active_display(&fresh) {
+        let mut merged = fresh;
+        if let Some(peak) = peak {
+            if let serde_json::Value::Object(ref mut map) = merged {
+                map.insert("peak".to_string(), peak);
+            }
+        }
+        return merged;
+    }
+
+    let Some(peak) = peak else {
+        return fresh;
+    };
+    let peak_total = json_get_i64(&peak, &["totalCents", "total_cents"]).unwrap_or(0);
+    if peak_total <= 0 {
+        return fresh;
+    }
+    let peak_used = json_get_i64(&peak, &["usedCents", "used_cents"]).unwrap_or(peak_total);
+
+    serde_json::json!({
+        "balance": {
+            "totalCents": peak_total,
+            "usedCents": peak_used.max(peak_total),
+            "remainingCents": 0,
+            "hasCreditGrants": true,
+            "historical": true,
+        },
+        "grants": fresh
+            .get("grants")
+            .cloned()
+            .or_else(|| previous.and_then(|value| value.get("grants").cloned()))
+            .unwrap_or_else(|| serde_json::json!({})),
+        "peak": peak,
+        "historical": true,
+    })
+}
+
+fn referral_has_code(value: &serde_json::Value) -> bool {
+    let keys = [
+        "referralCode",
+        "referral_code",
+        "code",
+        "referralLink",
+        "referral_link",
+        "referralUrl",
+        "referral_url",
+    ];
+    for key in keys {
+        if let Some(text) = value.get(key).and_then(|raw| raw.as_str()) {
+            if !text.trim().is_empty() {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn referral_is_eligible(value: &serde_json::Value) -> bool {
+    if value.get("eligible").and_then(|raw| raw.as_bool()) == Some(false) {
+        return false;
+    }
+    if referral_has_code(value) {
+        return true;
+    }
+    json_get_bool(
+        value,
+        &[
+            "eligible",
+            "isEligible",
+            "hasReferralProgram",
+            "hasP2PReferral",
+            "has_p2p_referral",
+        ],
+    ) == Some(true)
+}
+
+fn normalize_referral_status(mut response: serde_json::Value) -> serde_json::Value {
+    let eligible = referral_is_eligible(&response);
+    if let serde_json::Value::Object(ref mut map) = response {
+        map.insert("eligible".to_string(), serde_json::json!(eligible));
+    } else {
+        response = serde_json::json!({ "eligible": eligible });
+    }
+    response
+}
+
+async fn fetch_referral_status_with_client(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> Result<serde_json::Value, String> {
+    match post_dashboard_json_with_client(
+        client,
+        access_token,
+        CURSOR_P2P_REFERRAL_STATUS_URL,
+        "https://cursor.com/dashboard/referrals",
+    )
+    .await
+    {
+        Ok(response) => Ok(normalize_referral_status(response)),
+        Err(err) if err.contains("403") || err.contains("404") => {
+            Ok(serde_json::json!({ "eligible": false }))
+        }
+        Err(err) => Err(err),
+    }
+}
+
+pub async fn fetch_referral_status_async(account_id: &str) -> Result<CursorAccount, String> {
+    let mut account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
+    let client = build_cursor_http_client()?;
+
+    if access_token_needs_refresh(&account.access_token) {
+        let _ = refresh_account_access_token_with_client(&client, &mut account).await;
+    }
+
+    let referral = fetch_referral_status_with_client(&client, &account.access_token).await?;
+    account.cursor_referral_raw = Some(referral);
+    account.last_used = now_ts();
+    let updated = account.clone();
+    upsert_account_record(account)?;
+    Ok(updated)
+}
+
 async fn fetch_credit_grants_with_client(
     client: &reqwest::Client,
     access_token: &str,
@@ -1950,12 +2259,14 @@ async fn fetch_credit_grants_with_client(
         client,
         access_token,
         CURSOR_CREDIT_GRANTS_BALANCE_URL,
+        "https://cursor.com/dashboard",
     )
     .await?;
     let grants = post_dashboard_json_with_client(
         client,
         access_token,
         CURSOR_CLIENT_VISIBLE_CREDIT_GRANTS_URL,
+        "https://cursor.com/dashboard",
     )
     .await
     .unwrap_or_else(|err| {
@@ -2111,7 +2422,11 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
 
     match fetch_credit_grants_with_client(&client, &account.access_token).await {
         Ok(credit_grants) => {
-            account.cursor_credit_grants_raw = Some(credit_grants);
+            let merged = merge_credit_grants_preserving_history(
+                existing.cursor_credit_grants_raw.as_ref(),
+                credit_grants,
+            );
+            account.cursor_credit_grants_raw = Some(merged);
             logger::log_info(&format!(
                 "[Cursor Refresh] 赠送额度拉取成功: id={}",
                 account.id
@@ -2120,6 +2435,22 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         Err(err) => {
             logger::log_warn(&format!(
                 "[Cursor Refresh] 赠送额度拉取失败: id={}, error={}",
+                account.id, err
+            ));
+        }
+    }
+
+    match fetch_referral_status_with_client(&client, &account.access_token).await {
+        Ok(referral) => {
+            account.cursor_referral_raw = Some(referral);
+            logger::log_info(&format!(
+                "[Cursor Refresh] 邀请奖励状态拉取成功: id={}",
+                account.id
+            ));
+        }
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[Cursor Refresh] 邀请奖励状态拉取失败: id={}, error={}",
                 account.id, err
             ));
         }

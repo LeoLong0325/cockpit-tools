@@ -57,6 +57,13 @@ function maskJsonValues(value: unknown): unknown {
 
 export function maskJsonPreviewContent(jsonContent: string): string {
   if (!jsonContent) return '';
+  // Large payloads (legacy full-account exports) can freeze the UI during parse/stringify.
+  if (jsonContent.length > 64_000) {
+    return jsonContent.replace(
+      /"(access_token|refresh_token|token|workos_cursor_session_token)"\s*:\s*"([^"]*)"/g,
+      (_match, key: string, value: string) => `"${key}":"${maskStringValue(value)}"`,
+    );
+  }
   try {
     const parsed = JSON.parse(jsonContent) as unknown;
     const masked = maskJsonValues(parsed);

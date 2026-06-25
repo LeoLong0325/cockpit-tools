@@ -25,11 +25,13 @@ import {
   Lock,
   Home,
   BookOpen,
+  Gift,
 } from 'lucide-react';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
 import * as cursorService from '../services/cursorService';
 import { TagEditModal } from '../components/TagEditModal';
 import { ExportJsonModal } from '../components/ExportJsonModal';
+import { CursorReferralModal } from '../components/CursorReferralModal';
 import { ModalErrorMessage } from '../components/ModalErrorMessage';
 import { MfaQuickCodeSelect } from '../components/MfaQuickCodeSelect';
 import { PaginationControls } from '../components/PaginationControls';
@@ -44,6 +46,8 @@ import {
   getCursorOnDemandSummary,
   getCursorUsage,
   getCursorCreditGrants,
+  getCursorReferralStatus,
+  hasCursorReferralEligibility,
   formatCursorUsageDollars,
   formatCursorCreditGrantsValue,
   hasCursorQuotaData,
@@ -117,6 +121,9 @@ function normalizeCursorPercent(raw: number | null | undefined): {
 
 export function CursorAccountsPage() {
   const [activeTab, setActiveTab] = useState<CursorTab>('overview');
+  const [referralModalAccountId, setReferralModalAccountId] = useState<string | null>(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralError, setReferralError] = useState<string | null>(null);
   const [filterTypes, setFilterTypes] = useState<string[]>(() =>
     readAccountsOverviewFilterPersistenceEnabled(CURSOR_FILTER_PERSISTENCE_SCOPE)
       ? readAccountsOverviewFilterStringArray(CURSOR_FILTER_PERSISTENCE_SCOPE, FILTER_TYPES_FIELD)
@@ -277,6 +284,41 @@ export function CursorAccountsPage() {
     }
   }, [setMessage, t]);
 
+  const handleOpenReferral = useCallback(async (accountId: string) => {
+    setReferralModalAccountId(accountId);
+    setReferralLoading(true);
+    setReferralError(null);
+    try {
+      await cursorService.fetchCursorReferralStatus(accountId);
+      await store.fetchAccounts();
+    } catch (error) {
+      setReferralError(
+        t('cursor.referral.loadFailed', {
+          error: String(error).replace(/^Error:\s*/, ''),
+          defaultValue: '加载邀请奖励失败: {{error}}',
+        }),
+      );
+    } finally {
+      setReferralLoading(false);
+    }
+  }, [store, t]);
+
+  const closeReferralModal = useCallback(() => {
+    setReferralModalAccountId(null);
+    setReferralError(null);
+    setReferralLoading(false);
+  }, []);
+
+  const referralModalAccount = useMemo(
+    () => accounts.find((account) => account.id === referralModalAccountId) ?? null,
+    [accounts, referralModalAccountId],
+  );
+
+  const referralModalStatus = useMemo(
+    () => (referralModalAccount ? getCursorReferralStatus(referralModalAccount) : null),
+    [referralModalAccount],
+  );
+
   // ─── Platform-specific: Quota ──────────────────────────────────────
 
   const resolveTotalQuota = useCallback(
@@ -376,17 +418,17 @@ export function CursorAccountsPage() {
       const credits = getCursorCreditGrants(account);
       if (!credits) return null;
 
-      const remaining = credits.remainingCents ?? credits.totalCents;
+      const remaining = credits.remainingCents;
       const total = credits.totalCents;
-      const used = credits.usedCents;
+      const used =
+        credits.usedCents ??
+        (total != null && remaining != null ? Math.max(0, total - remaining) : null);
       const rawPct =
         total != null && total > 0 && used != null
           ? (used / total) * 100
-          : remaining != null && total != null && total > 0
-            ? ((total - remaining) / total) * 100
-            : 0;
+          : 0;
       const pct = normalizeCursorPercent(rawPct);
-      const valueText = formatCursorCreditGrantsValue(remaining, total);
+      const valueText = formatCursorCreditGrantsValue(used, total);
 
       return {
         percentage: pct.bar,
@@ -793,6 +835,16 @@ export function CursorAccountsPage() {
               <button className="card-action-btn" onClick={() => handleRefresh(account.id)} disabled={refreshing === account.id} title={t('common.shared.refreshQuota', '刷新配额')}>
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
               </button>
+              {hasCursorReferralEligibility(account) ? (
+                <button
+                  className="card-action-btn"
+                  onClick={() => handleOpenReferral(account.id)}
+                  disabled={referralLoading && referralModalAccountId === account.id}
+                  title={t('cursor.referral.view', '查看邀请奖励')}
+                >
+                  <Gift size={14} className={referralLoading && referralModalAccountId === account.id ? 'loading-spinner' : ''} />
+                </button>
+              ) : null}
               <button
                 className="card-action-btn"
                 onClick={() => handleOpenDashboard(account.id)}
@@ -966,6 +1018,16 @@ export function CursorAccountsPage() {
               <button className="action-btn" onClick={() => handleRefresh(account.id)} disabled={refreshing === account.id} title={t('common.shared.refreshQuota', '刷新配额')}>
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
               </button>
+              {hasCursorReferralEligibility(account) ? (
+                <button
+                  className="action-btn"
+                  onClick={() => handleOpenReferral(account.id)}
+                  disabled={referralLoading && referralModalAccountId === account.id}
+                  title={t('cursor.referral.view', '查看邀请奖励')}
+                >
+                  <Gift size={14} className={referralLoading && referralModalAccountId === account.id ? 'loading-spinner' : ''} />
+                </button>
+              ) : null}
               <button
                 className="action-btn"
                 onClick={() => handleOpenDashboard(account.id)}
@@ -1438,6 +1500,16 @@ export function CursorAccountsPage() {
           </div>
         </div>
       )}
+
+      <CursorReferralModal
+        isOpen={!!referralModalAccountId}
+        title={t('cursor.referral.title', '邀请奖励')}
+        accountLabel={referralModalAccount ? resolveDisplayEmail(referralModalAccount) : ''}
+        status={referralModalStatus}
+        loading={referralLoading}
+        errorMessage={referralError}
+        onClose={closeReferralModal}
+      />
 
       <TagEditModal
         isOpen={!!showTagModal}

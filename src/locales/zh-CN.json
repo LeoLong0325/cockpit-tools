@@ -3941,6 +3941,19 @@
       "desc": "支持从本地 Cursor 安装导入、粘贴 JWT 令牌或 OAuth 授权登录来管理 Cursor 账号。",
       "reason": "权限范围：读取并写入 Cursor 本地认证存储（state.vscdb），用于账号导入与令牌注入（切号）。",
       "storage": "网络请求范围：刷新配额时携带 JWT 向 cursor.com 官方接口请求使用量、用户信息及订阅信息；不向任何第三方服务器上传数据。"
+    },
+    "referral": {
+      "view": "查看邀请奖励",
+      "title": "邀请奖励",
+      "code": "邀请码",
+      "link": "邀请链接",
+      "invitedCount": "本周期邀请人数",
+      "rewardAmount": "已获得奖励",
+      "lifetimeReward": "累计",
+      "copyLink": "复制链接",
+      "copied": "已复制",
+      "loadFailed": "加载邀请奖励失败: {{error}}",
+      "empty": "暂无邀请奖励数据"
     }
   },
   "gemini": {

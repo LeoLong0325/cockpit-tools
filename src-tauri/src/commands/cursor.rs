@@ -139,6 +139,11 @@ pub async fn add_cursor_account_with_token(
 }
 
 #[tauri::command]
+pub async fn fetch_cursor_referral_status(account_id: String) -> Result<CursorAccount, String> {
+    cursor_account::fetch_referral_status_async(&account_id).await
+}
+
+#[tauri::command]
 pub async fn open_cursor_dashboard(app: AppHandle, account_id: String) -> Result<(), String> {
     cursor_account::open_cursor_dashboard(&app, &account_id).await
 }

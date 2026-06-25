@@ -3643,6 +3643,19 @@
     "dashboard": {
       "viewHome": "대시보드 보기",
       "openFailed": "대시보드를 열지 못했습니다: {{error}}"
+    },
+    "referral": {
+      "view": "View Referrals",
+      "title": "Referral Rewards",
+      "code": "Referral Code",
+      "link": "Referral Link",
+      "invitedCount": "Referrals This Cycle",
+      "rewardAmount": "Credit Earned",
+      "lifetimeReward": "Lifetime",
+      "copyLink": "Copy Link",
+      "copied": "Copied",
+      "loadFailed": "Failed to load referral status: {{error}}",
+      "empty": "No referral data available"
     }
   },
   "breakout": {

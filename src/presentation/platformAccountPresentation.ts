@@ -1574,17 +1574,17 @@ export function buildCursorAccountPresentation(
 
   const creditGrants = getCursorCreditGrants(account);
   if (creditGrants) {
-    const remaining = creditGrants.remainingCents ?? creditGrants.totalCents;
+    const remaining = creditGrants.remainingCents;
     const total = creditGrants.totalCents;
-    const used = creditGrants.usedCents;
+    const used =
+      creditGrants.usedCents ??
+      (total != null && remaining != null ? Math.max(0, total - remaining) : null);
     const rawPercent =
       total != null && total > 0 && used != null
         ? (used / total) * 100
-        : remaining != null && total != null && total > 0
-          ? ((total - remaining) / total) * 100
-          : 0;
+        : 0;
     const creditPercent = normalizeCursorUsagePercent(rawPercent) ?? 0;
-    const valueText = formatCursorCreditGrantsValue(remaining, total);
+    const valueText = formatCursorCreditGrantsValue(used, total);
 
     quotaItems.push({
       key: "credits",
