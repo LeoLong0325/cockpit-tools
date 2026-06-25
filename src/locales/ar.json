@@ -3680,6 +3680,9 @@
     },
     "oauth": {
       "desc": "انقر الزر أدناه لإكمال تفويض Cursor في المتصفح."
+    },
+    "subscriptionStatus": {
+      "pastDue": "متأخر"
     }
   },
   "breakout": {

@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "Klikněte na tlačítko níže a dokončete autorizaci Cursor v prohlížeči."
+    },
+    "subscriptionStatus": {
+      "pastDue": "Po splatnosti"
     }
   },
   "breakout": {

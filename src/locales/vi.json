@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "Nhấn nút bên dưới và hoàn tất ủy quyền Cursor trong trình duyệt."
+    },
+    "subscriptionStatus": {
+      "pastDue": "Quá hạn"
     }
   },
   "breakout": {

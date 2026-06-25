@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "Kliknij przycisk poniżej i dokończ autoryzację Cursor w przeglądarce."
+    },
+    "subscriptionStatus": {
+      "pastDue": "Zaległość"
     }
   },
   "breakout": {

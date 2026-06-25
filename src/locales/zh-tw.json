@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "點擊下方按鈕，在瀏覽器中完成 Cursor 授權登入。"
+    },
+    "subscriptionStatus": {
+      "pastDue": "逾期"
     }
   },
   "breakout": {

@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "아래 버튼을 클릭하고 브라우저에서 Cursor 인증을 완료하세요."
+    },
+    "subscriptionStatus": {
+      "pastDue": "연체"
     }
   },
   "breakout": {

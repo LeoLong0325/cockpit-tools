@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "Aşağıdaki düğmeye tıklayın ve tarayıcıda Cursor yetkilendirmesini tamamlayın."
+    },
+    "subscriptionStatus": {
+      "pastDue": "Gecikmiş ödeme"
     }
   },
   "breakout": {

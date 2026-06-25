@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "Нажмите кнопку ниже и завершите авторизацию Cursor в браузере."
+    },
+    "subscriptionStatus": {
+      "pastDue": "Просрочен"
     }
   },
   "breakout": {

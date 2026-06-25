@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "Fai clic sul pulsante qui sotto e completa l'autorizzazione di Cursor nel browser."
+    },
+    "subscriptionStatus": {
+      "pastDue": "Pagamento scaduto"
     }
   },
   "breakout": {

@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "Klicken Sie auf die Schaltfläche unten und schließen Sie die Cursor-Autorisierung im Browser ab."
+    },
+    "subscriptionStatus": {
+      "pastDue": "Zahlung überfällig"
     }
   },
   "breakout": {

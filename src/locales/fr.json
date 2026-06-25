@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "Cliquez sur le bouton ci-dessous et terminez l'autorisation Cursor dans le navigateur."
+    },
+    "subscriptionStatus": {
+      "pastDue": "Paiement en retard"
     }
   },
   "breakout": {

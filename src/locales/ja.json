@@ -3634,6 +3634,9 @@
     },
     "oauth": {
       "desc": "下のボタンをクリックして、ブラウザで Cursor の認可を完了してください。"
+    },
+    "subscriptionStatus": {
+      "pastDue": "支払い延滞"
     }
   },
   "breakout": {
