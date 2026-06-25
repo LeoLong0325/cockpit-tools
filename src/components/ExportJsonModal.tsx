@@ -1,5 +1,5 @@
-import { Check, Copy, Download, Eye, EyeOff, FolderOpen, X } from 'lucide-react';
-import { type ReactNode, useMemo, type SyntheticEvent } from 'react';
+import { Check, Copy, Download, Eye, EyeOff, FolderOpen, KeyRound, X } from 'lucide-react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModalErrorMessage } from './ModalErrorMessage';
 import { useEscClose } from '../hooks/useEscClose';
@@ -33,6 +33,53 @@ function maskStringValue(value: string): string {
   if (length === 3) return `${value.slice(0, 1)}*${value.slice(-1)}`;
   if (length === 4) return `${value.slice(0, 1)}**${value.slice(-1)}`;
   return `${value.slice(0, 2)}***${value.slice(-2)}`;
+}
+
+function extractWorkosTokensFromObject(obj: Record<string, unknown>): string[] {
+  const tokens: string[] = [];
+  for (const key of ['workos_cursor_session_token', 'workosSessionToken', 'workosToken']) {
+    const value = obj[key];
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed) tokens.push(trimmed);
+    }
+  }
+  return tokens;
+}
+
+export function extractWorkosSessionTokenFromExportJson(jsonContent: string): string | null {
+  if (!jsonContent.trim()) return null;
+
+  try {
+    const parsed = JSON.parse(jsonContent) as unknown;
+    const tokens: string[] = [];
+
+    if (Array.isArray(parsed)) {
+      parsed.forEach((item) => {
+        if (item && typeof item === 'object') {
+          tokens.push(...extractWorkosTokensFromObject(item as Record<string, unknown>));
+        }
+      });
+    } else if (parsed && typeof parsed === 'object') {
+      tokens.push(...extractWorkosTokensFromObject(parsed as Record<string, unknown>));
+    }
+
+    if (tokens.length > 0) {
+      return tokens.join('\n');
+    }
+  } catch {
+    const matches = jsonContent.matchAll(
+      /"(?:workos_cursor_session_token|workosSessionToken|workosToken)"\s*:\s*"([^"]*)"/g,
+    );
+    const tokens = [...matches]
+      .map((match) => match[1]?.trim())
+      .filter((token): token is string => Boolean(token));
+    if (tokens.length > 0) {
+      return tokens.join('\n');
+    }
+  }
+
+  return null;
 }
 
 function maskJsonValues(value: unknown): unknown {
@@ -121,11 +168,34 @@ export function ExportJsonModal(props: ExportJsonModalProps) {
     onCopySavedPath,
   } = props;
   const { t } = useTranslation();
+  const [workosCopied, setWorkosCopied] = useState(false);
   useEscClose(isOpen, onClose);
 
   const maskedContent = useMemo(() => {
     return maskJsonPreviewContent(jsonContent);
   }, [jsonContent]);
+
+  const workosSessionToken = useMemo(
+    () => extractWorkosSessionTokenFromExportJson(jsonContent),
+    [jsonContent],
+  );
+
+  const copyWorkosToken = useCallback(async () => {
+    if (!workosSessionToken) return;
+    try {
+      await navigator.clipboard.writeText(workosSessionToken);
+      setWorkosCopied(true);
+      window.setTimeout(() => setWorkosCopied(false), 1200);
+    } catch {
+      // clipboard errors are surfaced by the host page when needed
+    }
+  }, [workosSessionToken]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setWorkosCopied(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -161,6 +231,14 @@ export function ExportJsonModal(props: ExportJsonModalProps) {
                   {copied ? <Check size={14} /> : <Copy size={14} />}
                   {copied ? t('common.success', '成功') : t('common.copy', '复制')}
                 </button>
+                {workosSessionToken ? (
+                  <button className="btn btn-secondary btn-sm" onClick={() => void copyWorkosToken()}>
+                    {workosCopied ? <Check size={14} /> : <KeyRound size={14} />}
+                    {workosCopied
+                      ? t('common.success', '成功')
+                      : t('common.shared.export.copyWorkosToken', '一键复制 WorkOS Token')}
+                  </button>
+                ) : null}
                 <button className="btn btn-primary btn-sm" onClick={onSaveJson} disabled={saving}>
                   <Download size={14} />
                   {saving ? t('common.loading', '加载中...') : t('settings.about.download', 'Download')}

@@ -44,7 +44,8 @@
         "title": "匯出",
         "copyFailed": "複製失敗，請手動複製",
         "hideSensitive": "隱藏",
-        "showSensitive": "顯示"
+        "showSensitive": "顯示",
+        "copyWorkosToken": "一鍵複製 WorkOS Token"
       },
       "filter": {
         "all": "全部 ({{count}})",

@@ -51,7 +51,8 @@
         "title": "Ekspor",
         "copyFailed": "Gagal menyalin, silakan salin secara manual",
         "hideSensitive": "Sembunyikan",
-        "showSensitive": "Tampilkan"
+        "showSensitive": "Tampilkan",
+        "copyWorkosToken": "Salin WorkOS Token"
       },
       "filter": {
         "all": "Semua ({{count}})",

@@ -44,7 +44,8 @@
         "title": "Exportovat",
         "copyFailed": "Kopírování se nezdařilo, zkopírujte prosím ručně",
         "hideSensitive": "Skrýt",
-        "showSensitive": "Zobrazit"
+        "showSensitive": "Zobrazit",
+        "copyWorkosToken": "Kopírovat WorkOS Token"
       },
       "filter": {
         "all": "Vše ({{count}})",

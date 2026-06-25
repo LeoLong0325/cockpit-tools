@@ -51,7 +51,8 @@
         "title": "导出",
         "copyFailed": "复制失败，请手动复制",
         "hideSensitive": "隐藏",
-        "showSensitive": "显示"
+        "showSensitive": "显示",
+        "copyWorkosToken": "一键复制 WorkOS Token"
       },
       "filter": {
         "all": "全部 ({{count}})",

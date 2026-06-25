@@ -44,7 +44,8 @@
         "title": "내보내기",
         "copyFailed": "복사에 실패했습니다. 수동으로 복사해 주세요",
         "hideSensitive": "숨기기",
-        "showSensitive": "표시"
+        "showSensitive": "표시",
+        "copyWorkosToken": "WorkOS Token 복사"
       },
       "filter": {
         "all": "전체 ({{count}})",

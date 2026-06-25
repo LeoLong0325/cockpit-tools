@@ -51,7 +51,8 @@
         "title": "Export",
         "copyFailed": "Copy failed, please copy manually",
         "hideSensitive": "Hide",
-        "showSensitive": "Show"
+        "showSensitive": "Show",
+        "copyWorkosToken": "Copy WorkOS Token"
       },
       "filter": {
         "all": "All ({{count}})",

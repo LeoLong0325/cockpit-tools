@@ -44,7 +44,8 @@
         "title": "エクスポート",
         "copyFailed": "コピーに失敗しました。手動でコピーしてください",
         "hideSensitive": "非表示",
-        "showSensitive": "表示"
+        "showSensitive": "表示",
+        "copyWorkosToken": "WorkOS Token をコピー"
       },
       "filter": {
         "all": "すべて ({{count}})",

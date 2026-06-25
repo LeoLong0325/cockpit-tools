@@ -44,7 +44,8 @@
         "title": "Dışa aktar",
         "copyFailed": "Kopyalama başarısız, lütfen manuel kopyalayın",
         "hideSensitive": "Gizle",
-        "showSensitive": "Göster"
+        "showSensitive": "Göster",
+        "copyWorkosToken": "WorkOS Token kopyala"
       },
       "filter": {
         "all": "Tümü ({{count}})",

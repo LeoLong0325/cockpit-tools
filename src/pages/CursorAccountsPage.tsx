@@ -454,7 +454,7 @@ export function CursorAccountsPage() {
 
       return {
         percentage: pct.bar,
-        quotaClass: getCursorQuotaClass(pct.display),
+        quotaClass: 'gold',
         valueText,
       };
     },
@@ -832,7 +832,7 @@ export function CursorAccountsPage() {
                 </div>
 
                 {creditGrants && (
-                  <div className="quota-item windsurf-credit-item">
+                  <div className="quota-item windsurf-credit-item cursor-credit-grants">
                     <div className="quota-header">
                       <span className="quota-label">{t('cursor.quota.credits', 'Credits')}</span>
                       <span className={`quota-pct ${creditGrants.quotaClass}`}>{creditGrants.valueText}</span>
@@ -1023,7 +1023,7 @@ export function CursorAccountsPage() {
                   </div>
                 </div>
                 {creditGrants && (
-                  <div className="quota-item windsurf-table-credit-item" style={{ marginTop: 4 }}>
+                  <div className="quota-item windsurf-table-credit-item cursor-credit-grants" style={{ marginTop: 4 }}>
                     <div className="quota-header">
                       <span className="quota-name">{t('cursor.quota.credits', 'Credits')}</span>
                       <span className={`quota-value ${creditGrants.quotaClass}`}>{creditGrants.valueText}</span>

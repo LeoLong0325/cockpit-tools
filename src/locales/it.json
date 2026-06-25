@@ -44,7 +44,8 @@
         "title": "Esporta",
         "copyFailed": "Copia non riuscita, copia manualmente",
         "hideSensitive": "Nascondi",
-        "showSensitive": "Mostra"
+        "showSensitive": "Mostra",
+        "copyWorkosToken": "Copia token WorkOS"
       },
       "filter": {
         "all": "Tutti ({{count}})",

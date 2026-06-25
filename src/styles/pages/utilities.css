@@ -880,12 +880,14 @@
 
 /* Cursor usage modals */
 .modal.cursor-usage-modal {
-  width: min(920px, 96vw);
+  width: min(1380px, 96vw);
+  max-width: min(1380px, 96vw);
   max-height: 90vh;
 }
 
 .modal.cursor-usage-details-modal {
-  width: min(980px, 96vw);
+  width: min(1470px, 96vw);
+  max-width: min(1470px, 96vw);
   max-height: 90vh;
 }
 

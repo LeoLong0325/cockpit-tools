@@ -44,7 +44,8 @@
         "title": "Exportieren",
         "copyFailed": "Kopieren fehlgeschlagen, bitte manuell kopieren",
         "hideSensitive": "Ausblenden",
-        "showSensitive": "Anzeigen"
+        "showSensitive": "Anzeigen",
+        "copyWorkosToken": "WorkOS-Token kopieren"
       },
       "filter": {
         "all": "Alle ({{count}})",

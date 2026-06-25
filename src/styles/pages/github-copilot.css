@@ -999,6 +999,43 @@
   letter-spacing: normal;
 }
 
+.cursor-accounts-page .cursor-credit-grants .quota-label,
+.cursor-accounts-page .cursor-credit-grants .quota-name {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.cursor-accounts-page .cursor-credit-grants .quota-pct,
+.cursor-accounts-page .cursor-credit-grants .quota-value {
+  color: #ca8a04;
+  font-weight: 700;
+}
+
+.cursor-accounts-page .cursor-credit-grants .quota-bar.gold,
+.cursor-accounts-page .cursor-credit-grants .quota-progress-bar.gold {
+  background: linear-gradient(90deg, #fbbf24, #d97706);
+}
+
+.cursor-accounts-page .cursor-credit-grants .quota-bar-track,
+.cursor-accounts-page .cursor-credit-grants .quota-progress-track {
+  background: rgba(217, 119, 6, 0.12);
+}
+
+[data-theme="dark"] .cursor-accounts-page .cursor-credit-grants .quota-label,
+[data-theme="dark"] .cursor-accounts-page .cursor-credit-grants .quota-name {
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .cursor-accounts-page .cursor-credit-grants .quota-pct,
+[data-theme="dark"] .cursor-accounts-page .cursor-credit-grants .quota-value {
+  color: #fcd34d;
+}
+
+[data-theme="dark"] .cursor-accounts-page .cursor-credit-grants .quota-bar-track,
+[data-theme="dark"] .cursor-accounts-page .cursor-credit-grants .quota-progress-track {
+  background: rgba(251, 191, 36, 0.16);
+}
+
 .gemini-accounts-page .ghcp-account-card .tier-badge,
 .gemini-accounts-page .account-table .tier-badge {
   text-transform: none;
