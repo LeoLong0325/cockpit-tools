@@ -49,7 +49,9 @@
       },
       "export": {
         "title": "Export",
-        "copyFailed": "Copy failed, please copy manually"
+        "copyFailed": "Copy failed, please copy manually",
+        "hideSensitive": "Hide",
+        "showSensitive": "Show"
       },
       "filter": {
         "all": "All ({{count}})",

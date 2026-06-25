@@ -49,7 +49,9 @@
       },
       "export": {
         "title": "Ekspor",
-        "copyFailed": "Gagal menyalin, silakan salin secara manual"
+        "copyFailed": "Gagal menyalin, silakan salin secara manual",
+        "hideSensitive": "Sembunyikan",
+        "showSensitive": "Tampilkan"
       },
       "filter": {
         "all": "Semua ({{count}})",

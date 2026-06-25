@@ -42,7 +42,9 @@
       },
       "export": {
         "title": "Xuất",
-        "copyFailed": "Sao chép thất bại, vui lòng sao chép thủ công"
+        "copyFailed": "Sao chép thất bại, vui lòng sao chép thủ công",
+        "hideSensitive": "Ẩn",
+        "showSensitive": "Hiện"
       },
       "filter": {
         "all": "Tất cả ({{count}})",

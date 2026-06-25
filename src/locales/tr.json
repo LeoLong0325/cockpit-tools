@@ -42,7 +42,9 @@
       },
       "export": {
         "title": "Dışa aktar",
-        "copyFailed": "Kopyalama başarısız, lütfen manuel kopyalayın"
+        "copyFailed": "Kopyalama başarısız, lütfen manuel kopyalayın",
+        "hideSensitive": "Gizle",
+        "showSensitive": "Göster"
       },
       "filter": {
         "all": "Tümü ({{count}})",

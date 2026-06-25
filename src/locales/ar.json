@@ -42,7 +42,9 @@
       },
       "export": {
         "title": "تصدير",
-        "copyFailed": "فشل النسخ، يُرجى النسخ يدويًا"
+        "copyFailed": "فشل النسخ، يُرجى النسخ يدويًا",
+        "hideSensitive": "إخفاء",
+        "showSensitive": "إظهار"
       },
       "filter": {
         "all": "الكل ({{count}})",

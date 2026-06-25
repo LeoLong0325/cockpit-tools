@@ -42,7 +42,9 @@
       },
       "export": {
         "title": "Exportovat",
-        "copyFailed": "Kopírování se nezdařilo, zkopírujte prosím ručně"
+        "copyFailed": "Kopírování se nezdařilo, zkopírujte prosím ručně",
+        "hideSensitive": "Skrýt",
+        "showSensitive": "Zobrazit"
       },
       "filter": {
         "all": "Vše ({{count}})",

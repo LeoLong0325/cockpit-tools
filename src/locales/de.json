@@ -42,7 +42,9 @@
       },
       "export": {
         "title": "Exportieren",
-        "copyFailed": "Kopieren fehlgeschlagen, bitte manuell kopieren"
+        "copyFailed": "Kopieren fehlgeschlagen, bitte manuell kopieren",
+        "hideSensitive": "Ausblenden",
+        "showSensitive": "Anzeigen"
       },
       "filter": {
         "all": "Alle ({{count}})",
