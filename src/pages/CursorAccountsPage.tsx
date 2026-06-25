@@ -45,6 +45,8 @@ import {
   formatCursorUsageDollars,
   hasCursorQuotaData,
   isCursorAccountBanned,
+  isCursorAccountPastDue,
+  CURSOR_PAST_DUE_FILTER,
 } from '../types/cursor';
 import type { CursorAccount } from '../types/cursor';
 import { compareCurrentAccountFirst } from '../utils/currentAccountSort';
@@ -235,7 +237,9 @@ export function CursorAccountsPage() {
 
   const resolvePlanBadgeClass = useCallback(
     (account: CursorAccount) =>
-      getCursorPlanBadgeClass(account.membership_type, account),
+      isCursorAccountPastDue(account)
+        ? 'past-due'
+        : getCursorPlanBadgeClass(account.membership_type, account),
     [],
   );
 
@@ -394,18 +398,22 @@ export function CursorAccountsPage() {
       (count, account) => (isAbnormalAccount(account) ? count : count + 1),
       0,
     );
+    const pastDueCount = accounts.filter(isCursorAccountPastDue).length;
 
     const extraKeys = Array.from(dynamicCounts.keys())
       .filter((tier) => !(CURSOR_KNOWN_PLAN_FILTERS as readonly string[]).includes(tier))
       .sort((a, b) => a.localeCompare(b));
 
-    return { all: accounts.length, validCount, knownCounts, dynamicCounts, extraKeys, displayLabels };
+    return { all: accounts.length, validCount, pastDueCount, knownCounts, dynamicCounts, extraKeys, displayLabels };
   }, [accounts, isAbnormalAccount, resolvePlanKey, resolvePlanLabel]);
 
   useEffect(() => {
     setFilterTypes((prev) => {
       const next = prev.filter(
-        (value) => value === VALID_ACCOUNTS_FILTER_VALUE || tierSummary.dynamicCounts.has(value),
+        (value) =>
+          value === VALID_ACCOUNTS_FILTER_VALUE ||
+          value === CURSOR_PAST_DUE_FILTER ||
+          tierSummary.dynamicCounts.has(value),
       );
       return next.length === prev.length ? prev : next;
     });
@@ -434,9 +442,13 @@ export function CursorAccountsPage() {
         label: resolveFilterLabel(planKey, tierSummary.dynamicCounts.get(planKey) ?? 0),
       });
     });
+    options.push({
+      value: CURSOR_PAST_DUE_FILTER,
+      label: `${t('cursor.subscriptionStatus.pastDue', '逾期')} (${tierSummary.pastDueCount})`,
+    });
     options.push(buildValidAccountsFilterOption(t, tierSummary.validCount));
     return options;
-  }, [resolveFilterLabel, t, tierSummary.dynamicCounts, tierSummary.extraKeys, tierSummary.knownCounts.ENTERPRISE, tierSummary.knownCounts.FREE, tierSummary.knownCounts.FREE_TRIAL, tierSummary.knownCounts.PRO, tierSummary.knownCounts.PRO_PLUS, tierSummary.knownCounts.ULTRA, tierSummary.validCount]);
+  }, [resolveFilterLabel, t, tierSummary.dynamicCounts, tierSummary.extraKeys, tierSummary.knownCounts.ENTERPRISE, tierSummary.knownCounts.FREE, tierSummary.knownCounts.FREE_TRIAL, tierSummary.knownCounts.PRO, tierSummary.knownCounts.PRO_PLUS, tierSummary.knownCounts.ULTRA, tierSummary.pastDueCount, tierSummary.validCount]);
 
   // ─── Filtering & Sorting ──────────────────────────────────────────
 
@@ -494,8 +506,16 @@ export function CursorAccountsPage() {
       if (requireValidAccounts) {
         result = result.filter((account) => !isAbnormalAccount(account));
       }
-      if (selectedTypes.size > 0) {
-        result = result.filter((account) => selectedTypes.has(resolvePlanKey(account)));
+      const wantsPastDue = selectedTypes.has(CURSOR_PAST_DUE_FILTER);
+      const planTypes = new Set(
+        [...selectedTypes].filter((value) => value !== CURSOR_PAST_DUE_FILTER),
+      );
+      if (planTypes.size > 0 || wantsPastDue) {
+        result = result.filter((account) => {
+          const planMatch = planTypes.size > 0 && planTypes.has(resolvePlanKey(account));
+          const pastDueMatch = wantsPastDue && isCursorAccountPastDue(account);
+          return planMatch || pastDueMatch;
+        });
       }
     }
 

@@ -1067,6 +1067,13 @@
   border: 1px solid var(--plan-pro-border);
 }
 
+.ghcp-account-card .tier-badge.past-due,
+.ghcp-accounts-page .account-table .tier-badge.past-due {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #b91c1c;
+}
+
 .ghcp-account-card .tier-badge.pro-plus,
 .ghcp-accounts-page .account-table .tier-badge.pro-plus {
   background: var(--plan-ultra-bg);

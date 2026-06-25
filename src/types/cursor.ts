@@ -427,6 +427,12 @@ export function formatCursorUsageDollars(cents: number | null | undefined): stri
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+export const CURSOR_PAST_DUE_FILTER = 'PAST_DUE';
+
+export function isCursorAccountPastDue(account: CursorAccount): boolean {
+  return (account.subscription_status || '').trim() === 'past_due';
+}
+
 export function isCursorAccountBanned(account: CursorAccount): boolean {
   const status = (account.status || '').toLowerCase();
   const reason = (account.status_reason || '').toLowerCase();
