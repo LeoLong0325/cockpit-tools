@@ -149,6 +149,54 @@ pub async fn open_cursor_dashboard(app: AppHandle, account_id: String) -> Result
 }
 
 #[tauri::command]
+pub async fn fetch_cursor_aggregated_usage(
+    account_id: String,
+    start_date: u64,
+    end_date: u64,
+    team_id: i32,
+) -> Result<serde_json::Value, String> {
+    cursor_account::fetch_cursor_aggregated_usage(&account_id, start_date, end_date, team_id).await
+}
+
+#[tauri::command]
+pub async fn fetch_cursor_usage_events(
+    account_id: String,
+    team_id: i32,
+    start_date: String,
+    end_date: String,
+    page: i32,
+    page_size: i32,
+) -> Result<serde_json::Value, String> {
+    cursor_account::fetch_cursor_usage_events(
+        &account_id,
+        team_id,
+        start_date,
+        end_date,
+        page,
+        page_size,
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn fetch_cursor_user_analytics(
+    account_id: String,
+    team_id: i32,
+    user_id: i32,
+    start_date: String,
+    end_date: String,
+) -> Result<serde_json::Value, String> {
+    cursor_account::fetch_cursor_user_analytics(
+        &account_id,
+        team_id,
+        user_id,
+        start_date,
+        end_date,
+    )
+    .await
+}
+
+#[tauri::command]
 pub async fn update_cursor_account_tags(
     account_id: String,
     tags: Vec<String>,

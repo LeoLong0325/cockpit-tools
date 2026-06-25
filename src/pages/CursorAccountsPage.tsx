@@ -26,12 +26,14 @@ import {
   Home,
   BookOpen,
   Gift,
+  BarChart3,
 } from 'lucide-react';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
 import * as cursorService from '../services/cursorService';
 import { TagEditModal } from '../components/TagEditModal';
 import { ExportJsonModal } from '../components/ExportJsonModal';
 import { CursorReferralModal } from '../components/CursorReferralModal';
+import { CursorAccountUsageModal } from '../components/CursorUsageModals';
 import { ModalErrorMessage } from '../components/ModalErrorMessage';
 import { MfaQuickCodeSelect } from '../components/MfaQuickCodeSelect';
 import { PaginationControls } from '../components/PaginationControls';
@@ -122,8 +124,10 @@ function normalizeCursorPercent(raw: number | null | undefined): {
 export function CursorAccountsPage() {
   const [activeTab, setActiveTab] = useState<CursorTab>('overview');
   const [referralModalAccountId, setReferralModalAccountId] = useState<string | null>(null);
+  const [usageModalAccountId, setUsageModalAccountId] = useState<string | null>(null);
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralError, setReferralError] = useState<string | null>(null);
+  const [referralEligibleOnly, setReferralEligibleOnly] = useState(false);
   const [filterTypes, setFilterTypes] = useState<string[]>(() =>
     readAccountsOverviewFilterPersistenceEnabled(CURSOR_FILTER_PERSISTENCE_SCOPE)
       ? readAccountsOverviewFilterStringArray(CURSOR_FILTER_PERSISTENCE_SCOPE, FILTER_TYPES_FIELD)
@@ -203,7 +207,7 @@ export function CursorAccountsPage() {
     handleCopyOauthUrl, handleCopyOauthUserCode, handleRetryOauth, handleOpenOauthUrl,
     isFlowNoticeCollapsed, setIsFlowNoticeCollapsed,
     currentAccountId,
-    formatDate, normalizeTag,
+    normalizeTag,
   } = page;
 
   useEffect(() => {
@@ -229,6 +233,11 @@ export function CursorAccountsPage() {
 
   const accounts = store.accounts;
   const loading = store.loading;
+
+  const referralEligibleCount = useMemo(
+    () => accounts.filter((account) => hasCursorReferralEligibility(account)).length,
+    [accounts],
+  );
 
   // ─── Platform-specific: Plan resolution ────────────────────────────
 
@@ -308,6 +317,19 @@ export function CursorAccountsPage() {
     setReferralError(null);
     setReferralLoading(false);
   }, []);
+
+  const handleOpenUsage = useCallback((accountId: string) => {
+    setUsageModalAccountId(accountId);
+  }, []);
+
+  const closeUsageModal = useCallback(() => {
+    setUsageModalAccountId(null);
+  }, []);
+
+  const usageModalAccount = useMemo(
+    () => accounts.find((account) => account.id === usageModalAccountId) ?? null,
+    [accounts, usageModalAccountId],
+  );
 
   const referralModalAccount = useMemo(
     () => accounts.find((account) => account.id === referralModalAccountId) ?? null,
@@ -615,10 +637,14 @@ export function CursorAccountsPage() {
       });
     }
 
+    if (referralEligibleOnly) {
+      result = result.filter((account) => hasCursorReferralEligibility(account));
+    }
+
     result.sort(compareAccountsBySort);
 
     return result;
-  }, [accounts, compareAccountsBySort, filterTypes, isAbnormalAccount, normalizeTag, resolvePlanKey, searchQuery, tagFilter]);
+  }, [accounts, compareAccountsBySort, filterTypes, isAbnormalAccount, normalizeTag, referralEligibleOnly, resolvePlanKey, searchQuery, tagFilter]);
 
   const filteredIds = useMemo(() => filteredAccounts.map((account) => account.id), [filteredAccounts]);
   const exportSelectionCount = getScopedSelectedCount(filteredIds);
@@ -822,8 +848,7 @@ export function CursorAccountsPage() {
             )}
           </div>
 
-          <div className="card-footer">
-            <span className="card-date">{formatDate(account.created_at)}</span>
+          <div className="card-footer card-footer-actions-only">
             <div className="card-actions">
               <button className="card-action-btn success" onClick={() => handleInjectToVSCode?.(account.id)} disabled={!!injecting || isBanned}
                 title={isBanned ? t('accounts.status.forbidden_msg') : t('cursor.injectToCursor', '切换到 Cursor')}>
@@ -834,6 +859,13 @@ export function CursorAccountsPage() {
               </button>
               <button className="card-action-btn" onClick={() => handleRefresh(account.id)} disabled={refreshing === account.id} title={t('common.shared.refreshQuota', '刷新配额')}>
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
+              </button>
+              <button
+                className="card-action-btn"
+                onClick={() => handleOpenUsage(account.id)}
+                title={t('cursor.usage.viewUsage', '查看用量')}
+              >
+                <BarChart3 size={14} />
               </button>
               {hasCursorReferralEligibility(account) ? (
                 <button
@@ -1018,6 +1050,13 @@ export function CursorAccountsPage() {
               <button className="action-btn" onClick={() => handleRefresh(account.id)} disabled={refreshing === account.id} title={t('common.shared.refreshQuota', '刷新配额')}>
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
               </button>
+              <button
+                className="action-btn"
+                onClick={() => handleOpenUsage(account.id)}
+                title={t('cursor.usage.viewUsage', '查看用量')}
+              >
+                <BarChart3 size={14} />
+              </button>
               {hasCursorReferralEligibility(account) ? (
                 <button
                   className="action-btn"
@@ -1146,6 +1185,20 @@ export function CursorAccountsPage() {
               </div>
             )}
           </div>
+
+          <button
+            type="button"
+            className={`tag-filter-btn referral-eligible-filter-btn ${referralEligibleOnly ? 'active' : ''}`}
+            onClick={() => setReferralEligibleOnly((prev) => !prev)}
+            disabled={referralEligibleCount === 0}
+            title={t('cursor.referral.filterEligibleTitle', '筛选有邀请资格的账号')}
+            aria-label={t('cursor.referral.filterEligibleTitle', '筛选有邀请资格的账号')}
+          >
+            <Gift size={14} />
+            {referralEligibleCount > 0
+              ? t('cursor.referral.filterEligibleWithCount', '邀请资格 ({{count}})', { count: referralEligibleCount })
+              : t('cursor.referral.filterEligible', '邀请资格')}
+          </button>
 
           <SingleSelectFilterDropdown
             value={sortBy}
@@ -1500,6 +1553,13 @@ export function CursorAccountsPage() {
           </div>
         </div>
       )}
+
+      <CursorAccountUsageModal
+        isOpen={!!usageModalAccountId}
+        accountId={usageModalAccountId ?? ''}
+        accountLabel={usageModalAccount ? resolveDisplayEmail(usageModalAccount) : ''}
+        onClose={closeUsageModal}
+      />
 
       <CursorReferralModal
         isOpen={!!referralModalAccountId}

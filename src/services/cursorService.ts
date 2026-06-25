@@ -67,6 +67,54 @@ export async function fetchCursorReferralStatus(accountId: string): Promise<Curs
   return await invoke('fetch_cursor_referral_status', { accountId });
 }
 
+export async function fetchCursorAggregatedUsage(
+  accountId: string,
+  startDate: number,
+  endDate: number,
+  teamId = -1,
+): Promise<unknown> {
+  return await invoke('fetch_cursor_aggregated_usage', {
+    accountId,
+    startDate,
+    endDate,
+    teamId,
+  });
+}
+
+export async function fetchCursorUsageEvents(
+  accountId: string,
+  startDate: number,
+  endDate: number,
+  page = 1,
+  pageSize = 20,
+  teamId = 0,
+): Promise<unknown> {
+  return await invoke('fetch_cursor_usage_events', {
+    accountId,
+    teamId,
+    startDate: String(startDate),
+    endDate: String(endDate),
+    page,
+    pageSize,
+  });
+}
+
+export async function fetchCursorUserAnalytics(
+  accountId: string,
+  startDate: number,
+  endDate: number,
+  teamId = 0,
+  userId = 0,
+): Promise<unknown> {
+  return await invoke('fetch_cursor_user_analytics', {
+    accountId,
+    teamId,
+    userId,
+    startDate: String(startDate),
+    endDate: String(endDate),
+  });
+}
+
 export async function updateCursorAccountTags(accountId: string, tags: string[]): Promise<CursorAccount> {
   return await invoke('update_cursor_account_tags', { accountId, tags });
 }

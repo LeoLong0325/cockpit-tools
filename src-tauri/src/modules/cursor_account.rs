@@ -1995,6 +1995,131 @@ async fn post_dashboard_json_with_client(
         .map_err(|e| format!("解析 Cursor dashboard JSON 失败: {}", e))
 }
 
+fn account_dashboard_cookie(account: &CursorAccount) -> Result<String, String> {
+    if let Some(token) = read_workos_session_token(account) {
+        return Ok(format!("WorkosCursorSessionToken={}", token));
+    }
+    build_session_cookie(&account.access_token)
+        .ok_or_else(|| "无法获取 WorkOS Session Token，请重新导入账号".to_string())
+}
+
+async fn post_dashboard_json_body_for_account(
+    account: &CursorAccount,
+    url: &str,
+    referer: &str,
+    body: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let cookie = account_dashboard_cookie(account)?;
+    let client = reqwest::Client::new();
+    let response = client
+        .post(url)
+        .header("Accept", "application/json")
+        .header("Content-Type", "application/json")
+        .header("Cookie", &cookie)
+        .header("Origin", "https://cursor.com")
+        .header("Referer", referer)
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        )
+        .json(&body)
+        .timeout(std::time::Duration::from_secs(40))
+        .send()
+        .await
+        .map_err(|e| format!("请求 Cursor dashboard API 失败: {}", e))?;
+
+    let status = response.status().as_u16();
+    if status == 401 || status == 403 {
+        return Err(format!(
+            "Cursor 会话已过期或未认证，请重新导入账号 (HTTP {})",
+            status
+        ));
+    }
+    if status != 200 {
+        return Err(format!("Cursor dashboard API 返回异常状态码: {}", status));
+    }
+
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("读取 Cursor dashboard 响应失败: {}", e))?;
+
+    serde_json::from_str::<serde_json::Value>(&body)
+        .map_err(|e| format!("解析 Cursor dashboard JSON 失败: {}", e))
+}
+
+pub async fn fetch_cursor_aggregated_usage(
+    account_id: &str,
+    start_date: u64,
+    end_date: u64,
+    team_id: i32,
+) -> Result<serde_json::Value, String> {
+    let account = load_account(account_id)
+        .ok_or_else(|| format!("Cursor account not found: {}", account_id))?;
+    let body = serde_json::json!({
+        "startDate": start_date,
+        "endDate": end_date,
+        "teamId": team_id
+    });
+    post_dashboard_json_body_for_account(
+        &account,
+        "https://cursor.com/api/dashboard/get-aggregated-usage-events",
+        "https://cursor.com/cn/dashboard",
+        body,
+    )
+    .await
+}
+
+pub async fn fetch_cursor_usage_events(
+    account_id: &str,
+    team_id: i32,
+    start_date: String,
+    end_date: String,
+    page: i32,
+    page_size: i32,
+) -> Result<serde_json::Value, String> {
+    let account = load_account(account_id)
+        .ok_or_else(|| format!("Cursor account not found: {}", account_id))?;
+    let body = serde_json::json!({
+        "teamId": team_id,
+        "startDate": start_date,
+        "endDate": end_date,
+        "page": page,
+        "pageSize": page_size
+    });
+    post_dashboard_json_body_for_account(
+        &account,
+        "https://cursor.com/api/dashboard/get-filtered-usage-events",
+        "https://cursor.com/dashboard",
+        body,
+    )
+    .await
+}
+
+pub async fn fetch_cursor_user_analytics(
+    account_id: &str,
+    team_id: i32,
+    user_id: i32,
+    start_date: String,
+    end_date: String,
+) -> Result<serde_json::Value, String> {
+    let account = load_account(account_id)
+        .ok_or_else(|| format!("Cursor account not found: {}", account_id))?;
+    let body = serde_json::json!({
+        "teamId": team_id,
+        "userId": user_id,
+        "startDate": start_date,
+        "endDate": end_date
+    });
+    post_dashboard_json_body_for_account(
+        &account,
+        "https://cursor.com/api/dashboard/get-user-analytics",
+        "https://cursor.com/dashboard",
+        body,
+    )
+    .await
+}
+
 fn json_get_i64(value: &serde_json::Value, keys: &[&str]) -> Option<i64> {
     let obj = value.as_object()?;
     for key in keys {
