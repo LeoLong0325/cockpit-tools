@@ -3645,17 +3645,17 @@
       "openFailed": "대시보드를 열지 못했습니다: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "추천 보상 보기",
+      "title": "추천 보상",
+      "code": "추천 코드",
+      "link": "추천 링크",
+      "invitedCount": "이번 주기 추천 수",
+      "rewardAmount": "적립된 크레딧",
+      "lifetimeReward": "누적",
+      "copyLink": "링크 복사",
+      "copied": "복사됨",
+      "loadFailed": "추천 보상 불러오기 실패: {{error}}",
+      "empty": "추천 보상 데이터 없음"
     }
   },
   "breakout": {

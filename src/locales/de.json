@@ -3645,17 +3645,17 @@
       "openFailed": "Dashboard konnte nicht geöffnet werden: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Empfehlungsprämien anzeigen",
+      "title": "Empfehlungsprämien",
+      "code": "Empfehlungscode",
+      "link": "Empfehlungslink",
+      "invitedCount": "Empfehlungen in diesem Zyklus",
+      "rewardAmount": "Verdientes Guthaben",
+      "lifetimeReward": "Gesamt",
+      "copyLink": "Link kopieren",
+      "copied": "Kopiert",
+      "loadFailed": "Empfehlungsstatus konnte nicht geladen werden: {{error}}",
+      "empty": "Keine Empfehlungsdaten verfügbar"
     }
   },
   "breakout": {

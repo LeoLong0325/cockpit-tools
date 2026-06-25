@@ -3645,17 +3645,17 @@
       "openFailed": "ダッシュボードを開けませんでした: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "招待報酬を表示",
+      "title": "招待報酬",
+      "code": "招待コード",
+      "link": "招待リンク",
+      "invitedCount": "今周期の招待人数",
+      "rewardAmount": "獲得クレジット",
+      "lifetimeReward": "累計",
+      "copyLink": "リンクをコピー",
+      "copied": "コピーしました",
+      "loadFailed": "招待報酬の読み込みに失敗しました: {{error}}",
+      "empty": "招待報酬データがありません"
     }
   },
   "breakout": {

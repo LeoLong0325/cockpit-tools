@@ -3645,17 +3645,17 @@
       "openFailed": "Nie udało się otworzyć panelu: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Pokaż nagrody za polecenia",
+      "title": "Nagrody za polecenia",
+      "code": "Kod polecający",
+      "link": "Link polecający",
+      "invitedCount": "Polecenia w tym cyklu",
+      "rewardAmount": "Zdobyte kredyty",
+      "lifetimeReward": "Łącznie",
+      "copyLink": "Kopiuj link",
+      "copied": "Skopiowano",
+      "loadFailed": "Nie udało się wczytać statusu poleceń: {{error}}",
+      "empty": "Brak danych o poleceniach"
     }
   },
   "breakout": {

@@ -3645,17 +3645,17 @@
       "openFailed": "Не удалось открыть панель: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Просмотр реферальных наград",
+      "title": "Реферальные награды",
+      "code": "Реферальный код",
+      "link": "Реферальная ссылка",
+      "invitedCount": "Приглашения в этом цикле",
+      "rewardAmount": "Получено кредитов",
+      "lifetimeReward": "Всего",
+      "copyLink": "Копировать ссылку",
+      "copied": "Скопировано",
+      "loadFailed": "Не удалось загрузить статус рефералов: {{error}}",
+      "empty": "Нет данных о рефералах"
     }
   },
   "breakout": {

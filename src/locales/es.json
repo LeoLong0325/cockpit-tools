@@ -3645,17 +3645,17 @@
       "openFailed": "No se pudo abrir el panel: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Ver recompensas por referidos",
+      "title": "Recompensas por referidos",
+      "code": "Código de referido",
+      "link": "Enlace de referido",
+      "invitedCount": "Referidos en este ciclo",
+      "rewardAmount": "Crédito obtenido",
+      "lifetimeReward": "Total",
+      "copyLink": "Copiar enlace",
+      "copied": "Copiado",
+      "loadFailed": "Error al cargar el estado de referidos: {{error}}",
+      "empty": "No hay datos de referidos disponibles"
     }
   },
   "breakout": {

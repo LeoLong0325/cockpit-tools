@@ -3691,17 +3691,17 @@
       "openFailed": "تعذر فتح لوحة التحكم: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "عرض مكافآت الإحالة",
+      "title": "مكافآت الإحالة",
+      "code": "رمز الإحالة",
+      "link": "رابط الإحالة",
+      "invitedCount": "الإحالات في هذه الدورة",
+      "rewardAmount": "الرصيد المكتسب",
+      "lifetimeReward": "الإجمالي",
+      "copyLink": "نسخ الرابط",
+      "copied": "تم النسخ",
+      "loadFailed": "فشل تحميل حالة الإحالة: {{error}}",
+      "empty": "لا تتوفر بيانات إحالة"
     }
   },
   "breakout": {

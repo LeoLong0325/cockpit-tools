@@ -3645,17 +3645,17 @@
       "openFailed": "Pano açılamadı: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Referans ödüllerini görüntüle",
+      "title": "Referans ödülleri",
+      "code": "Referans kodu",
+      "link": "Referans bağlantısı",
+      "invitedCount": "Bu döngüdeki referanslar",
+      "rewardAmount": "Kazanılan kredi",
+      "lifetimeReward": "Toplam",
+      "copyLink": "Bağlantıyı kopyala",
+      "copied": "Kopyalandı",
+      "loadFailed": "Referans durumu yüklenemedi: {{error}}",
+      "empty": "Referans verisi yok"
     }
   },
   "breakout": {

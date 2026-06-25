@@ -3645,17 +3645,17 @@
       "openFailed": "Dashboard se nepodařilo otevřít: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Zobrazit odměny za doporučení",
+      "title": "Odměny za doporučení",
+      "code": "Doporučovací kód",
+      "link": "Doporučovací odkaz",
+      "invitedCount": "Doporučení v tomto cyklu",
+      "rewardAmount": "Získaný kredit",
+      "lifetimeReward": "Celkem",
+      "copyLink": "Kopírovat odkaz",
+      "copied": "Zkopírováno",
+      "loadFailed": "Nepodařilo se načíst stav doporučení: {{error}}",
+      "empty": "Nejsou k dispozici žádná data o doporučeních"
     }
   },
   "breakout": {

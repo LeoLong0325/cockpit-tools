@@ -3645,17 +3645,17 @@
       "openFailed": "Không thể mở bảng điều khiển: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Xem phần thưởng giới thiệu",
+      "title": "Phần thưởng giới thiệu",
+      "code": "Mã giới thiệu",
+      "link": "Liên kết giới thiệu",
+      "invitedCount": "Giới thiệu trong chu kỳ này",
+      "rewardAmount": "Tín dụng đã nhận",
+      "lifetimeReward": "Tổng cộng",
+      "copyLink": "Sao chép liên kết",
+      "copied": "Đã sao chép",
+      "loadFailed": "Không thể tải trạng thái giới thiệu: {{error}}",
+      "empty": "Không có dữ liệu giới thiệu"
     }
   },
   "breakout": {

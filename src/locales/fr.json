@@ -3645,17 +3645,17 @@
       "openFailed": "Impossible d’ouvrir le tableau de bord : {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Voir les récompenses de parrainage",
+      "title": "Récompenses de parrainage",
+      "code": "Code de parrainage",
+      "link": "Lien de parrainage",
+      "invitedCount": "Parrainages ce cycle",
+      "rewardAmount": "Crédits gagnés",
+      "lifetimeReward": "Total",
+      "copyLink": "Copier le lien",
+      "copied": "Copié",
+      "loadFailed": "Échec du chargement du statut de parrainage : {{error}}",
+      "empty": "Aucune donnée de parrainage disponible"
     }
   },
   "breakout": {

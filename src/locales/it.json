@@ -3645,17 +3645,17 @@
       "openFailed": "Impossibile aprire la dashboard: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Visualizza ricompense referral",
+      "title": "Ricompense referral",
+      "code": "Codice referral",
+      "link": "Link referral",
+      "invitedCount": "Referral in questo ciclo",
+      "rewardAmount": "Credito ottenuto",
+      "lifetimeReward": "Totale",
+      "copyLink": "Copia link",
+      "copied": "Copiato",
+      "loadFailed": "Impossibile caricare lo stato referral: {{error}}",
+      "empty": "Nessun dato referral disponibile"
     }
   },
   "breakout": {

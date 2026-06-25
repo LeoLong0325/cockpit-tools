@@ -3645,17 +3645,17 @@
       "openFailed": "Falha ao abrir o painel: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Ver recompensas de indicação",
+      "title": "Recompensas de indicação",
+      "code": "Código de indicação",
+      "link": "Link de indicação",
+      "invitedCount": "Indicações neste ciclo",
+      "rewardAmount": "Crédito obtido",
+      "lifetimeReward": "Total",
+      "copyLink": "Copiar link",
+      "copied": "Copiado",
+      "loadFailed": "Falha ao carregar status de indicação: {{error}}",
+      "empty": "Nenhum dado de indicação disponível"
     }
   },
   "breakout": {

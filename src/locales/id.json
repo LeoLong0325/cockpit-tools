@@ -3791,17 +3791,17 @@
       "openFailed": "Gagal membuka dasbor: {{error}}"
     },
     "referral": {
-      "view": "View Referrals",
-      "title": "Referral Rewards",
-      "code": "Referral Code",
-      "link": "Referral Link",
-      "invitedCount": "Referrals This Cycle",
-      "rewardAmount": "Credit Earned",
-      "lifetimeReward": "Lifetime",
-      "copyLink": "Copy Link",
-      "copied": "Copied",
-      "loadFailed": "Failed to load referral status: {{error}}",
-      "empty": "No referral data available"
+      "view": "Lihat hadiah referral",
+      "title": "Hadiah referral",
+      "code": "Kode referral",
+      "link": "Tautan referral",
+      "invitedCount": "Referral siklus ini",
+      "rewardAmount": "Kredit diperoleh",
+      "lifetimeReward": "Total",
+      "copyLink": "Salin tautan",
+      "copied": "Disalin",
+      "loadFailed": "Gagal memuat status referral: {{error}}",
+      "empty": "Tidak ada data referral"
     }
   },
   "gemini": {
