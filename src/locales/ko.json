@@ -3601,7 +3601,9 @@
     "subscription": "구독",
     "injectToCursor": "Cursor로 전환",
     "quota": {
-      "onDemand": "온디맨드"
+      "onDemand": "온디맨드",
+      "credits": "크레딧",
+      "creditsExpireAt": "만료: {{time}}"
     },
     "title": "Cursor 계정 관리",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "연체"
+    },
+    "dashboard": {
+      "viewHome": "대시보드 보기",
+      "openFailed": "대시보드를 열지 못했습니다: {{error}}"
     }
   },
   "breakout": {

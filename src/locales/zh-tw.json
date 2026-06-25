@@ -3601,7 +3601,9 @@
     "subscription": "訂閱方案",
     "injectToCursor": "切換至 Cursor",
     "quota": {
-      "onDemand": "按需使用"
+      "onDemand": "按需使用",
+      "credits": "贈送額度",
+      "creditsExpireAt": "到期: {{time}}"
     },
     "title": "Cursor 帳號管理",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "逾期"
+    },
+    "dashboard": {
+      "viewHome": "查看主頁",
+      "openFailed": "打開主頁失敗: {{error}}"
     }
   },
   "breakout": {

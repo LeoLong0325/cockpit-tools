@@ -3601,7 +3601,9 @@
     "subscription": "サブスクリプション",
     "injectToCursor": "Cursor に切り替え",
     "quota": {
-      "onDemand": "オンデマンド"
+      "onDemand": "オンデマンド",
+      "credits": "クレジット",
+      "creditsExpireAt": "有効期限: {{time}}"
     },
     "title": "Cursor アカウント管理",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "支払い延滞"
+    },
+    "dashboard": {
+      "viewHome": "ダッシュボードを表示",
+      "openFailed": "ダッシュボードを開けませんでした: {{error}}"
     }
   },
   "breakout": {

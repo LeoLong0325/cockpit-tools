@@ -3601,7 +3601,9 @@
     "subscription": "Assinatura",
     "injectToCursor": "Alternar para Cursor",
     "quota": {
-      "onDemand": "Sob demanda"
+      "onDemand": "Sob demanda",
+      "credits": "Créditos",
+      "creditsExpireAt": "Expira em: {{time}}"
     },
     "title": "Gerenciamento de contas Cursor",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "Pagamento em atraso"
+    },
+    "dashboard": {
+      "viewHome": "Ver painel",
+      "openFailed": "Falha ao abrir o painel: {{error}}"
     }
   },
   "breakout": {

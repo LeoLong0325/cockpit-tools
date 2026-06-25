@@ -3601,7 +3601,9 @@
     "subscription": "Подписка",
     "injectToCursor": "Переключиться на Cursor",
     "quota": {
-      "onDemand": "По запросу"
+      "onDemand": "По запросу",
+      "credits": "Кредиты",
+      "creditsExpireAt": "Истекает: {{time}}"
     },
     "title": "Управление аккаунтами Cursor",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "Просрочен"
+    },
+    "dashboard": {
+      "viewHome": "Открыть панель",
+      "openFailed": "Не удалось открыть панель: {{error}}"
     }
   },
   "breakout": {

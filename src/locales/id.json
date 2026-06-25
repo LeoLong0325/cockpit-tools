@@ -3747,7 +3747,9 @@
     "subscription": "Subscription​",
     "injectToCursor": "Switch to Cursor​",
     "quota": {
-      "onDemand": "Sesuai permintaan"
+      "onDemand": "Sesuai permintaan",
+      "credits": "Kredit",
+      "creditsExpireAt": "Kedaluwarsa: {{time}}"
     },
     "title": "Cursor Account​",
     "instances": {
@@ -3783,6 +3785,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "Terlambat"
+    },
+    "dashboard": {
+      "viewHome": "Lihat dasbor",
+      "openFailed": "Gagal membuka dasbor: {{error}}"
     }
   },
   "gemini": {

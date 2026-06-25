@@ -3601,7 +3601,9 @@
     "subscription": "Gói đăng ký",
     "injectToCursor": "Chuyển sang Cursor",
     "quota": {
-      "onDemand": "Theo yêu cầu"
+      "onDemand": "Theo yêu cầu",
+      "credits": "Tín dụng",
+      "creditsExpireAt": "Hết hạn: {{time}}"
     },
     "title": "Quản lý tài khoản Cursor",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "Quá hạn"
+    },
+    "dashboard": {
+      "viewHome": "Xem bảng điều khiển",
+      "openFailed": "Không thể mở bảng điều khiển: {{error}}"
     }
   },
   "breakout": {

@@ -3601,7 +3601,9 @@
     "subscription": "Abonnement",
     "injectToCursor": "Zu Cursor wechseln",
     "quota": {
-      "onDemand": "On-Demand​"
+      "onDemand": "On-Demand​",
+      "credits": "Guthaben",
+      "creditsExpireAt": "Läuft ab: {{time}}"
     },
     "title": "Cursor-Kontoverwaltung",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "Zahlung überfällig"
+    },
+    "dashboard": {
+      "viewHome": "Dashboard anzeigen",
+      "openFailed": "Dashboard konnte nicht geöffnet werden: {{error}}"
     }
   },
   "breakout": {

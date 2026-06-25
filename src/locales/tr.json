@@ -3601,7 +3601,9 @@
     "subscription": "Abonelik",
     "injectToCursor": "Cursor'a geç",
     "quota": {
-      "onDemand": "İsteğe bağlı"
+      "onDemand": "İsteğe bağlı",
+      "credits": "Krediler",
+      "creditsExpireAt": "Bitiş: {{time}}"
     },
     "title": "Cursor Hesap Yönetimi",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "Gecikmiş ödeme"
+    },
+    "dashboard": {
+      "viewHome": "Panoyu görüntüle",
+      "openFailed": "Pano açılamadı: {{error}}"
     }
   },
   "breakout": {

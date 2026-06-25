@@ -3601,7 +3601,9 @@
     "subscription": "Suscripción",
     "injectToCursor": "Cambiar a Cursor",
     "quota": {
-      "onDemand": "Bajo demanda"
+      "onDemand": "Bajo demanda",
+      "credits": "Créditos",
+      "creditsExpireAt": "Expira: {{time}}"
     },
     "title": "Gestión de cuentas de Cursor",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "Pago vencido"
+    },
+    "dashboard": {
+      "viewHome": "Ver panel",
+      "openFailed": "No se pudo abrir el panel: {{error}}"
     }
   },
   "breakout": {

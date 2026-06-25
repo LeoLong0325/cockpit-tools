@@ -3601,7 +3601,9 @@
     "subscription": "Abbonamento",
     "injectToCursor": "Passa a Cursor",
     "quota": {
-      "onDemand": "Su richiesta"
+      "onDemand": "Su richiesta",
+      "credits": "Crediti",
+      "creditsExpireAt": "Scade: {{time}}"
     },
     "title": "Gestione account Cursor",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "Pagamento scaduto"
+    },
+    "dashboard": {
+      "viewHome": "Visualizza dashboard",
+      "openFailed": "Impossibile aprire la dashboard: {{error}}"
     }
   },
   "breakout": {

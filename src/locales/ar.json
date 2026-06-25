@@ -3647,7 +3647,9 @@
     "subscription": "الاشتراك",
     "injectToCursor": "التبديل إلى Cursor",
     "quota": {
-      "onDemand": "حسب الطلب"
+      "onDemand": "حسب الطلب",
+      "credits": "الأرصدة",
+      "creditsExpireAt": "تنتهي: {{time}}"
     },
     "title": "إدارة حسابات Cursor",
     "instances": {
@@ -3683,6 +3685,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "متأخر"
+    },
+    "dashboard": {
+      "viewHome": "عرض لوحة التحكم",
+      "openFailed": "تعذر فتح لوحة التحكم: {{error}}"
     }
   },
   "breakout": {

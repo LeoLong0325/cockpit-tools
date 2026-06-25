@@ -3601,7 +3601,9 @@
     "subscription": "Předplatné",
     "injectToCursor": "Přepnout na Cursor",
     "quota": {
-      "onDemand": "Na vyžádání"
+      "onDemand": "Na vyžádání",
+      "credits": "Kredity",
+      "creditsExpireAt": "Vyprší: {{time}}"
     },
     "title": "Správa účtů Cursor",
     "instances": {
@@ -3637,6 +3639,10 @@
     },
     "subscriptionStatus": {
       "pastDue": "Po splatnosti"
+    },
+    "dashboard": {
+      "viewHome": "Zobrazit dashboard",
+      "openFailed": "Dashboard se nepodařilo otevřít: {{error}}"
     }
   },
   "breakout": {
