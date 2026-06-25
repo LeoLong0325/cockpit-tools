@@ -3902,7 +3902,13 @@
     },
     "injectToCursor": "切换到 Cursor",
     "quota": {
-      "onDemand": "按需使用"
+      "onDemand": "按需使用",
+      "credits": "赠送额度",
+      "creditsExpireAt": "到期: {{time}}"
+    },
+    "dashboard": {
+      "viewHome": "查看主页",
+      "openFailed": "打开主页失败: {{error}}"
     },
     "title": "Cursor 账号管理",
     "instances": {
@@ -3920,9 +3926,9 @@
       "desc": "点击下方按钮，在浏览器中完成 Cursor 授权登录。"
     },
     "token": {
-      "desc": "粘贴您的 Cursor Access Token（JWT）或导出的 JSON 数据。",
+      "desc": "粘贴 Cursor Access Token（JWT）、WorkOS Session Token（user_xxx::eyJ...）或导出的 JSON 数据。",
       "formatHint": "必填字段与示例（点击展开）",
-      "formatRequired": "单条 Token 直接粘贴 JWT；批量导入使用 JSON 数组格式",
+      "formatRequired": "支持 JWT、WorkOS Session Token，或包含 token / workos_cursor_session_token 的 JSON",
       "singleExample": "单条示例（JWT）",
       "batchExample": "批量示例（JSON）"
     },

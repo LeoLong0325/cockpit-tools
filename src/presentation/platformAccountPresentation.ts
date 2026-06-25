@@ -69,7 +69,9 @@ import {
 } from "../types/windsurf";
 import {
   formatCursorUsageDollars,
+  formatCursorCreditGrantsValue,
   getCursorAccountDisplayEmail,
+  getCursorCreditGrants,
   getCursorOnDemandSummary,
   getCursorPlanDisplayName,
   getCursorPlanBadgeClass,
@@ -1567,6 +1569,29 @@ export function buildCursorAccountPresentation(
       percentage: 0,
       quotaClass: "medium",
       valueText: t("common.disabled", "Disabled"),
+    });
+  }
+
+  const creditGrants = getCursorCreditGrants(account);
+  if (creditGrants) {
+    const remaining = creditGrants.remainingCents ?? creditGrants.totalCents;
+    const total = creditGrants.totalCents;
+    const used = creditGrants.usedCents;
+    const rawPercent =
+      total != null && total > 0 && used != null
+        ? (used / total) * 100
+        : remaining != null && total != null && total > 0
+          ? ((total - remaining) / total) * 100
+          : 0;
+    const creditPercent = normalizeCursorUsagePercent(rawPercent) ?? 0;
+    const valueText = formatCursorCreditGrantsValue(remaining, total);
+
+    quotaItems.push({
+      key: "credits",
+      label: t("cursor.quota.credits", "Credits"),
+      percentage: creditPercent,
+      quotaClass: getCursorUsageQuotaClass(creditPercent),
+      valueText,
     });
   }
 

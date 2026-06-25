@@ -23,6 +23,7 @@ import {
   Eye,
   EyeOff,
   Lock,
+  Home,
   BookOpen,
 } from 'lucide-react';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
@@ -42,7 +43,9 @@ import {
   getCursorAccountDisplayEmail,
   getCursorOnDemandSummary,
   getCursorUsage,
+  getCursorCreditGrants,
   formatCursorUsageDollars,
+  formatCursorCreditGrantsValue,
   hasCursorQuotaData,
   isCursorAccountBanned,
   isCursorAccountPastDue,
@@ -85,10 +88,13 @@ const CURSOR_KNOWN_PLAN_FILTERS = [
   'FREE_TRIAL',
   'ULTRA',
 ] as const;
-const CURSOR_TOKEN_SINGLE_EXAMPLE = `eyJhbGciOiJIUzI1NiIs...`;
+const CURSOR_TOKEN_SINGLE_EXAMPLE = `eyJhbGciOiJIUzI1NiIs...
+
+或 WorkOS Session Token:
+user_01XXXXXXXX::eyJhbGciOiJIUzI1NiIs...`;
 const CURSOR_TOKEN_BATCH_EXAMPLE = `[
   {"access_token":"eyJhbGciOiJIUzI1NiIs...","email":"a@example.com"},
-  {"access_token":"eyJhbGciOiJIUzI1NiIs...","email":"b@example.com"}
+  {"token":"eyJhbGciOiJIUzI1NiIs...","workos_cursor_session_token":"user_01XXX::eyJ..."}
 ]`;
 
 function getCursorQuotaClass(percentage: number): string {
@@ -257,6 +263,20 @@ export function CursorAccountsPage() {
     [resolveDisplayEmail],
   );
 
+  const handleOpenDashboard = useCallback(async (accountId: string) => {
+    try {
+      await cursorService.openCursorDashboard(accountId);
+    } catch (error) {
+      setMessage({
+        tone: 'error',
+        text: t('cursor.dashboard.openFailed', {
+          error: String(error).replace(/^Error:\s*/, ''),
+          defaultValue: '打开主页失败: {{error}}',
+        }),
+      });
+    }
+  }, [setMessage, t]);
+
   // ─── Platform-specific: Quota ──────────────────────────────────────
 
   const resolveTotalQuota = useCallback(
@@ -349,6 +369,32 @@ export function CursorAccountsPage() {
       };
     },
     [t],
+  );
+
+  const resolveCreditGrantsQuota = useCallback(
+    (account: CursorAccount) => {
+      const credits = getCursorCreditGrants(account);
+      if (!credits) return null;
+
+      const remaining = credits.remainingCents ?? credits.totalCents;
+      const total = credits.totalCents;
+      const used = credits.usedCents;
+      const rawPct =
+        total != null && total > 0 && used != null
+          ? (used / total) * 100
+          : remaining != null && total != null && total > 0
+            ? ((total - remaining) / total) * 100
+            : 0;
+      const pct = normalizeCursorPercent(rawPct);
+      const valueText = formatCursorCreditGrantsValue(remaining, total);
+
+      return {
+        percentage: pct.bar,
+        quotaClass: getCursorQuotaClass(pct.display),
+        valueText,
+      };
+    },
+    [],
   );
 
   const resolveResetTime = useCallback(
@@ -594,6 +640,7 @@ export function CursorAccountsPage() {
       const auto = resolveAutoQuota(account);
       const api = resolveApiQuota(account);
       const onDemand = resolveOnDemandQuota(account);
+      const creditGrants = resolveCreditGrantsQuota(account);
       const resetTs = resolveResetTime(account);
       const resetText = formatResetTime(resetTs);
       const accountTags = (account.tags || []).map((tag) => tag.trim()).filter(Boolean);
@@ -715,6 +762,18 @@ export function CursorAccountsPage() {
                     <div className={`quota-bar ${onDemand.quotaClass}`} style={{ width: `${Math.min(onDemand.percentage, 100)}%` }} />
                   </div>
                 </div>
+
+                {creditGrants && (
+                  <div className="quota-item windsurf-credit-item">
+                    <div className="quota-header">
+                      <span className="quota-label">{t('cursor.quota.credits', 'Credits')}</span>
+                      <span className={`quota-pct ${creditGrants.quotaClass}`}>{creditGrants.valueText}</span>
+                    </div>
+                    <div className="quota-bar-track">
+                      <div className={`quota-bar ${creditGrants.quotaClass}`} style={{ width: `${Math.min(creditGrants.percentage, 100)}%` }} />
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="quota-empty">{t('common.shared.quota.noData', '暂无配额数据')}</div>
@@ -733,6 +792,14 @@ export function CursorAccountsPage() {
               </button>
               <button className="card-action-btn" onClick={() => handleRefresh(account.id)} disabled={refreshing === account.id} title={t('common.shared.refreshQuota', '刷新配额')}>
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
+              </button>
+              <button
+                className="card-action-btn"
+                onClick={() => handleOpenDashboard(account.id)}
+                disabled={isBanned}
+                title={t('cursor.dashboard.viewHome', '查看主页')}
+              >
+                <Home size={14} />
               </button>
               <button
                 className="card-action-btn export-btn"
@@ -761,6 +828,7 @@ export function CursorAccountsPage() {
       const auto = resolveAutoQuota(account);
       const api = resolveApiQuota(account);
       const onDemand = resolveOnDemandQuota(account);
+      const creditGrants = resolveCreditGrantsQuota(account);
       const resetTs = resolveResetTime(account);
       const resetText = formatResetTime(resetTs);
       const accountTags = (account.tags || []).map((tag) => tag.trim()).filter(Boolean);
@@ -870,6 +938,17 @@ export function CursorAccountsPage() {
                     <div className={`quota-progress-bar ${onDemand.quotaClass}`} style={{ width: `${Math.min(onDemand.percentage, 100)}%` }} />
                   </div>
                 </div>
+                {creditGrants && (
+                  <div className="quota-item windsurf-table-credit-item" style={{ marginTop: 4 }}>
+                    <div className="quota-header">
+                      <span className="quota-name">{t('cursor.quota.credits', 'Credits')}</span>
+                      <span className={`quota-value ${creditGrants.quotaClass}`}>{creditGrants.valueText}</span>
+                    </div>
+                    <div className="quota-progress-track">
+                      <div className={`quota-progress-bar ${creditGrants.quotaClass}`} style={{ width: `${Math.min(creditGrants.percentage, 100)}%` }} />
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="quota-empty">{t('common.shared.quota.noData', '暂无配额数据')}</div>
@@ -886,6 +965,14 @@ export function CursorAccountsPage() {
               </button>
               <button className="action-btn" onClick={() => handleRefresh(account.id)} disabled={refreshing === account.id} title={t('common.shared.refreshQuota', '刷新配额')}>
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
+              </button>
+              <button
+                className="action-btn"
+                onClick={() => handleOpenDashboard(account.id)}
+                disabled={isBanned}
+                title={t('cursor.dashboard.viewHome', '查看主页')}
+              >
+                <Home size={14} />
               </button>
               <button
                 className="action-btn"
@@ -1245,7 +1332,7 @@ export function CursorAccountsPage() {
 
               {addTab === 'token' && (
                 <div className="add-section">
-                  <p className="section-desc">{t('cursor.token.desc', '粘贴您的 Cursor Access Token（JWT）或导出的 JSON 数据。')}</p>
+                  <p className="section-desc">{t('cursor.token.desc', '粘贴 Cursor Access Token（JWT）、WorkOS Session Token（user_xxx::eyJ...）或导出的 JSON 数据。')}</p>
                   <details className="token-format-collapse">
                     <summary className="token-format-collapse-summary">{t('cursor.token.formatHint', '必填字段与示例（点击展开）')}</summary>
                     <div className="token-format">

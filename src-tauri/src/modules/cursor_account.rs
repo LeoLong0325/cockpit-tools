@@ -771,6 +771,9 @@ fn apply_payload(
     account.sign_up_type = payload.sign_up_type;
     account.cursor_auth_raw = payload.cursor_auth_raw;
     account.cursor_usage_raw = payload.cursor_usage_raw;
+    if payload.cursor_credit_grants_raw.is_some() {
+        account.cursor_credit_grants_raw = payload.cursor_credit_grants_raw;
+    }
     if let Some(auth_id) = resolved_auth_id {
         account.auth_id = Some(auth_id.clone());
         upsert_cursor_auth_raw_string(account, "authId", Some(auth_id));
@@ -848,6 +851,7 @@ pub fn upsert_account(payload: CursorImportPayload) -> Result<CursorAccount, Str
         sign_up_type: payload.sign_up_type.clone(),
         cursor_auth_raw: payload.cursor_auth_raw.clone(),
         cursor_usage_raw: payload.cursor_usage_raw.clone(),
+        cursor_credit_grants_raw: payload.cursor_credit_grants_raw.clone(),
         status: payload.status.clone(),
         status_reason: payload.status_reason.clone(),
         quota_query_last_error: None,
@@ -932,8 +936,17 @@ fn payload_from_import_value(raw: Value) -> Result<CursorImportPayload, String> 
         .as_object()
         .ok_or_else(|| "Cursor 导入 JSON 必须是对象".to_string())?;
 
+    let workos_token = extract_string(
+        obj,
+        &[
+            "workos_cursor_session_token",
+            "workosSessionToken",
+            "workos_token",
+            "workosToken",
+        ],
+    );
     let email = extract_string(obj, &["email", "cachedEmail", "cursor_email"])
-        .ok_or_else(|| "缺少 email 字段".to_string())?;
+        .unwrap_or_else(|| "unknown".to_string());
     let access_token = extract_string(
         obj,
         &[
@@ -943,7 +956,16 @@ fn payload_from_import_value(raw: Value) -> Result<CursorImportPayload, String> 
             "cursor_access_token",
         ],
     )
-    .ok_or_else(|| "缺少 access_token 字段".to_string())?;
+    .or_else(|| {
+        workos_token.as_ref().and_then(|token| {
+            normalize_workos_session_token(token).and_then(|normalized| {
+                normalized
+                    .split_once("::")
+                    .map(|(_, jwt)| jwt.to_string())
+            })
+        })
+    })
+    .ok_or_else(|| "缺少 access_token 或 workos_cursor_session_token 字段".to_string())?;
 
     let name = extract_string(obj, &["name", "displayName"]);
     let refresh_token = extract_string(
@@ -971,10 +993,30 @@ fn payload_from_import_value(raw: Value) -> Result<CursorImportPayload, String> 
     let status = extract_string(obj, &["status"]);
     let status_reason = extract_string(obj, &["status_reason", "statusReason"]);
 
-    let cursor_auth_raw = clone_object_value(obj.get("cursor_auth_raw"))
+    let mut cursor_auth_raw = clone_object_value(obj.get("cursor_auth_raw"))
         .or_else(|| clone_object_value(obj.get("cursorAuthRaw")));
+    if let Some(workos_token) = workos_token.as_ref() {
+        if let Some(normalized) = normalize_workos_session_token(workos_token) {
+            let auth_map = match cursor_auth_raw.as_mut() {
+                Some(Value::Object(map)) => map,
+                _ => {
+                    cursor_auth_raw = Some(Value::Object(serde_json::Map::new()));
+                    cursor_auth_raw
+                        .as_mut()
+                        .and_then(|value| value.as_object_mut())
+                        .expect("cursor_auth_raw 应为对象")
+                }
+            };
+            auth_map.insert(
+                "workosSessionToken".to_string(),
+                Value::String(normalized),
+            );
+        }
+    }
     let cursor_usage_raw = clone_object_value(obj.get("cursor_usage_raw"))
         .or_else(|| clone_object_value(obj.get("cursorUsageRaw")));
+    let cursor_credit_grants_raw = clone_object_value(obj.get("cursor_credit_grants_raw"))
+        .or_else(|| clone_object_value(obj.get("cursorCreditGrantsRaw")));
     let auth_id = extract_string(obj, &["auth_id", "authId", "workos_id", "workosId"])
         .or_else(|| extract_auth_id_from_raw_value(cursor_auth_raw.as_ref()))
         .or_else(|| extract_auth_id_from_access_token(access_token.as_str()));
@@ -990,6 +1032,7 @@ fn payload_from_import_value(raw: Value) -> Result<CursorImportPayload, String> 
         sign_up_type,
         cursor_auth_raw,
         cursor_usage_raw,
+        cursor_credit_grants_raw,
         status,
         status_reason,
     })
@@ -1072,7 +1115,28 @@ pub fn export_accounts(account_ids: &[String]) -> Result<String, String> {
         .iter()
         .filter_map(|id| load_account(id))
         .collect();
-    serde_json::to_string_pretty(&accounts).map_err(|e| format!("序列化失败: {}", e))
+
+    let export_items: Vec<Value> = accounts
+        .into_iter()
+        .map(|account| {
+            let mut value = serde_json::to_value(&account).unwrap_or(Value::Null);
+            if let Value::Object(obj) = &mut value {
+                if let Some(workos_token) = read_workos_session_token(&account) {
+                    obj.insert(
+                        "workos_cursor_session_token".to_string(),
+                        Value::String(workos_token),
+                    );
+                }
+                obj.insert(
+                    "token".to_string(),
+                    Value::String(account.access_token.clone()),
+                );
+            }
+            value
+        })
+        .collect();
+
+    serde_json::to_string_pretty(&export_items).map_err(|e| format!("序列化失败: {}", e))
 }
 
 // ---------------------------------------------------------------------------
@@ -1192,6 +1256,7 @@ pub fn read_local_cursor_auth() -> Result<Option<CursorImportPayload>, String> {
         sign_up_type,
         cursor_auth_raw: Some(Value::Object(auth_raw)),
         cursor_usage_raw: None,
+        cursor_credit_grants_raw: None,
         status: None,
         status_reason: None,
     }))
@@ -1295,6 +1360,10 @@ pub fn inject_to_cursor_at_path(db_path: &std::path::Path, account_id: &str) -> 
 // ---------------------------------------------------------------------------
 
 const CURSOR_USAGE_SUMMARY_URL: &str = "https://cursor.com/api/usage-summary";
+const CURSOR_CREDIT_GRANTS_BALANCE_URL: &str =
+    "https://cursor.com/api/dashboard/get-credit-grants-balance";
+const CURSOR_CLIENT_VISIBLE_CREDIT_GRANTS_URL: &str =
+    "https://cursor.com/api/dashboard/get-client-visible-credit-grants";
 const CURSOR_GET_USER_META_URL: &str = "https://api2.cursor.sh/aiserver.v1.AuthService/GetUserMeta";
 const CURSOR_FULL_STRIPE_PROFILE_URL: &str = "https://api2.cursor.sh/auth/full_stripe_profile";
 const CURSOR_STRIPE_PROFILE_URL: &str = "https://api2.cursor.sh/auth/stripe_profile";
@@ -1355,6 +1424,257 @@ fn build_session_cookie(access_token: &str) -> Option<String> {
         "WorkosCursorSessionToken={}%3A%3A{}",
         user_id, access_token
     ))
+}
+
+pub fn is_workos_session_token(raw: &str) -> bool {
+    normalize_workos_session_token(raw).is_some()
+}
+
+pub fn normalize_workos_session_token(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let decoded = urlencoding::decode(trimmed)
+        .map(|value| value.into_owned())
+        .unwrap_or_else(|_| trimmed.to_string());
+    let (user_id, jwt) = decoded.split_once("::")?;
+    if user_id.starts_with("user_") && jwt.starts_with("eyJ") {
+        Some(format!("{}::{}", user_id, jwt))
+    } else {
+        None
+    }
+}
+
+pub fn read_workos_session_token(account: &CursorAccount) -> Option<String> {
+    if let Some(Value::Object(raw)) = account.cursor_auth_raw.as_ref() {
+        for key in ["workosSessionToken", "workos_cursor_session_token", "workosToken"] {
+            if let Some(Value::String(token)) = raw.get(key) {
+                if let Some(normalized) = normalize_workos_session_token(token) {
+                    return Some(normalized);
+                }
+            }
+        }
+    }
+    build_session_cookie(&account.access_token).and_then(|_| {
+        let user_id = extract_workos_user_id(&account.access_token)?;
+        Some(format!("{}::{}", user_id, account.access_token))
+    })
+}
+
+fn generate_pkce_verifier_and_challenge() -> (String, String) {
+    use rand::RngCore;
+    use sha2::{Digest, Sha256};
+
+    let mut verifier_bytes = [0u8; 32];
+    rand::thread_rng().fill_bytes(&mut verifier_bytes);
+    let verifier = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(verifier_bytes);
+    let hash = Sha256::digest(verifier.as_bytes());
+    let challenge = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+    (verifier, challenge)
+}
+
+async fn trigger_workos_authorization_login(
+    client: &reqwest::Client,
+    uuid: &str,
+    challenge: &str,
+    workos_session_token: &str,
+) -> Result<(), String> {
+    let cookie_value = format!("WorkosCursorSessionToken={}", workos_session_token);
+    let response = client
+        .post("https://cursor.com/api/auth/loginDeepCallbackControl")
+        .header("Cookie", cookie_value)
+        .header("Content-Type", "application/json")
+        .header("Origin", "https://cursor.com")
+        .json(&serde_json::json!({
+            "challenge": challenge,
+            "uuid": uuid,
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("WorkOS 授权登录请求失败: {}", e))?;
+
+    if !response.status().is_success() {
+        let status = response.status().as_u16();
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!("WorkOS 授权登录失败: HTTP {} {}", status, body));
+    }
+    Ok(())
+}
+
+async fn poll_workos_authorization_tokens(
+    client: &reqwest::Client,
+    uuid: &str,
+    verifier: &str,
+) -> Result<(String, Option<String>), String> {
+    for _ in 0..20 {
+        let response = client
+            .get(format!(
+                "https://api2.cursor.sh/auth/poll?uuid={}&verifier={}",
+                uuid, verifier
+            ))
+            .header("Accept", "*/*")
+            .header("Content-Type", "application/json")
+            .header("Origin", "https://cursor.com")
+            .send()
+            .await
+            .map_err(|e| format!("WorkOS 授权轮询失败: {}", e))?;
+
+        if response.status().is_success() {
+            let body = response
+                .text()
+                .await
+                .map_err(|e| format!("读取 WorkOS 授权响应失败: {}", e))?;
+            if body.trim().is_empty() {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                continue;
+            }
+            let value: Value = serde_json::from_str(&body)
+                .map_err(|e| format!("解析 WorkOS 授权响应失败: {}", e))?;
+            let access_token = value
+                .get("accessToken")
+                .or_else(|| value.get("access_token"))
+                .and_then(|v| v.as_str())
+                .map(|v| v.trim().to_string())
+                .filter(|v| !v.is_empty());
+            if let Some(access_token) = access_token {
+                let refresh_token = value
+                    .get("refreshToken")
+                    .or_else(|| value.get("refresh_token"))
+                    .and_then(|v| v.as_str())
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty());
+                return Ok((access_token, refresh_token));
+            }
+        }
+
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    }
+
+    Err("WorkOS 授权超时，未能换取 Access Token".to_string())
+}
+
+pub async fn exchange_workos_session_token(
+    workos_session_token: &str,
+) -> Result<(String, Option<String>), String> {
+    let normalized = normalize_workos_session_token(workos_session_token)
+        .ok_or_else(|| "无效的 WorkOS Session Token 格式".to_string())?;
+    let client = build_cursor_http_client()?;
+    let uuid = uuid::Uuid::new_v4().to_string();
+    let (verifier, challenge) = generate_pkce_verifier_and_challenge();
+
+    let poll_client = client.clone();
+    let poll_uuid = uuid.clone();
+    let poll_verifier = verifier.clone();
+    let poll_task = tokio::spawn(async move {
+        poll_workos_authorization_tokens(&poll_client, &poll_uuid, &poll_verifier).await
+    });
+
+    trigger_workos_authorization_login(&client, &uuid, &challenge, &normalized).await?;
+
+    match poll_task.await {
+        Ok(result) => result,
+        Err(err) => Err(format!("WorkOS 授权任务失败: {}", err)),
+    }
+}
+
+fn build_payload_from_workos_session_token(
+    workos_session_token: &str,
+    access_token: String,
+    refresh_token: Option<String>,
+) -> CursorImportPayload {
+    let normalized = normalize_workos_session_token(workos_session_token).unwrap_or_else(|| {
+        workos_session_token.trim().to_string()
+    });
+    let auth_id = normalized
+        .split_once("::")
+        .map(|(user_id, _)| user_id.to_string())
+        .or_else(|| extract_auth_id_from_access_token(&access_token));
+    let mut auth_raw = serde_json::Map::new();
+    auth_raw.insert(
+        "workosSessionToken".to_string(),
+        Value::String(normalized),
+    );
+
+    CursorImportPayload {
+        email: "unknown".to_string(),
+        auth_id,
+        name: None,
+        access_token,
+        refresh_token,
+        membership_type: None,
+        subscription_status: None,
+        sign_up_type: None,
+        cursor_auth_raw: Some(Value::Object(auth_raw)),
+        cursor_usage_raw: None,
+        cursor_credit_grants_raw: None,
+        status: None,
+        status_reason: None,
+    }
+}
+
+pub async fn add_account_with_workos_token(
+    workos_session_token: &str,
+) -> Result<CursorAccount, String> {
+    let normalized = normalize_workos_session_token(workos_session_token)
+        .ok_or_else(|| "无效的 WorkOS Session Token 格式，应为 user_xxx::eyJ...".to_string())?;
+
+    let (access_token, refresh_token) = match exchange_workos_session_token(&normalized).await {
+        Ok(tokens) => tokens,
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[Cursor WorkOS] 授权换取失败，回退为直接解析 JWT: {}",
+                err
+            ));
+            let jwt = normalized
+                .split_once("::")
+                .map(|(_, jwt)| jwt.to_string())
+                .ok_or_else(|| err)?;
+            (jwt, None)
+        }
+    };
+
+    let payload = build_payload_from_workos_session_token(&normalized, access_token, refresh_token);
+    upsert_account(payload)
+}
+
+pub async fn open_cursor_dashboard(
+    app: &tauri::AppHandle,
+    account_id: &str,
+) -> Result<(), String> {
+    use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+
+    let account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
+    let workos_token = read_workos_session_token(&account)
+        .ok_or_else(|| "无法解析 WorkOS Session Token，请重新导入账号".to_string())?;
+
+    if let Some(existing_window) = app.get_webview_window("cursor_dashboard") {
+        let _ = existing_window.close();
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+
+    WebviewWindowBuilder::new(
+        app,
+        "cursor_dashboard",
+        WebviewUrl::External(
+            "https://cursor.com/dashboard"
+                .parse()
+                .map_err(|e| format!("无效的 Dashboard URL: {}", e))?,
+        ),
+    )
+    .title("Cursor Dashboard")
+    .inner_size(1200.0, 800.0)
+    .resizable(true)
+    .initialization_script(&format!(
+        r#"
+        document.cookie = 'WorkosCursorSessionToken={}; domain=.cursor.com; path=/; secure; samesite=none';
+        "#,
+        workos_token
+    ))
+    .build()
+    .map_err(|e| format!("打开 Cursor 主页失败: {}", e))?;
+
+    Ok(())
 }
 
 fn resolve_membership_from_stripe_profile(profile: &CursorStripeProfileResponse) -> Option<String> {
@@ -1581,6 +1901,77 @@ async fn fetch_usage_summary_with_client(
         .map_err(|e| format!("解析 Cursor usage JSON 失败: {}", e))
 }
 
+async fn post_dashboard_json_with_client(
+    client: &reqwest::Client,
+    access_token: &str,
+    url: &str,
+) -> Result<serde_json::Value, String> {
+    let cookie = build_session_cookie(access_token)
+        .ok_or_else(|| "无法从 accessToken 解析 WorkOS 用户 ID".to_string())?;
+
+    let response = client
+        .post(url)
+        .header("Accept", "application/json")
+        .header("Content-Type", "application/json")
+        .header("Cookie", &cookie)
+        .header("Origin", "https://cursor.com")
+        .header("Referer", "https://cursor.com/dashboard")
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        )
+        .json(&serde_json::json!({}))
+        .send()
+        .await
+        .map_err(|e| format!("请求 Cursor dashboard API 失败: {}", e))?;
+
+    let status = response.status().as_u16();
+    if status == 401 || status == 403 {
+        return Err("Cursor 会话已过期或未认证，请重新导入账号".to_string());
+    }
+    if status != 200 {
+        return Err(format!("Cursor dashboard API 返回异常状态码: {}", status));
+    }
+
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("读取 Cursor dashboard 响应失败: {}", e))?;
+
+    serde_json::from_str::<serde_json::Value>(&body)
+        .map_err(|e| format!("解析 Cursor dashboard JSON 失败: {}", e))
+}
+
+async fn fetch_credit_grants_with_client(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> Result<serde_json::Value, String> {
+    let balance = post_dashboard_json_with_client(
+        client,
+        access_token,
+        CURSOR_CREDIT_GRANTS_BALANCE_URL,
+    )
+    .await?;
+    let grants = post_dashboard_json_with_client(
+        client,
+        access_token,
+        CURSOR_CLIENT_VISIBLE_CREDIT_GRANTS_URL,
+    )
+    .await
+    .unwrap_or_else(|err| {
+        logger::log_warn(&format!(
+            "[Cursor Refresh] 赠送额度明细拉取失败，仅保留余额: {}",
+            err
+        ));
+        serde_json::json!({})
+    });
+
+    Ok(serde_json::json!({
+        "balance": balance,
+        "grants": grants,
+    }))
+}
+
 // ---------------------------------------------------------------------------
 // Refresh (updates our own account storage + fetches usage from official APIs)
 // ---------------------------------------------------------------------------
@@ -1715,6 +2106,22 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
             ));
             account.quota_query_last_error = Some(err);
             account.quota_query_last_error_at = Some(chrono::Utc::now().timestamp_millis());
+        }
+    }
+
+    match fetch_credit_grants_with_client(&client, &account.access_token).await {
+        Ok(credit_grants) => {
+            account.cursor_credit_grants_raw = Some(credit_grants);
+            logger::log_info(&format!(
+                "[Cursor Refresh] 赠送额度拉取成功: id={}",
+                account.id
+            ));
+        }
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[Cursor Refresh] 赠送额度拉取失败: id={}, error={}",
+                account.id, err
+            ));
         }
     }
 

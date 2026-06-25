@@ -104,28 +104,43 @@ pub async fn refresh_all_cursor_tokens(app: AppHandle) -> Result<i32, String> {
 }
 
 #[tauri::command]
-pub fn add_cursor_account_with_token(
+pub async fn add_cursor_account_with_token(
     app: AppHandle,
     access_token: String,
 ) -> Result<CursorAccount, String> {
-    let email = "unknown".to_string();
-    let payload = crate::models::cursor::CursorImportPayload {
-        email,
-        auth_id: None,
-        name: None,
-        access_token,
-        refresh_token: None,
-        membership_type: None,
-        subscription_status: None,
-        sign_up_type: None,
-        cursor_auth_raw: None,
-        cursor_usage_raw: None,
-        status: None,
-        status_reason: None,
+    let account = if cursor_account::is_workos_session_token(&access_token) {
+        cursor_account::add_account_with_workos_token(&access_token).await?
+    } else {
+        let payload = crate::models::cursor::CursorImportPayload {
+            email: "unknown".to_string(),
+            auth_id: None,
+            name: None,
+            access_token,
+            refresh_token: None,
+            membership_type: None,
+            subscription_status: None,
+            sign_up_type: None,
+            cursor_auth_raw: None,
+            cursor_usage_raw: None,
+            cursor_credit_grants_raw: None,
+            status: None,
+            status_reason: None,
+        };
+        cursor_account::upsert_account(payload)?
     };
-    let account = cursor_account::upsert_account(payload)?;
+
+    if let Ok(refreshed) = cursor_account::refresh_account_async(&account.id).await {
+        let _ = crate::modules::tray::update_tray_menu(&app);
+        return Ok(refreshed);
+    }
+
     let _ = crate::modules::tray::update_tray_menu(&app);
     Ok(account)
+}
+
+#[tauri::command]
+pub async fn open_cursor_dashboard(app: AppHandle, account_id: String) -> Result<(), String> {
+    cursor_account::open_cursor_dashboard(&app, &account_id).await
 }
 
 #[tauri::command]

@@ -240,6 +240,7 @@ pub async fn complete_login(login_id: &str) -> Result<CursorImportPayload, Strin
                         sign_up_type: None,
                         cursor_auth_raw: Some(serde_json::Value::Object(auth_raw)),
                         cursor_usage_raw: None,
+                        cursor_credit_grants_raw: None,
                         status: None,
                         status_reason: None,
                     });

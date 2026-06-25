@@ -26,6 +26,8 @@ pub struct CursorAccount {
     pub cursor_auth_raw: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cursor_usage_raw: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cursor_credit_grants_raw: Option<serde_json::Value>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -89,6 +91,7 @@ pub struct CursorImportPayload {
     pub sign_up_type: Option<String>,
     pub cursor_auth_raw: Option<serde_json::Value>,
     pub cursor_usage_raw: Option<serde_json::Value>,
+    pub cursor_credit_grants_raw: Option<serde_json::Value>,
     pub status: Option<String>,
     pub status_reason: Option<String>,
 }

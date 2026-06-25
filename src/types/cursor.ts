@@ -14,6 +14,7 @@ export interface CursorAccount {
 
   cursor_auth_raw?: unknown;
   cursor_usage_raw?: unknown;
+  cursor_credit_grants_raw?: unknown;
 
   status?: string | null;
   status_reason?: string | null;
@@ -427,6 +428,22 @@ export function formatCursorUsageDollars(cents: number | null | undefined): stri
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+export function formatCursorCreditGrantsValue(
+  remainingCents: number | null | undefined,
+  totalCents: number | null | undefined,
+): string {
+  if (remainingCents != null && totalCents != null) {
+    return `$${Math.round(remainingCents / 100)} / $${Math.round(totalCents / 100)}`;
+  }
+  if (remainingCents != null) {
+    return `$${Math.round(remainingCents / 100)}`;
+  }
+  if (totalCents != null) {
+    return `$${Math.round(totalCents / 100)}`;
+  }
+  return '—';
+}
+
 export const CURSOR_PAST_DUE_FILTER = 'PAST_DUE';
 
 export function isCursorAccountPastDue(account: CursorAccount): boolean {
@@ -442,4 +459,158 @@ export function isCursorAccountBanned(account: CursorAccount): boolean {
 
 export function hasCursorQuotaData(account: CursorAccount): boolean {
   return account.cursor_usage_raw != null;
+}
+
+export type CursorCreditGrants = {
+  hasGrants: boolean;
+  remainingCents: number | null;
+  totalCents: number | null;
+  usedCents: number | null;
+  expiresAt: number | null;
+};
+
+function parseCentsValue(value: unknown): number | null {
+  if (value == null) return null;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const n = Number(trimmed);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function parseTimestampValue(value: unknown): number | null {
+  if (value == null) return null;
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value > 1_000_000_000_000 ? Math.floor(value / 1000) : Math.floor(value);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const asNumber = Number(trimmed);
+    if (Number.isFinite(asNumber)) {
+      return asNumber > 1_000_000_000_000
+        ? Math.floor(asNumber / 1000)
+        : Math.floor(asNumber);
+    }
+    const ts = new Date(trimmed).getTime();
+    if (Number.isFinite(ts)) return Math.floor(ts / 1000);
+  }
+  return null;
+}
+
+function extractGrantExpiryTimestamps(value: unknown): number[] {
+  const timestamps: number[] = [];
+
+  const visit = (node: unknown) => {
+    if (node == null) return;
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    if (typeof node !== 'object') return;
+
+    const obj = node as Record<string, unknown>;
+    for (const [key, raw] of Object.entries(obj)) {
+      const normalizedKey = key.toLowerCase();
+      if (
+        normalizedKey.includes('expire') ||
+        normalizedKey.includes('expiry') ||
+        normalizedKey.includes('expiresat') ||
+        normalizedKey.includes('expiration')
+      ) {
+        const parsed = parseTimestampValue(raw);
+        if (parsed != null) timestamps.push(parsed);
+      }
+    }
+
+    for (const raw of Object.values(obj)) {
+      if (raw != null && typeof raw === 'object') {
+        visit(raw);
+      }
+    }
+  };
+
+  visit(value);
+  return timestamps;
+}
+
+export function getCursorCreditGrants(
+  account: CursorAccount,
+): CursorCreditGrants | null {
+  const raw = account.cursor_credit_grants_raw;
+  if (!raw || typeof raw !== 'object') return null;
+
+  const root = raw as Record<string, unknown>;
+  const balance =
+    (root.balance && typeof root.balance === 'object'
+      ? (root.balance as Record<string, unknown>)
+      : root) ?? root;
+
+  const hasCreditGrants = pickBoolean(
+    balance,
+    'hasCreditGrants',
+    'has_credit_grants',
+  );
+  const totalCents = parseCentsValue(
+    balance.totalCents ??
+      balance.total_cents ??
+      balance.grantTotalCents ??
+      balance.grant_total_cents,
+  );
+  const usedCents = parseCentsValue(
+    balance.usedCents ??
+      balance.used_cents ??
+      balance.grantUsedCents ??
+      balance.grant_used_cents,
+  );
+  const remainingCentsRaw = parseCentsValue(
+    balance.remainingCents ??
+      balance.remaining_cents ??
+      balance.balanceCents ??
+      balance.balance_cents,
+  );
+  const remainingCents =
+    remainingCentsRaw ??
+    (totalCents != null && usedCents != null
+      ? Math.max(0, totalCents - usedCents)
+      : null);
+
+  const grantsNode = root.grants ?? root.creditGrants ?? root.credit_grants;
+  const expiryCandidates = extractGrantExpiryTimestamps(grantsNode);
+  const nowSec = Math.floor(Date.now() / 1000);
+  const futureExpiries = expiryCandidates.filter((ts) => ts >= nowSec);
+  const expiresAt =
+    (futureExpiries.length > 0
+      ? Math.min(...futureExpiries)
+      : expiryCandidates.length > 0
+        ? Math.min(...expiryCandidates)
+        : null) ??
+    parseTimestampValue(
+      balance.expiresAt ??
+        balance.expires_at ??
+        balance.expiryDate ??
+        balance.expiry_date,
+    );
+
+  const hasGrants =
+    hasCreditGrants === true ||
+    (totalCents != null && totalCents > 0) ||
+    (remainingCents != null && remainingCents > 0);
+
+  if (!hasGrants) return null;
+
+  return {
+    hasGrants: true,
+    remainingCents,
+    totalCents,
+    usedCents,
+    expiresAt,
+  };
+}
+
+export function hasCursorCreditGrants(account: CursorAccount): boolean {
+  return getCursorCreditGrants(account) != null;
 }

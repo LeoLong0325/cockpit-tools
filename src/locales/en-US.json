@@ -3902,7 +3902,13 @@
     },
     "injectToCursor": "Switch to Cursor",
     "quota": {
-      "onDemand": "On-Demand"
+      "onDemand": "On-Demand",
+      "credits": "Credits",
+      "creditsExpireAt": "Expires: {{time}}"
+    },
+    "dashboard": {
+      "viewHome": "View Dashboard",
+      "openFailed": "Failed to open dashboard: {{error}}"
     },
     "title": "Cursor Account",
     "instances": {
@@ -3920,9 +3926,9 @@
       "desc": "Click the button below and complete Cursor authorization in your browser."
     },
     "token": {
-      "desc": "Paste your Cursor Access Token (JWT) or exported JSON data.",
+      "desc": "Paste Cursor Access Token (JWT), WorkOS Session Token (user_xxx::eyJ...), or exported JSON data.",
       "formatHint": "Required fields & examples (click to expand)",
-      "formatRequired": "Single token: paste JWT directly; batch import: use JSON array format",
+      "formatRequired": "Supports JWT, WorkOS Session Token, or JSON with token / workos_cursor_session_token",
       "singleExample": "Single example (JWT)",
       "batchExample": "Batch example (JSON)"
     },
