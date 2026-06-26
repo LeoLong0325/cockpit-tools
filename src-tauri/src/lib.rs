@@ -128,6 +128,10 @@ pub fn run() {
             std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
             logger::log_info("[Linux] 设置 WEBKIT_DISABLE_DMABUF_RENDERER=1");
         }
+        if std::env::var_os("GTK_OVERLAY_SCROLLING").is_none() {
+            std::env::set_var("GTK_OVERLAY_SCROLLING", "0");
+            logger::log_info("[Linux] 设置 GTK_OVERLAY_SCROLLING=0");
+        }
     }
 
     let app = tauri::Builder::default()

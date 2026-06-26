@@ -291,7 +291,11 @@
   padding-right: 12px;
   cursor: text;
   appearance: textfield;
+  -webkit-appearance: textfield;
   -moz-appearance: textfield;
+  -webkit-app-region: no-drag;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .settings-select--with-unit {

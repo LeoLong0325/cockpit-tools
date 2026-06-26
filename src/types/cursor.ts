@@ -732,6 +732,41 @@ function extractGrantExpiryTimestamps(value: unknown): number[] {
   return timestamps;
 }
 
+function sumGrantRemainingCents(value: unknown): number | null {
+  if (value == null) return null;
+
+  const collectFromArray = (items: unknown[]): number | null => {
+    let sum = 0;
+    let found = false;
+    for (const item of items) {
+      if (item == null || typeof item !== 'object') continue;
+      const obj = item as Record<string, unknown>;
+      const remaining = parseCentsValue(
+        obj.remainingCents ??
+          obj.remaining_cents ??
+          obj.balanceCents ??
+          obj.balance_cents,
+      );
+      if (remaining == null) continue;
+      found = true;
+      sum += Math.max(0, remaining);
+    }
+    return found ? sum : null;
+  };
+
+  if (Array.isArray(value)) {
+    return collectFromArray(value);
+  }
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const nested = obj.grants ?? obj.creditGrants ?? obj.credit_grants;
+    if (Array.isArray(nested)) {
+      return collectFromArray(nested);
+    }
+  }
+  return null;
+}
+
 export function getCursorCreditGrants(
   account: CursorAccount,
 ): CursorCreditGrants | null {
@@ -761,19 +796,24 @@ export function getCursorCreditGrants(
       balance.grantUsedCents ??
       balance.grant_used_cents,
   );
+  const grantsNode = root.grants ?? root.creditGrants ?? root.credit_grants;
   const remainingCentsRaw = parseCentsValue(
     balance.remainingCents ??
       balance.remaining_cents ??
       balance.balanceCents ??
-      balance.balance_cents,
+      balance.balance_cents ??
+      balance.creditBalanceCents ??
+      balance.credit_balance_cents,
   );
-  const remainingCents =
+  let remainingCents =
     remainingCentsRaw ??
     (totalCents != null && usedCents != null
       ? Math.max(0, totalCents - usedCents)
       : null);
+  if (remainingCents == null) {
+    remainingCents = sumGrantRemainingCents(grantsNode);
+  }
 
-  const grantsNode = root.grants ?? root.creditGrants ?? root.credit_grants;
   const expiryCandidates = extractGrantExpiryTimestamps(grantsNode);
   const nowSec = Math.floor(Date.now() / 1000);
   const futureExpiries = expiryCandidates.filter((ts) => ts >= nowSec);
@@ -807,11 +847,14 @@ export function getCursorCreditGrants(
     : null;
 
   let resolvedTotal = totalCents ?? peakTotalCents;
-  let resolvedUsed = usedCents ?? peakUsedCents;
+  let resolvedUsed = usedCents;
+  if (resolvedUsed == null && resolvedTotal != null && remainingCents != null) {
+    resolvedUsed = Math.max(0, resolvedTotal - remainingCents);
+  }
   let resolvedRemaining = remainingCents;
   if (historical && resolvedTotal != null) {
     resolvedRemaining = 0;
-    resolvedUsed = resolvedUsed ?? resolvedTotal;
+    resolvedUsed = resolvedUsed ?? peakUsedCents ?? resolvedTotal;
   }
 
   const hasGrants =
@@ -861,11 +904,48 @@ function deriveCursorGrantUsedCents(grants: CursorCreditGrants): number | null {
   );
 }
 
-/** Credit-grants API returned a non-zero / usable balance snapshot. */
-function hasValidCursorCreditGrantsApiData(grants: CursorCreditGrants): boolean {
-  if (grants.remainingCents != null && grants.remainingCents > 0) return true;
-  if (grants.totalCents != null && grants.totalCents > 0) return true;
-  if (grants.usedCents != null && grants.usedCents > 0) return true;
+/** Live credit-grants balance node has non-zero metrics (matches Rust refresh gate). */
+function hasLiveCreditGrantsApiMetrics(account: CursorAccount): boolean {
+  const raw = account.cursor_credit_grants_raw;
+  if (!raw || typeof raw !== 'object') return false;
+
+  const root = raw as Record<string, unknown>;
+  const balance =
+    root.balance && typeof root.balance === 'object'
+      ? (root.balance as Record<string, unknown>)
+      : root;
+
+  const totalCents = parseCentsValue(
+    balance.totalCents ??
+      balance.total_cents ??
+      balance.grantTotalCents ??
+      balance.grant_total_cents,
+  );
+  const usedCents = parseCentsValue(
+    balance.usedCents ??
+      balance.used_cents ??
+      balance.grantUsedCents ??
+      balance.grant_used_cents,
+  );
+  const remainingCents = parseCentsValue(
+    balance.remainingCents ??
+      balance.remaining_cents ??
+      balance.balanceCents ??
+      balance.balance_cents ??
+      balance.creditBalanceCents ??
+      balance.credit_balance_cents,
+  );
+
+  if (remainingCents != null && remainingCents > 0) return true;
+  if (totalCents != null && totalCents > 0) return true;
+  if (usedCents != null && usedCents > 0) return true;
+  if (
+    totalCents != null &&
+    remainingCents != null &&
+    Math.max(0, totalCents - remainingCents) > 0
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -879,11 +959,13 @@ export interface CursorCreditGrantsQuotaDisplay {
 export function resolveCursorCreditGrantsQuotaDisplay(
   account: CursorAccount,
 ): CursorCreditGrantsQuotaDisplay | null {
-  const grants = getCursorCreditGrants(account);
   const freeCreditUsed = getCursorFreeCreditUsedCents(account);
 
-  // 1. Credit-grants API has valid metrics → show API data only (ignore FREE_CREDIT events).
-  if (grants && hasValidCursorCreditGrantsApiData(grants)) {
+  // 1. Live credit-grants API has usable fields → show API data only.
+  if (hasLiveCreditGrantsApiMetrics(account)) {
+    const grants = getCursorCreditGrants(account);
+    if (!grants) return null;
+
     const total = grants.totalCents;
     const used = deriveCursorGrantUsedCents(grants) ?? 0;
     const effectiveTotal = total ?? used;
@@ -900,12 +982,12 @@ export function resolveCursorCreditGrantsQuotaDisplay(
     };
   }
 
-  // 2. API empty / all-zero → fall back to FREE_CREDIT event aggregate.
+  // 2. API empty / all-zero → FREE_CREDIT events (only exist when gifted credits apply).
   if (freeCreditUsed != null) {
     return {
       usedCents: freeCreditUsed,
       totalCents: freeCreditUsed,
-      valueText: formatCursorCreditGrantsValue(freeCreditUsed, freeCreditUsed),
+      valueText: formatCursorCreditGrantsValue(freeCreditUsed, null),
       percentage: 100,
     };
   }

@@ -30,6 +30,11 @@
   width: 140px;
   text-align: right;
   outline: none;
+  -webkit-appearance: textfield;
+  appearance: textfield;
+  -webkit-app-region: no-drag;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .settings-input--path {

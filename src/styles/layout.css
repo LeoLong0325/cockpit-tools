@@ -33,6 +33,30 @@
   -webkit-app-region: no-drag;
 }
 
+/* Linux WebKitGTK: custom drag hit-tests can swallow focus/typing in inputs. */
+.app-container-linux .drag-region {
+  -webkit-app-region: no-drag;
+  pointer-events: none;
+}
+
+.app-container-linux .main-wrapper,
+.app-container-linux .modal-overlay,
+.app-container-linux .modal-content,
+.app-container-linux input,
+.app-container-linux textarea,
+.app-container-linux select,
+.app-container-linux button,
+.app-container-linux [contenteditable='true'] {
+  -webkit-app-region: no-drag;
+}
+
+.app-container-linux input,
+.app-container-linux textarea,
+.app-container-linux select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .app-container-side-nav-classic {
   --side-nav-classic-width-expanded: 205px;
   --side-nav-classic-width-collapsed: 84px;

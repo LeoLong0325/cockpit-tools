@@ -470,6 +470,13 @@ function isWindowsPlatform(): boolean {
   return platform.toLowerCase().includes('win');
 }
 
+function isLinuxPlatform(): boolean {
+  const navWithUAData = navigator as Navigator & { userAgentData?: { platform?: string } };
+  const platform = navWithUAData.userAgentData?.platform || navigator.platform || '';
+  const ua = navigator.userAgent || '';
+  return platform.toLowerCase().includes('linux') || /linux/i.test(ua);
+}
+
 function MainApp() {
   const { t } = useTranslation();
   const sideNavLayoutMode = useSideNavLayoutStore((state) => state.mode);
@@ -3053,7 +3060,7 @@ function MainApp() {
 
   // 窗口拖拽处理
   const handleDragStart = (event: ReactMouseEvent<HTMLDivElement>) => {
-    if (event.button !== 0) {
+    if (event.button !== 0 || isLinuxPlatform()) {
       return;
     }
     void getCurrentWindow().startDragging().catch((error) => {
@@ -3154,7 +3161,7 @@ function MainApp() {
 
   return (
     <div
-      className={`app-container${isWindowsPlatform() ? ' app-container-windows' : ''}${sideNavLayoutMode === 'classic' ? ' app-container-side-nav-classic' : ''}${sideNavLayoutMode === 'classic' && sideNavClassicCollapsed ? ' app-container-side-nav-classic-collapsed' : ''}`}
+      className={`app-container${isWindowsPlatform() ? ' app-container-windows' : ''}${isLinuxPlatform() ? ' app-container-linux' : ''}${sideNavLayoutMode === 'classic' ? ' app-container-side-nav-classic' : ''}${sideNavLayoutMode === 'classic' && sideNavClassicCollapsed ? ' app-container-side-nav-classic-collapsed' : ''}`}
     >
       {/* 更新通知：活跃状态时保持挂载，关闭后继续保留当前更新状态 */}
       {shouldRenderUpdateNotification && (

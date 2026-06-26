@@ -1174,6 +1174,73 @@ fn build_cursor_export_item(account: CursorAccount) -> Value {
     Value::Object(obj)
 }
 
+#[cfg(target_os = "linux")]
+fn cursor_dashboard_linux_scroll_wheel_fix_script() -> &'static str {
+    r#"
+(function installCursorDashboardScrollWheelFix() {
+  if (window.__cockpitCursorDashboardScrollFix) return;
+  window.__cockpitCursorDashboardScrollFix = true;
+
+  function normalizeWheelDelta(event) {
+    let delta = event.deltaY;
+    if (event.deltaMode === 1) delta *= 16;
+    else if (event.deltaMode === 2) delta *= window.innerHeight;
+    return delta;
+  }
+
+  function canScrollVertically(el) {
+    if (!(el instanceof Element)) return false;
+    const style = window.getComputedStyle(el);
+    const overflowY = style.overflowY;
+    if (overflowY !== 'auto' && overflowY !== 'scroll' && overflowY !== 'overlay') {
+      return false;
+    }
+    return el.scrollHeight > el.clientHeight + 1;
+  }
+
+  function findScrollTarget(start, delta) {
+    let el = start instanceof Element ? start : null;
+    while (el) {
+      if (canScrollVertically(el)) {
+        const maxScroll = el.scrollHeight - el.clientHeight;
+        const next = el.scrollTop + delta;
+        if (next > 0 && next < maxScroll) return el;
+        if ((delta < 0 && el.scrollTop > 0) || (delta > 0 && el.scrollTop < maxScroll)) {
+          return el;
+        }
+      }
+      if (el === document.body || el === document.documentElement) break;
+      el = el.parentElement;
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+
+  function onWheel(event) {
+    if (event.defaultPrevented || event.ctrlKey) return;
+    const delta = normalizeWheelDelta(event);
+    if (!delta) return;
+
+    const target = findScrollTarget(event.target, delta);
+    if (!target) return;
+
+    const before = target.scrollTop;
+    target.scrollTop += delta;
+    if (target.scrollTop !== before) {
+      event.preventDefault();
+    }
+  }
+
+  window.addEventListener('wheel', onWheel, { capture: true, passive: false });
+  document.addEventListener('wheel', onWheel, { capture: true, passive: false });
+})();
+"#
+}
+
+#[cfg(not(target_os = "linux"))]
+fn cursor_dashboard_linux_scroll_wheel_fix_script() -> &'static str {
+    ""
+}
+
 fn build_cursor_dashboard_init_script(workos_token: &str) -> String {
     let token_json =
         serde_json::to_string(workos_token).unwrap_or_else(|_| "\"\"".to_string());
@@ -1190,8 +1257,10 @@ fn build_cursor_dashboard_init_script(workos_token: &str) -> String {
   }} catch (error) {{
     console.error('[cockpit-tools] Failed to inject Cursor session cookie', error);
   }}
-}})();"#,
-        token_json = token_json
+}})();
+{scroll_fix}"#,
+        token_json = token_json,
+        scroll_fix = cursor_dashboard_linux_scroll_wheel_fix_script()
     )
 }
 
@@ -1212,7 +1281,7 @@ pub async fn open_cursor_dashboard(
 
     let init_script = build_cursor_dashboard_init_script(&workos_token);
 
-    WebviewWindowBuilder::new(
+    let window = WebviewWindowBuilder::new(
         app,
         "cursor_dashboard",
         WebviewUrl::External(
@@ -1228,6 +1297,8 @@ pub async fn open_cursor_dashboard(
     .initialization_script(&init_script)
     .build()
     .map_err(|e| format!("打开 Cursor 主页失败: {}", e))?;
+
+    let _ = window.set_focus();
 
     Ok(())
 }
@@ -2244,6 +2315,7 @@ async fn fetch_free_credit_usage_with_client(
         "startDate": start_date,
         "endDate": end_date,
         "eventCount": free_credit_event_count,
+        "source": "free_credit_events",
     })))
 }
 
@@ -2422,10 +2494,6 @@ fn extract_credit_grants_metrics(root: &serde_json::Value) -> (Option<i64>, Opti
             "grant_total_cents",
         ],
     );
-    let used = json_get_i64(
-        balance,
-        &["usedCents", "used_cents", "grantUsedCents", "grant_used_cents"],
-    );
     let remaining = json_get_i64(
         balance,
         &[
@@ -2433,10 +2501,22 @@ fn extract_credit_grants_metrics(root: &serde_json::Value) -> (Option<i64>, Opti
             "remaining_cents",
             "balanceCents",
             "balance_cents",
+            "creditBalanceCents",
+            "credit_balance_cents",
         ],
+    );
+    let used = json_get_i64(
+        balance,
+        &["usedCents", "used_cents", "grantUsedCents", "grant_used_cents"],
     )
     .or_else(|| {
-        total.zip(used)
+        total
+            .zip(remaining)
+            .map(|(total_cents, remaining_cents)| (total_cents - remaining_cents).max(0))
+    });
+    let remaining = remaining.or_else(|| {
+        total
+            .zip(used)
             .map(|(total_cents, used_cents)| (total_cents - used_cents).max(0))
     });
     (total, used, remaining)
@@ -2446,6 +2526,9 @@ fn credit_grants_has_active_display(root: &serde_json::Value) -> bool {
     credit_grants_has_valid_display_metrics(root)
 }
 
+/// Live credit-grants API returned usable balance fields (non-zero total/used/remaining).
+/// When false, FREE_CREDIT usage events are the fallback display source — that event kind
+/// only appears for accounts that have (or had) gifted credits.
 fn credit_grants_has_valid_display_metrics(root: &serde_json::Value) -> bool {
     let (total, used, remaining) = extract_credit_grants_metrics(root);
     if remaining.unwrap_or(0) > 0 {
@@ -2460,10 +2543,16 @@ fn credit_grants_has_valid_display_metrics(root: &serde_json::Value) -> bool {
     false
 }
 
-fn build_credit_grants_peak(total: i64, used: Option<i64>) -> serde_json::Value {
+fn build_credit_grants_peak(total: i64, used: Option<i64>, remaining: Option<i64>) -> serde_json::Value {
+    let resolved_used = used
+        .or_else(|| {
+            remaining.map(|remaining_cents| (total - remaining_cents).max(0))
+        })
+        .unwrap_or(0)
+        .max(0);
     serde_json::json!({
         "totalCents": total,
-        "usedCents": used.unwrap_or(total).max(0),
+        "usedCents": resolved_used,
     })
 }
 
@@ -2488,11 +2577,12 @@ fn resolve_credit_grants_peak(
 
     for source in [Some(fresh), previous] {
         let Some(source) = source else { continue };
-        let (total, used, _) = extract_credit_grants_metrics(source);
+        let (total, used, remaining) = extract_credit_grants_metrics(source);
         if total.unwrap_or(0) > 0 {
             return Some(build_credit_grants_peak(
                 total.unwrap_or(0),
-                used.or(total),
+                used,
+                remaining,
             ));
         }
     }
@@ -2828,31 +2918,34 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
             "[Cursor Refresh] 赠送额度 API 有效，跳过 FREE_CREDIT 事件统计: id={}",
             account.id
         ));
-    } else if usage_refreshed {
-        if let Some(usage_raw) = account.cursor_usage_raw.as_ref() {
-            match fetch_free_credit_usage_with_client(&client, &account, usage_raw).await {
-                Ok(Some(snapshot)) => {
-                    account.cursor_free_credit_usage_raw = Some(snapshot);
-                    logger::log_info(&format!(
-                        "[Cursor Refresh] FREE_CREDIT 用量拉取成功: id={}",
-                        account.id
-                    ));
-                }
-                Ok(None) => {
-                    account.cursor_free_credit_usage_raw = None;
-                    logger::log_info(&format!(
-                        "[Cursor Refresh] 无 FREE_CREDIT 用量事件: id={}",
-                        account.id
-                    ));
-                }
-                Err(err) => {
-                    logger::log_warn(&format!(
-                        "[Cursor Refresh] FREE_CREDIT 用量拉取失败: id={}, error={}",
-                        account.id, err
-                    ));
-                }
+    } else if let Some(usage_raw) = account.cursor_usage_raw.as_ref() {
+        match fetch_free_credit_usage_with_client(&client, &account, usage_raw).await {
+            Ok(Some(snapshot)) => {
+                account.cursor_free_credit_usage_raw = Some(snapshot);
+                logger::log_info(&format!(
+                    "[Cursor Refresh] 赠送额度 API 无有效字段，已用 FREE_CREDIT 事件汇总: id={}",
+                    account.id
+                ));
+            }
+            Ok(None) => {
+                account.cursor_free_credit_usage_raw = None;
+                logger::log_info(&format!(
+                    "[Cursor Refresh] 赠送额度 API 无有效字段且无 FREE_CREDIT 事件: id={}",
+                    account.id
+                ));
+            }
+            Err(err) => {
+                logger::log_warn(&format!(
+                    "[Cursor Refresh] FREE_CREDIT 用量拉取失败: id={}, error={}",
+                    account.id, err
+                ));
             }
         }
+    } else {
+        logger::log_info(&format!(
+            "[Cursor Refresh] 赠送额度 API 无有效字段且无 billing cycle 数据，跳过 FREE_CREDIT 统计: id={}",
+            account.id
+        ));
     }
 
     match fetch_referral_status_with_client(&client, &account.access_token).await {
@@ -3157,4 +3250,58 @@ pub fn run_quota_alert_if_needed(
 
     crate::modules::account::dispatch_quota_alert(&payload);
     Ok(Some(payload))
+}
+
+#[cfg(test)]
+mod credit_grants_tests {
+    use super::{
+        build_credit_grants_peak, credit_grants_has_valid_display_metrics,
+        extract_credit_grants_metrics, merge_credit_grants_preserving_history,
+    };
+    use serde_json::json;
+
+    #[test]
+    fn extract_metrics_uses_credit_balance_as_remaining() {
+        let root = json!({
+            "balance": {
+                "hasCreditGrants": true,
+                "totalCents": "5000",
+                "creditBalanceCents": "5000"
+            }
+        });
+        let (total, used, remaining) = extract_credit_grants_metrics(&root);
+        assert_eq!(total, Some(5000));
+        assert_eq!(remaining, Some(5000));
+        assert_eq!(used, Some(0));
+    }
+
+    #[test]
+    fn peak_preserves_zero_used_when_grant_unused() {
+        let fresh = json!({
+            "balance": {
+                "hasCreditGrants": true,
+                "totalCents": "5000",
+                "creditBalanceCents": "5000"
+            },
+            "grants": {}
+        });
+        let merged = merge_credit_grants_preserving_history(None, fresh);
+        let peak = merged.get("peak").expect("peak should exist");
+        assert_eq!(peak.get("totalCents").and_then(|v| v.as_i64()), Some(5000));
+        assert_eq!(peak.get("usedCents").and_then(|v| v.as_i64()), Some(0));
+    }
+
+    #[test]
+    fn build_peak_derives_used_from_remaining() {
+        let peak = build_credit_grants_peak(5000, None, Some(5000));
+        assert_eq!(peak.get("usedCents").and_then(|v| v.as_i64()), Some(0));
+        let peak = build_credit_grants_peak(5000, None, Some(1000));
+        assert_eq!(peak.get("usedCents").and_then(|v| v.as_i64()), Some(4000));
+    }
+
+    #[test]
+    fn empty_credit_grants_api_is_invalid_for_display() {
+        let empty = json!({ "balance": {}, "grants": {} });
+        assert!(!credit_grants_has_valid_display_metrics(&empty));
+    }
 }
