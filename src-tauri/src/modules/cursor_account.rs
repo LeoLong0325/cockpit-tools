@@ -2158,7 +2158,7 @@ fn free_credit_event_cents(event: &serde_json::Value) -> i64 {
         .get("tokenUsage")
         .or_else(|| event.get("token_usage"))
     {
-        if let Some(cents) = json_get_i64(token, &["totalCents", "total_cents"]) {
+        if let Some(cents) = json_get_cents(token, &["totalCents", "total_cents"]) {
             if cents > 0 {
                 return cents;
             }
@@ -2445,6 +2445,10 @@ pub async fn fetch_cursor_user_analytics(
 }
 
 fn json_get_i64(value: &serde_json::Value, keys: &[&str]) -> Option<i64> {
+    json_get_cents(value, keys)
+}
+
+fn json_get_cents(value: &serde_json::Value, keys: &[&str]) -> Option<i64> {
     let obj = value.as_object()?;
     for key in keys {
         let Some(raw) = obj.get(*key) else {
@@ -2456,9 +2460,20 @@ fn json_get_i64(value: &serde_json::Value, keys: &[&str]) -> Option<i64> {
         if let Some(n) = raw.as_u64() {
             return Some(n as i64);
         }
+        if let Some(n) = raw.as_f64() {
+            if n.is_finite() {
+                return Some(n.round() as i64);
+            }
+        }
         if let Some(text) = raw.as_str() {
-            if let Ok(n) = text.trim().parse::<i64>() {
+            let trimmed = text.trim();
+            if let Ok(n) = trimmed.parse::<i64>() {
                 return Some(n);
+            }
+            if let Ok(n) = trimmed.parse::<f64>() {
+                if n.is_finite() {
+                    return Some(n.round() as i64);
+                }
             }
         }
     }
@@ -2918,8 +2933,13 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
             "[Cursor Refresh] 赠送额度 API 有效，跳过 FREE_CREDIT 事件统计: id={}",
             account.id
         ));
-    } else if let Some(usage_raw) = account.cursor_usage_raw.as_ref() {
-        match fetch_free_credit_usage_with_client(&client, &account, usage_raw).await {
+    } else {
+        let usage_raw = account
+            .cursor_usage_raw
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| serde_json::json!({}));
+        match fetch_free_credit_usage_with_client(&client, &account, &usage_raw).await {
             Ok(Some(snapshot)) => {
                 account.cursor_free_credit_usage_raw = Some(snapshot);
                 logger::log_info(&format!(
@@ -2941,11 +2961,6 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
                 ));
             }
         }
-    } else {
-        logger::log_info(&format!(
-            "[Cursor Refresh] 赠送额度 API 无有效字段且无 billing cycle 数据，跳过 FREE_CREDIT 统计: id={}",
-            account.id
-        ));
     }
 
     match fetch_referral_status_with_client(&client, &account.access_token).await {
@@ -3256,7 +3271,7 @@ pub fn run_quota_alert_if_needed(
 mod credit_grants_tests {
     use super::{
         build_credit_grants_peak, credit_grants_has_valid_display_metrics,
-        extract_credit_grants_metrics, merge_credit_grants_preserving_history,
+        extract_credit_grants_metrics, free_credit_event_cents, merge_credit_grants_preserving_history,
     };
     use serde_json::json;
 
@@ -3303,5 +3318,17 @@ mod credit_grants_tests {
     fn empty_credit_grants_api_is_invalid_for_display() {
         let empty = json!({ "balance": {}, "grants": {} });
         assert!(!credit_grants_has_valid_display_metrics(&empty));
+    }
+
+    #[test]
+    fn free_credit_event_cents_reads_float_token_usage() {
+        let event = json!({
+            "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
+            "usageBasedCosts": "$0.00",
+            "tokenUsage": {
+                "totalCents": 12.23840045928955
+            }
+        });
+        assert_eq!(free_credit_event_cents(&event), 12);
     }
 }
