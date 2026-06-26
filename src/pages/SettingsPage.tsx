@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -49,34 +49,28 @@ import {
   removeAccountRefreshOverride,
   type AccountRefreshOverrides,
 } from '../utils/currentAccountRefresh';
-import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
-import { useWindsurfAccountStore } from '../stores/useWindsurfAccountStore';
-import { useKiroAccountStore } from '../stores/useKiroAccountStore';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
-import { useGeminiAccountStore } from '../stores/useGeminiAccountStore';
-import { useClaudeAccountStore } from '../stores/useClaudeAccountStore';
-import { useCodebuddyAccountStore } from '../stores/useCodebuddyAccountStore';
-import { useCodebuddyCnAccountStore } from '../stores/useCodebuddyCnAccountStore';
-import { useWorkbuddyAccountStore } from '../stores/useWorkbuddyAccountStore';
-import { useQoderAccountStore } from '../stores/useQoderAccountStore';
-import { useTraeAccountStore } from '../stores/useTraeAccountStore';
-import { useZedAccountStore } from '../stores/useZedAccountStore';
-import { getGitHubCopilotAccountDisplayEmail } from '../types/githubCopilot';
-import { getWindsurfAccountDisplayEmail } from '../types/windsurf';
-import { getKiroAccountDisplayEmail } from '../types/kiro';
 import { getCursorAccountDisplayEmail } from '../types/cursor';
-import { getGeminiAccountDisplayEmail } from '../types/gemini';
-import { getClaudeAccountDisplayEmail } from '../types/claude';
-import { getCodebuddyAccountDisplayEmail } from '../types/codebuddy';
-import { getWorkbuddyAccountDisplayEmail } from '../types/workbuddy';
-import { getQoderAccountDisplayEmail } from '../types/qoder';
-import { getTraeAccountDisplayEmail } from '../types/trae';
-import { getZedAccountDisplayEmail } from '../types/zed';
-import { ALL_PLATFORM_IDS, PlatformId } from '../types/platform';
+import { ALL_PLATFORM_IDS, isAutoRefreshPlatformEnabled, isEnabledPlatform, PlatformId } from '../types/platform';
 import { SettingsAccountTransferSection } from '../components/SettingsAccountTransferSection';
 import { SettingsWebdavSyncSection } from '../components/SettingsWebdavSyncSection';
 import { useEscClose } from '../hooks/useEscClose';
 import './settings/Settings.css';
+
+function PlatformSettingsBlock({
+  platformId,
+  order,
+  children,
+}: {
+  platformId: PlatformId;
+  order: number;
+  children: ReactNode;
+}) {
+  if (!isEnabledPlatform(platformId)) {
+    return null;
+  }
+  return <div style={{ order }}>{children}</div>;
+}
 import { 
   Github, User, Rocket, Save, FolderOpen,
   AlertCircle, RefreshCw, Heart, MessageSquare, FileText, Download, X
@@ -524,6 +518,11 @@ export function SettingsPage() {
   const [showUnlockFireworks, setShowUnlockFireworks] = useState(false);
   const unlockFireworksTimerRef = useRef<number | null>(null);
   const [generalLoaded, setGeneralLoaded] = useState(false);
+  const [networkLoaded, setNetworkLoaded] = useState(false);
+  const activeTabRef = useRef(activeTab);
+  const pendingGeneralConfigRef = useRef<GeneralConfig | null>(null);
+  const generalLoadStartedRef = useRef(false);
+  const networkLoadStartedRef = useRef(false);
   const generalSaveTimerRef = useRef<number | null>(null);
   const suppressGeneralSaveRef = useRef(false);
   const currentAccountRefreshPersistReadyRef = useRef(false);
@@ -738,11 +737,30 @@ export function SettingsPage() {
   // 检测配额重置任务状态
   const [hasActiveResetTasks, setHasActiveResetTasks] = useState(false);
   
-  // 加载配置
+  activeTabRef.current = activeTab;
+
+  // 按 Tab 懒加载配置，避免进入「网络」时触发通用配置大批量 setState 导致卡死
   useEffect(() => {
-    loadGeneralConfig();
-    loadNetworkConfig();
-  }, []);
+    if (activeTab === 'general' && !generalLoaded && !generalLoadStartedRef.current) {
+      generalLoadStartedRef.current = true;
+      void loadGeneralConfig();
+    }
+  }, [activeTab, generalLoaded]);
+
+  useEffect(() => {
+    if (activeTab === 'network' && !networkLoaded && !networkLoadStartedRef.current) {
+      networkLoadStartedRef.current = true;
+      void loadNetworkConfig();
+    }
+  }, [activeTab, networkLoaded]);
+
+  useEffect(() => {
+    if (activeTab !== 'general' || generalLoaded || !pendingGeneralConfigRef.current) {
+      return;
+    }
+    applyGeneralConfig(pendingGeneralConfigRef.current);
+    pendingGeneralConfigRef.current = null;
+  }, [activeTab, generalLoaded]);
   
   useEffect(() => {
     if (!generalLoaded) {
@@ -760,7 +778,7 @@ export function SettingsPage() {
   }, [generalLoaded, uiScale]);
 
   useEffect(() => {
-    if (!generalLoaded) {
+    if (activeTab !== 'general' || !generalLoaded) {
       return;
     }
 
@@ -768,22 +786,23 @@ export function SettingsPage() {
       window.clearTimeout(generalSaveTimerRef.current);
     }
 
-    if (
-      !autoRefresh.trim() ||
-      !codexAutoRefresh.trim() ||
-      !claudeAutoRefresh.trim() ||
-      !ghcpAutoRefresh.trim() ||
-      !windsurfAutoRefresh.trim() ||
-      !kiroAutoRefresh.trim() ||
-      !codebuddyAutoRefresh.trim() ||
-      !codebuddyCnAutoRefresh.trim() ||
-      !workbuddyAutoRefresh.trim() ||
-      !qoderAutoRefresh.trim() ||
-      !traeAutoRefresh.trim() ||
-      !zedAutoRefresh.trim() ||
-      !cursorAutoRefresh.trim() ||
-      !geminiAutoRefresh.trim()
-    ) {
+    const enabledAutoRefreshReady =
+      (!isEnabledPlatform('antigravity') || autoRefresh.trim()) &&
+      (!isEnabledPlatform('codex') || codexAutoRefresh.trim()) &&
+      (!isEnabledPlatform('cursor') || cursorAutoRefresh.trim()) &&
+      (!isEnabledPlatform('claude_manager') || claudeAutoRefresh.trim()) &&
+      (!isEnabledPlatform('github-copilot') || ghcpAutoRefresh.trim()) &&
+      (!isEnabledPlatform('windsurf') || windsurfAutoRefresh.trim()) &&
+      (!isEnabledPlatform('kiro') || kiroAutoRefresh.trim()) &&
+      (!isEnabledPlatform('codebuddy') || codebuddyAutoRefresh.trim()) &&
+      (!isEnabledPlatform('codebuddy_cn') || codebuddyCnAutoRefresh.trim()) &&
+      (!isEnabledPlatform('workbuddy') || workbuddyAutoRefresh.trim()) &&
+      (!isEnabledPlatform('qoder') || qoderAutoRefresh.trim()) &&
+      (!isEnabledPlatform('trae') || traeAutoRefresh.trim()) &&
+      (!isEnabledPlatform('zed') || zedAutoRefresh.trim()) &&
+      (!isEnabledPlatform('gemini') || geminiAutoRefresh.trim());
+
+    if (!enabledAutoRefreshReady) {
       return;
     }
 
@@ -1050,6 +1069,7 @@ export function SettingsPage() {
     cursorQuotaAlertThreshold,
     geminiQuotaAlertEnabled,
     geminiQuotaAlertThreshold,
+    activeTab,
     t,
   ]);
 
@@ -1063,7 +1083,7 @@ export function SettingsPage() {
       return;
     }
 
-    const payload = CURRENT_ACCOUNT_REFRESH_PLATFORMS.reduce((result, platform) => {
+    const payload = CURRENT_ACCOUNT_REFRESH_PLATFORMS.filter(isAutoRefreshPlatformEnabled).reduce((result, platform) => {
       const raw = Number.parseInt(currentAccountRefreshMinutes[platform], 10);
       result[platform] = Number.isNaN(raw) ? 1 : raw;
       return result;
@@ -1256,10 +1276,9 @@ export function SettingsPage() {
     };
   }, [theme]);
   
-  const loadGeneralConfig = async () => {
-    try {
-      const config = await invoke<GeneralConfig>('get_general_config');
-      setLanguage(normalizeLanguage(config.language));
+  const applyGeneralConfig = (config: GeneralConfig) => {
+    suppressGeneralSaveRef.current = true;
+    setLanguage(normalizeLanguage(config.language));
       setDefaultTerminal(config.default_terminal || 'system');
       setTheme(config.theme);
       setUiScale(String(config.ui_scale ?? 1));
@@ -1393,10 +1412,19 @@ export function SettingsPage() {
       setGeminiQuotaAlertThresholdCustomMode(false);
       setCurrentAccountRefreshCustomMode(buildDefaultCurrentAccountRefreshCustomModeMap());
       currentAccountRefreshPersistReadyRef.current = false;
-      // 同步语言
-      changeLanguage(config.language);
-      applyTheme(config.theme);
-      setGeneralLoaded(true);
+    changeLanguage(config.language);
+    applyTheme(config.theme);
+    setGeneralLoaded(true);
+  };
+
+  const loadGeneralConfig = async () => {
+    try {
+      const config = await invoke<GeneralConfig>('get_general_config');
+      if (activeTabRef.current !== 'general') {
+        pendingGeneralConfigRef.current = config;
+        return;
+      }
+      applyGeneralConfig(config);
     } catch (err) {
       console.error('加载通用配置失败:', err);
     }
@@ -1418,8 +1446,10 @@ export function SettingsPage() {
       setGlobalProxyUrl(config.global_proxy_url || '');
       setGlobalProxyNoProxy(config.global_proxy_no_proxy || '');
       setNeedsRestart(false);
+      setNetworkLoaded(true);
     } catch (err) {
       console.error('加载网络配置失败:', err);
+      setNetworkLoaded(true);
     }
   };
   
@@ -1802,6 +1832,10 @@ export function SettingsPage() {
   const getAccountsForPlatform = (
     platform: CurrentAccountRefreshPlatform,
   ): Array<{ id: string; email: string }> => {
+    if (!isAutoRefreshPlatformEnabled(platform)) {
+      return [];
+    }
+
     const getProviderAccounts = <T extends { id: string; email?: string | null }>(
       store: { getState: () => { accounts: T[] } },
       getDisplayEmail: (account: T) => string,
@@ -1816,30 +1850,8 @@ export function SettingsPage() {
         return antigravityAccounts.map((a) => ({ id: a.id, email: a.email }));
       case 'codex':
         return codexAccounts.map((a) => ({ id: a.id, email: a.email }));
-      case 'claude':
-        return getProviderAccounts(useClaudeAccountStore, getClaudeAccountDisplayEmail);
-      case 'ghcp':
-        return getProviderAccounts(useGitHubCopilotAccountStore, getGitHubCopilotAccountDisplayEmail);
-      case 'windsurf':
-        return getProviderAccounts(useWindsurfAccountStore, getWindsurfAccountDisplayEmail);
-      case 'kiro':
-        return getProviderAccounts(useKiroAccountStore, getKiroAccountDisplayEmail);
       case 'cursor':
         return getProviderAccounts(useCursorAccountStore, getCursorAccountDisplayEmail);
-      case 'gemini':
-        return getProviderAccounts(useGeminiAccountStore, getGeminiAccountDisplayEmail);
-      case 'codebuddy':
-        return getProviderAccounts(useCodebuddyAccountStore, getCodebuddyAccountDisplayEmail);
-      case 'codebuddy_cn':
-        return getProviderAccounts(useCodebuddyCnAccountStore, getCodebuddyAccountDisplayEmail);
-      case 'workbuddy':
-        return getProviderAccounts(useWorkbuddyAccountStore, getWorkbuddyAccountDisplayEmail);
-      case 'qoder':
-        return getProviderAccounts(useQoderAccountStore, getQoderAccountDisplayEmail);
-      case 'trae':
-        return getProviderAccounts(useTraeAccountStore, getTraeAccountDisplayEmail);
-      case 'zed':
-        return getProviderAccounts(useZedAccountStore, getZedAccountDisplayEmail);
       default:
         return [];
     }
@@ -2712,7 +2724,7 @@ export function SettingsPage() {
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ order: platformSettingsOrder.antigravity }}>
+              <PlatformSettingsBlock platformId="antigravity" order={platformSettingsOrder.antigravity}>
                 <div className="group-title">{t('settings.general.antigravitySettingsTitle', 'Antigravity IDE 设置')}</div>
                 <div className="settings-group">
               <div className="settings-row">
@@ -3138,9 +3150,9 @@ export function SettingsPage() {
               )}
             </div>
 
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.codex }}>
+              <PlatformSettingsBlock platformId="codex" order={platformSettingsOrder.codex}>
                 <div className="group-title">{t('settings.general.codexSettingsTitle', 'Codex 设置')}</div>
                 <div className="settings-group">
               <div className="settings-row">
@@ -3591,9 +3603,9 @@ export function SettingsPage() {
               )}
             </div>
 
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.claude_manager }}>
+              <PlatformSettingsBlock platformId="claude_manager" order={platformSettingsOrder.claude_manager}>
                 <div className="group-title">
                   {t('settings.general.claudeSettingsTitle', 'Claude 设置')}
                 </div>
@@ -3737,9 +3749,9 @@ export function SettingsPage() {
                     isPreset: claudeQuotaAlertThresholdIsPreset,
                   })}
                 </div>
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder['github-copilot'] }}>
+              <PlatformSettingsBlock platformId="github-copilot" order={platformSettingsOrder['github-copilot']}>
                 <div className="group-title">{t('settings.general.githubCopilotSettingsTitle', 'GitHub Copilot 设置')}</div>
                 <div className="settings-group">
               <div className="settings-row">
@@ -3925,9 +3937,9 @@ export function SettingsPage() {
               )}
             </div>
 
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.windsurf }}>
+              <PlatformSettingsBlock platformId="windsurf" order={platformSettingsOrder.windsurf}>
                 <div className="group-title">{t('settings.general.windsurfSettingsTitle', 'Windsurf 设置')}</div>
                 <div className="settings-group">
               <div className="settings-row">
@@ -4113,9 +4125,9 @@ export function SettingsPage() {
               )}
             </div>
 
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.kiro }}>
+              <PlatformSettingsBlock platformId="kiro" order={platformSettingsOrder.kiro}>
                 <div className="group-title">{t('settings.general.kiroSettingsTitle', 'Kiro 设置')}</div>
                 <div className="settings-group">
               <div className="settings-row">
@@ -4300,9 +4312,9 @@ export function SettingsPage() {
                 </div>
               )}
             </div>
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.codebuddy }}>
+              <PlatformSettingsBlock platformId="codebuddy" order={platformSettingsOrder.codebuddy}>
                 <div className="group-title">{t('settings.general.codebuddySettingsTitle', 'CodeBuddy 设置')}</div>
                 <div className="settings-group">
               <div className="settings-row">
@@ -4491,9 +4503,9 @@ export function SettingsPage() {
                 </div>
               )}
             </div>
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.codebuddy_cn }}>
+              <PlatformSettingsBlock platformId="codebuddy_cn" order={platformSettingsOrder.codebuddy_cn}>
                 <div className="group-title">{t('settings.general.codebuddyCnSettingsTitle', 'CodeBuddy CN 设置')}</div>
                 <div className="settings-group">
                   <div className="settings-row">
@@ -4682,9 +4694,9 @@ export function SettingsPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.qoder }}>
+              <PlatformSettingsBlock platformId="qoder" order={platformSettingsOrder.qoder}>
                 <div className="group-title">{t('quickSettings.qoder.title', 'Qoder 设置')}</div>
                 <div className="settings-group">
                   <div className="settings-row">
@@ -4873,9 +4885,9 @@ export function SettingsPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.trae }}>
+              <PlatformSettingsBlock platformId="trae" order={platformSettingsOrder.trae}>
                 <div className="group-title">{t('quickSettings.trae.title', 'Trae 设置')}</div>
                 <div className="settings-group">
                   <div className="settings-row">
@@ -5064,9 +5076,9 @@ export function SettingsPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.workbuddy }}>
+              <PlatformSettingsBlock platformId="workbuddy" order={platformSettingsOrder.workbuddy}>
                 <div className="group-title">{t('quickSettings.workbuddy.title', 'WorkBuddy 设置')}</div>
                 <div className="settings-group">
                   <div className="settings-row">
@@ -5255,9 +5267,9 @@ export function SettingsPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.zed }}>
+              <PlatformSettingsBlock platformId="zed" order={platformSettingsOrder.zed}>
                 <div className="group-title">{t('quickSettings.zed.title', 'Zed 设置')}</div>
                 <div className="settings-group">
                   <div className="settings-row">
@@ -5442,9 +5454,9 @@ export function SettingsPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.cursor }}>
+              <PlatformSettingsBlock platformId="cursor" order={platformSettingsOrder.cursor}>
                 <div className="group-title">{t('quickSettings.cursor.title', 'Cursor 设置')}</div>
                 <div className="settings-group">
               <div className="settings-row">
@@ -5629,9 +5641,9 @@ export function SettingsPage() {
                 </div>
               )}
             </div>
-              </div>
+              </PlatformSettingsBlock>
 
-              <div style={{ order: platformSettingsOrder.gemini }}>
+              <PlatformSettingsBlock platformId="gemini" order={platformSettingsOrder.gemini}>
                 <div className="group-title">{t('quickSettings.gemini.title', 'Gemini Cli 设置')}</div>
                 <div className="settings-group">
                   <div className="settings-row">
@@ -5800,7 +5812,7 @@ export function SettingsPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </PlatformSettingsBlock>
             </div>
 
           </>

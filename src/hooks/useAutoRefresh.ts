@@ -2,29 +2,8 @@ import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useCodexAccountStore } from '../stores/useCodexAccountStore';
-import { useClaudeAccountStore } from '../stores/useClaudeAccountStore';
-import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
-import { useWindsurfAccountStore } from '../stores/useWindsurfAccountStore';
-import { useKiroAccountStore } from '../stores/useKiroAccountStore';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
-import { useGeminiAccountStore } from '../stores/useGeminiAccountStore';
-import { useCodebuddyAccountStore } from '../stores/useCodebuddyAccountStore';
-import { useCodebuddyCnAccountStore } from '../stores/useCodebuddyCnAccountStore';
-import { useWorkbuddyAccountStore } from '../stores/useWorkbuddyAccountStore';
-import { useQoderAccountStore } from '../stores/useQoderAccountStore';
-import { useTraeAccountStore } from '../stores/useTraeAccountStore';
-import { useZedAccountStore } from '../stores/useZedAccountStore';
-import { getGitHubCopilotAccountDisplayEmail } from '../types/githubCopilot';
-import { getWindsurfAccountDisplayEmail } from '../types/windsurf';
-import { getKiroAccountDisplayEmail } from '../types/kiro';
 import { getCursorAccountDisplayEmail } from '../types/cursor';
-import { getGeminiAccountDisplayEmail } from '../types/gemini';
-import { getClaudeAccountDisplayEmail } from '../types/claude';
-import { getCodebuddyAccountDisplayEmail } from '../types/codebuddy';
-import { getWorkbuddyAccountDisplayEmail } from '../types/workbuddy';
-import { getQoderAccountDisplayEmail } from '../types/qoder';
-import { getTraeAccountDisplayEmail } from '../types/trae';
-import { getZedAccountDisplayEmail } from '../types/zed';
 import {
   loadCurrentAccountRefreshMinutesMap,
   getAccountRefreshMinutes,
@@ -35,6 +14,7 @@ import {
   type AutoRefreshSchedulerHandle,
   type AutoRefreshSchedulerTask,
 } from '../utils/autoRefreshScheduler';
+import { isAutoRefreshPlatformEnabled } from '../types/platform';
 
 interface GeneralConfig {
   language: string;
@@ -127,7 +107,7 @@ function resolveCurrentMinutes(
     : defaultMap[platform];
 }
 
-function getCurrentAccountEmails(): Record<CurrentAccountRefreshPlatform, string | null> {
+function getCurrentAccountEmails(): Partial<Record<CurrentAccountRefreshPlatform, string | null>> {
   const getProviderEmail = <T extends { id: string; email?: string | null }>(
     store: { getState: () => { currentAccountId: string | null; accounts: T[] } },
     getDisplayEmail: (account: T) => string,
@@ -141,18 +121,7 @@ function getCurrentAccountEmails(): Record<CurrentAccountRefreshPlatform, string
   return {
     antigravity: useAccountStore.getState().currentAccount?.email ?? null,
     codex: useCodexAccountStore.getState().currentAccount?.email ?? null,
-    claude: getProviderEmail(useClaudeAccountStore, getClaudeAccountDisplayEmail),
-    ghcp: getProviderEmail(useGitHubCopilotAccountStore, getGitHubCopilotAccountDisplayEmail),
-    windsurf: getProviderEmail(useWindsurfAccountStore, getWindsurfAccountDisplayEmail),
-    kiro: getProviderEmail(useKiroAccountStore, getKiroAccountDisplayEmail),
     cursor: getProviderEmail(useCursorAccountStore, getCursorAccountDisplayEmail),
-    gemini: getProviderEmail(useGeminiAccountStore, getGeminiAccountDisplayEmail),
-    codebuddy: getProviderEmail(useCodebuddyAccountStore, getCodebuddyAccountDisplayEmail),
-    codebuddy_cn: getProviderEmail(useCodebuddyCnAccountStore, getCodebuddyAccountDisplayEmail),
-    workbuddy: getProviderEmail(useWorkbuddyAccountStore, getWorkbuddyAccountDisplayEmail),
-    qoder: getProviderEmail(useQoderAccountStore, getQoderAccountDisplayEmail),
-    trae: getProviderEmail(useTraeAccountStore, getTraeAccountDisplayEmail),
-    zed: getProviderEmail(useZedAccountStore, getZedAccountDisplayEmail),
   };
 }
 
@@ -164,71 +133,17 @@ export function useAutoRefresh() {
   const refreshAllCodexQuotas = useCodexAccountStore((state) => state.refreshAllQuotas);
   const fetchCodexAccounts = useCodexAccountStore((state) => state.fetchAccounts);
   const fetchCurrentCodexAccount = useCodexAccountStore((state) => state.fetchCurrentAccount);
-  const refreshAllClaudeQuotas = useClaudeAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentClaudeAccountId = useClaudeAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshClaudeQuota = useClaudeAccountStore((state) => state.refreshToken);
-  const refreshAllGhcpTokens = useGitHubCopilotAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentGhcpAccountId = useGitHubCopilotAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshGhcpToken = useGitHubCopilotAccountStore((state) => state.refreshToken);
-  const refreshAllWindsurfTokens = useWindsurfAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentWindsurfAccountId = useWindsurfAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshWindsurfToken = useWindsurfAccountStore((state) => state.refreshToken);
-  const refreshAllKiroTokens = useKiroAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentKiroAccountId = useKiroAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshKiroToken = useKiroAccountStore((state) => state.refreshToken);
+
   const refreshAllCursorTokens = useCursorAccountStore((state) => state.refreshAllTokens);
   const fetchCurrentCursorAccountId = useCursorAccountStore((state) => state.fetchCurrentAccountId);
   const refreshCursorToken = useCursorAccountStore((state) => state.refreshToken);
-  const refreshAllGeminiTokens = useGeminiAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentGeminiAccountId = useGeminiAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshGeminiToken = useGeminiAccountStore((state) => state.refreshToken);
-  const refreshAllCodebuddyTokens = useCodebuddyAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentCodebuddyAccountId = useCodebuddyAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshCodebuddyToken = useCodebuddyAccountStore((state) => state.refreshToken);
-  const refreshAllCodebuddyCnTokens = useCodebuddyCnAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentCodebuddyCnAccountId = useCodebuddyCnAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshCodebuddyCnToken = useCodebuddyCnAccountStore((state) => state.refreshToken);
-  const refreshAllWorkbuddyTokens = useWorkbuddyAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentWorkbuddyAccountId = useWorkbuddyAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshWorkbuddyToken = useWorkbuddyAccountStore((state) => state.refreshToken);
-  const refreshAllQoderTokens = useQoderAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentQoderAccountId = useQoderAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshQoderToken = useQoderAccountStore((state) => state.refreshToken);
-  const refreshAllTraeTokens = useTraeAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentTraeAccountId = useTraeAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshTraeToken = useTraeAccountStore((state) => state.refreshToken);
-  const refreshAllZedTokens = useZedAccountStore((state) => state.refreshAllTokens);
-  const fetchCurrentZedAccountId = useZedAccountStore((state) => state.fetchCurrentAccountId);
-  const refreshZedToken = useZedAccountStore((state) => state.refreshToken);
 
   const antigravityRefreshingRef = useRef(false);
   const antigravityCurrentRefreshingRef = useRef(false);
   const codexRefreshingRef = useRef(false);
   const codexCurrentRefreshingRef = useRef(false);
-  const claudeRefreshingRef = useRef(false);
-  const claudeCurrentRefreshingRef = useRef(false);
-  const ghcpRefreshingRef = useRef(false);
-  const ghcpCurrentRefreshingRef = useRef(false);
-  const windsurfRefreshingRef = useRef(false);
-  const windsurfCurrentRefreshingRef = useRef(false);
-  const kiroRefreshingRef = useRef(false);
-  const kiroCurrentRefreshingRef = useRef(false);
   const cursorRefreshingRef = useRef(false);
   const cursorCurrentRefreshingRef = useRef(false);
-  const geminiRefreshingRef = useRef(false);
-  const geminiCurrentRefreshingRef = useRef(false);
-  const codebuddyRefreshingRef = useRef(false);
-  const codebuddyCurrentRefreshingRef = useRef(false);
-  const codebuddyCnRefreshingRef = useRef(false);
-  const codebuddyCnCurrentRefreshingRef = useRef(false);
-  const workbuddyRefreshingRef = useRef(false);
-  const workbuddyCurrentRefreshingRef = useRef(false);
-  const qoderRefreshingRef = useRef(false);
-  const qoderCurrentRefreshingRef = useRef(false);
-  const traeRefreshingRef = useRef(false);
-  const traeCurrentRefreshingRef = useRef(false);
-  const zedRefreshingRef = useRef(false);
-  const zedCurrentRefreshingRef = useRef(false);
 
   const schedulerRef = useRef<AutoRefreshSchedulerHandle | null>(null);
   const setupRunningRef = useRef(false);
@@ -400,7 +315,7 @@ export function useAutoRefresh() {
               key: 'antigravity',
               label: 'Antigravity IDE',
               intervalMinutes: config.auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('antigravity', currentAccountEmails.antigravity, currentRefreshMinutesMap),
+              currentMinutes: resolveCurrentMinutes('antigravity', currentAccountEmails.antigravity ?? null, currentRefreshMinutesMap),
               fullRefreshingRef: antigravityRefreshingRef,
               currentRefreshingRef: antigravityCurrentRefreshingRef,
               runFullRefresh: async () => {
@@ -422,7 +337,7 @@ export function useAutoRefresh() {
               key: 'codex',
               label: 'Codex',
               intervalMinutes: config.codex_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('codex', currentAccountEmails.codex, currentRefreshMinutesMap),
+              currentMinutes: resolveCurrentMinutes('codex', currentAccountEmails.codex ?? null, currentRefreshMinutesMap),
               fullRefreshingRef: codexRefreshingRef,
               currentRefreshingRef: codexCurrentRefreshingRef,
               runFullRefresh: async () => {
@@ -441,69 +356,10 @@ export function useAutoRefresh() {
               },
             },
             {
-              key: 'claude',
-              label: 'Claude',
-              intervalMinutes: config.claude_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('claude', currentAccountEmails.claude, currentRefreshMinutesMap),
-              fullRefreshingRef: claudeRefreshingRef,
-              currentRefreshingRef: claudeCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllClaudeQuotas();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(fetchCurrentClaudeAccountId, refreshClaudeQuota);
-              },
-            },
-            {
-              key: 'ghcp',
-              label: 'GitHub Copilot',
-              intervalMinutes: config.ghcp_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('ghcp', currentAccountEmails.ghcp, currentRefreshMinutesMap),
-              fullRefreshingRef: ghcpRefreshingRef,
-              currentRefreshingRef: ghcpCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllGhcpTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(fetchCurrentGhcpAccountId, refreshGhcpToken);
-              },
-            },
-            {
-              key: 'windsurf',
-              label: 'Windsurf',
-              intervalMinutes: config.windsurf_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('windsurf', currentAccountEmails.windsurf, currentRefreshMinutesMap),
-              fullRefreshingRef: windsurfRefreshingRef,
-              currentRefreshingRef: windsurfCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllWindsurfTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(
-                  fetchCurrentWindsurfAccountId,
-                  refreshWindsurfToken,
-                );
-              },
-            },
-            {
-              key: 'kiro',
-              label: 'Kiro',
-              intervalMinutes: config.kiro_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('kiro', currentAccountEmails.kiro, currentRefreshMinutesMap),
-              fullRefreshingRef: kiroRefreshingRef,
-              currentRefreshingRef: kiroCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllKiroTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(fetchCurrentKiroAccountId, refreshKiroToken);
-              },
-            },
-            {
               key: 'cursor',
               label: 'Cursor',
               intervalMinutes: config.cursor_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('cursor', currentAccountEmails.cursor, currentRefreshMinutesMap),
+              currentMinutes: resolveCurrentMinutes('cursor', currentAccountEmails.cursor ?? null, currentRefreshMinutesMap),
               fullRefreshingRef: cursorRefreshingRef,
               currentRefreshingRef: cursorCurrentRefreshingRef,
               runFullRefresh: async () => {
@@ -513,117 +369,13 @@ export function useAutoRefresh() {
                 await runProviderCurrentRefresh(fetchCurrentCursorAccountId, refreshCursorToken);
               },
             },
-            {
-              key: 'gemini',
-              label: 'Gemini',
-              intervalMinutes: config.gemini_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('gemini', currentAccountEmails.gemini, currentRefreshMinutesMap),
-              fullRefreshingRef: geminiRefreshingRef,
-              currentRefreshingRef: geminiCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllGeminiTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(fetchCurrentGeminiAccountId, refreshGeminiToken);
-              },
-            },
-            {
-              key: 'codebuddy',
-              label: 'CodeBuddy',
-              intervalMinutes: config.codebuddy_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('codebuddy', currentAccountEmails.codebuddy, currentRefreshMinutesMap),
-              fullRefreshingRef: codebuddyRefreshingRef,
-              currentRefreshingRef: codebuddyCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllCodebuddyTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(
-                  fetchCurrentCodebuddyAccountId,
-                  refreshCodebuddyToken,
-                );
-              },
-            },
-            {
-              key: 'codebuddy_cn',
-              label: 'CodeBuddy CN',
-              intervalMinutes: config.codebuddy_cn_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('codebuddy_cn', currentAccountEmails.codebuddy_cn, currentRefreshMinutesMap),
-              fullRefreshingRef: codebuddyCnRefreshingRef,
-              currentRefreshingRef: codebuddyCnCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllCodebuddyCnTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(
-                  fetchCurrentCodebuddyCnAccountId,
-                  refreshCodebuddyCnToken,
-                );
-              },
-            },
-            {
-              key: 'workbuddy',
-              label: 'WorkBuddy',
-              intervalMinutes: config.workbuddy_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('workbuddy', currentAccountEmails.workbuddy, currentRefreshMinutesMap),
-              fullRefreshingRef: workbuddyRefreshingRef,
-              currentRefreshingRef: workbuddyCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllWorkbuddyTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(
-                  fetchCurrentWorkbuddyAccountId,
-                  refreshWorkbuddyToken,
-                );
-              },
-            },
-            {
-              key: 'qoder',
-              label: 'Qoder',
-              intervalMinutes: config.qoder_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('qoder', currentAccountEmails.qoder, currentRefreshMinutesMap),
-              fullRefreshingRef: qoderRefreshingRef,
-              currentRefreshingRef: qoderCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllQoderTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(fetchCurrentQoderAccountId, refreshQoderToken);
-              },
-            },
-            {
-              key: 'trae',
-              label: 'Trae',
-              intervalMinutes: config.trae_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('trae', currentAccountEmails.trae, currentRefreshMinutesMap),
-              fullRefreshingRef: traeRefreshingRef,
-              currentRefreshingRef: traeCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllTraeTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(fetchCurrentTraeAccountId, refreshTraeToken);
-              },
-            },
-            {
-              key: 'zed',
-              label: 'Zed',
-              intervalMinutes: config.zed_auto_refresh_minutes,
-              currentMinutes: resolveCurrentMinutes('zed', currentAccountEmails.zed, currentRefreshMinutesMap),
-              fullRefreshingRef: zedRefreshingRef,
-              currentRefreshingRef: zedCurrentRefreshingRef,
-              runFullRefresh: async () => {
-                await refreshAllZedTokens();
-              },
-              runCurrentRefresh: async () => {
-                await runProviderCurrentRefresh(fetchCurrentZedAccountId, refreshZedToken);
-              },
-            },
           ];
 
           const tasks: AutoRefreshSchedulerTask[] = [];
           for (const descriptor of descriptors) {
+            if (!isAutoRefreshPlatformEnabled(descriptor.key)) {
+              continue;
+            }
             if (descriptor.intervalMinutes > 0) {
               console.log(`[AutoRefresh] ${descriptor.label} 已启用: 每 ${descriptor.intervalMinutes} 分钟`);
               tasks.push({
@@ -693,46 +445,13 @@ export function useAutoRefresh() {
     executeWithGuard,
     fetchCodexAccounts,
     fetchCurrentAccount,
-    fetchCurrentClaudeAccountId,
-    fetchCurrentCodebuddyAccountId,
-    fetchCurrentCodebuddyCnAccountId,
     fetchCurrentCodexAccount,
     fetchCurrentCursorAccountId,
-    fetchCurrentGeminiAccountId,
-    fetchCurrentGhcpAccountId,
-    fetchCurrentKiroAccountId,
-    fetchCurrentQoderAccountId,
-    fetchCurrentTraeAccountId,
-    fetchCurrentWindsurfAccountId,
-    fetchCurrentWorkbuddyAccountId,
-    fetchCurrentZedAccountId,
     fetchAccounts,
-    refreshAllCodebuddyCnTokens,
-    refreshAllCodebuddyTokens,
     refreshAllCodexQuotas,
-    refreshAllClaudeQuotas,
     refreshAllCursorTokens,
-    refreshAllGeminiTokens,
-    refreshAllGhcpTokens,
-    refreshAllKiroTokens,
     refreshAllQuotas,
-    refreshAllQoderTokens,
-    refreshAllTraeTokens,
-    refreshAllWindsurfTokens,
-    refreshAllWorkbuddyTokens,
-    refreshAllZedTokens,
-    refreshCodebuddyCnToken,
-    refreshCodebuddyToken,
-    refreshClaudeQuota,
     refreshCursorToken,
-    refreshGeminiToken,
-    refreshGhcpToken,
-    refreshKiroToken,
-    refreshQoderToken,
-    refreshTraeToken,
-    refreshWindsurfToken,
-    refreshWorkbuddyToken,
-    refreshZedToken,
     stopScheduler,
   ]);
 

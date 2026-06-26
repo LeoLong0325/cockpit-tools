@@ -42,16 +42,9 @@ pub fn ensure_started(app_handle: AppHandle) {
 async fn run_refresh_cycle(app_handle: &AppHandle) {
     let mut refreshed_any = false;
 
+    // Lite build: only Codex + Cursor token keep-alive (Antigravity uses quota auto-refresh).
     refreshed_any |= refresh_due_codex_accounts().await;
     refreshed_any |= refresh_due_cursor_accounts().await;
-    refreshed_any |= refresh_due_gemini_accounts().await;
-    refreshed_any |= refresh_due_github_copilot_accounts().await;
-    refreshed_any |= refresh_due_windsurf_accounts().await;
-    refreshed_any |= refresh_due_kiro_accounts().await;
-    refreshed_any |= refresh_due_codebuddy_accounts().await;
-    refreshed_any |= refresh_due_codebuddy_cn_accounts().await;
-    refreshed_any |= refresh_due_workbuddy_accounts().await;
-    refreshed_any |= refresh_due_trae_accounts().await;
 
     if refreshed_any {
         let _ = crate::modules::tray::update_tray_menu(app_handle);

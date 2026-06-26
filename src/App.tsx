@@ -21,25 +21,14 @@ import { GlobalModal } from './components/GlobalModal';
 import { TopCenterPromoBanner } from './components/TopCenterPromoBanner';
 import type { QuickSettingsType } from './components/QuickSettingsPopover';
 import { Page } from './types/navigation';
-import { isEnabledPage } from './types/platform';
+import { isEnabledPage, isTrayRefreshCommandEnabled } from './types/platform';
 import { useAutoRefresh } from './hooks/useAutoRefresh';
 import { useEasterEggTrigger } from './hooks/useEasterEggTrigger';
 import { useGlobalModal } from './hooks/useGlobalModal';
 import { changeLanguage, getCurrentLanguage, normalizeLanguage, syncLanguage } from './i18n';
 import { useAccountStore } from './stores/useAccountStore';
 import { useCodexAccountStore } from './stores/useCodexAccountStore';
-import { useClaudeAccountStore } from './stores/useClaudeAccountStore';
-import { useGitHubCopilotAccountStore } from './stores/useGitHubCopilotAccountStore';
-import { useWindsurfAccountStore } from './stores/useWindsurfAccountStore';
-import { useKiroAccountStore } from './stores/useKiroAccountStore';
 import { useCursorAccountStore } from './stores/useCursorAccountStore';
-import { useGeminiAccountStore } from './stores/useGeminiAccountStore';
-import { useCodebuddyAccountStore } from './stores/useCodebuddyAccountStore';
-import { useCodebuddyCnAccountStore } from './stores/useCodebuddyCnAccountStore';
-import { useQoderAccountStore } from './stores/useQoderAccountStore';
-import { useTraeAccountStore } from './stores/useTraeAccountStore';
-import { useWorkbuddyAccountStore } from './stores/useWorkbuddyAccountStore';
-import { useZedAccountStore } from './stores/useZedAccountStore';
 import { useSideNavLayoutStore } from './stores/useSideNavLayoutStore';
 import { usePlatformLayoutStore } from './stores/usePlatformLayoutStore';
 import { useTopRightAdStore } from './stores/useTopRightAdStore';
@@ -99,9 +88,6 @@ const TwoFactorAuthPage = lazy(() =>
 );
 const ManualPage = lazy(() =>
   import('./pages/ManualPage').then((module) => ({ default: module.ManualPage })),
-);
-const ApiKeyFunPage = lazy(() =>
-  import('./pages/ApiKeyFunPage').then((module) => ({ default: module.ApiKeyFunPage })),
 );
 const InstancesPage = lazy(() =>
   import('./pages/InstancesPage').then((module) => ({ default: module.InstancesPage })),
@@ -822,10 +808,10 @@ function MainApp() {
   }, [fetchSponsorModuleState, fetchTopRightAdState]);
 
   useEffect(() => {
-    if (sponsorModuleInitialized && page === 'api-relay' && !sponsorEntryVisible) {
+    if (sponsorModuleInitialized && page === 'api-relay') {
       setPage('dashboard');
     }
-  }, [page, sponsorEntryVisible, sponsorModuleInitialized]);
+  }, [page, sponsorModuleInitialized]);
 
   useEffect(() => {
     if (sideNavLayoutMode !== 'classic' || sideNavClassicFirstSyncDone) {
@@ -2375,42 +2361,9 @@ function MainApp() {
                     if (platform === 'codex') {
                       await useCodexAccountStore.getState().switchAccount(targetAccountId);
                       setPage('codex');
-                    } else if (platform === 'claude') {
-                      await useClaudeAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('claude');
-                    } else if (platform === 'github_copilot') {
-                      await useGitHubCopilotAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('github-copilot');
-                    } else if (platform === 'windsurf') {
-                      await useWindsurfAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('windsurf');
-                    } else if (platform === 'kiro') {
-                      await useKiroAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('kiro');
                     } else if (platform === 'cursor') {
                       await useCursorAccountStore.getState().switchAccount(targetAccountId);
                       setPage('cursor');
-                    } else if (platform === 'gemini') {
-                      await useGeminiAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('gemini');
-                    } else if (platform === 'codebuddy') {
-                      await useCodebuddyAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('codebuddy');
-                    } else if (platform === 'codebuddy_cn') {
-                      await useCodebuddyCnAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('codebuddy-cn');
-                    } else if (platform === 'qoder') {
-                      await useQoderAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('qoder');
-                    } else if (platform === 'trae') {
-                      await useTraeAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('trae');
-                    } else if (platform === 'workbuddy') {
-                      await useWorkbuddyAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('workbuddy');
-                    } else if (platform === 'zed') {
-                      await useZedAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('zed');
                     } else {
                       await useAccountStore.getState().switchAccount(targetAccountId);
                       setPage('overview');
@@ -2645,7 +2598,9 @@ function MainApp() {
 
       try {
         await Promise.all(
-          refreshTasks.map(({ command, errorMessage }) =>
+          refreshTasks
+            .filter(({ command }) => isTrayRefreshCommandEnabled(command))
+            .map(({ command, errorMessage }) =>
             invoke(command).catch((error) => {
               console.error(errorMessage, error);
             }),
@@ -2838,13 +2793,12 @@ function MainApp() {
           scanRoots: appPathScanRootsDraft.trim(),
         });
       }
-      if (retry?.kind === 'switchAccount' && retry.accountId && app === 'zed') {
-        await useZedAccountStore.getState().switchAccount(retry.accountId);
-        setPage('zed');
-      } else if (retry?.kind === 'switchAccount' && retry.accountId && app === 'claude') {
-        await useClaudeAccountStore.getState().switchAccount(retry.accountId);
-        await useClaudeAccountStore.getState().fetchCurrentAccountId();
-        setPage('claude');
+      if (retry?.kind === 'switchAccount' && retry.accountId && app === 'cursor') {
+        await useCursorAccountStore.getState().switchAccount(retry.accountId);
+        setPage('cursor');
+      } else if (retry?.kind === 'switchAccount' && retry.accountId && app === 'codex') {
+        await useCodexAccountStore.getState().switchAccount(retry.accountId);
+        setPage('codex');
       } else if (retry?.kind === 'switchAccount' && retry.accountId) {
         await invoke('switch_account', {
           accountId: retry.accountId,
@@ -3550,7 +3504,7 @@ function MainApp() {
               }
             />
           )}
-          {page === 'api-relay' && <ApiKeyFunPage />}
+
           {page === 'overview' && <AccountsPage onNavigate={setPage} />}
           {page === 'codex' && <CodexAccountsPage />}
           {page === 'codex-api-service' && <CodexApiServicePage />}

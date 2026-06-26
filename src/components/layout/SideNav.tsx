@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo, typ
 import { createPortal } from 'react-dom';
 import apiKeyFunIcon from '../../assets/icons/apikey-fun.png';
 import { Page } from '../../types/navigation';
-import { isMenuVisiblePlatform, PlatformId, PLATFORM_PAGE_MAP } from '../../types/platform';
+import { isEnabledPage, isMenuVisiblePlatform, PlatformId, PLATFORM_PAGE_MAP } from '../../types/platform';
 import {
   API_RELAY_LAYOUT_ENTRY_ID,
   ApiRelayLayoutEntryId,
@@ -204,7 +204,7 @@ export function SideNav({
       isMenuVisiblePlatform(platformId) && !remoteHiddenPlatformSet.has(platformId),
     [remoteHiddenPlatformSet],
   );
-  const apiRelayEntryVisible = sponsorEntryVisible && apiRelaySidebarVisible;
+  const apiRelayEntryVisible = isEnabledPage('api-relay') && sponsorEntryVisible && apiRelaySidebarVisible;
 
   const orderedEntries = useMemo<SideNavEntry[]>(() => {
     const platformEntries: SideNavEntry[] = orderedEntryIds

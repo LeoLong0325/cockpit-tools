@@ -36,21 +36,10 @@ import {
   type FloatingCardInstanceContext,
 } from '../services/floatingCardService';
 import { useAccountStore } from '../stores/useAccountStore';
-import { useClaudeAccountStore } from '../stores/useClaudeAccountStore';
-import { useCodebuddyAccountStore } from '../stores/useCodebuddyAccountStore';
-import { useCodebuddyCnAccountStore } from '../stores/useCodebuddyCnAccountStore';
 import { useCodexAccountStore } from '../stores/useCodexAccountStore';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
-import { useGeminiAccountStore } from '../stores/useGeminiAccountStore';
-import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
-import { useKiroAccountStore } from '../stores/useKiroAccountStore';
 import { usePlatformLayoutStore } from '../stores/usePlatformLayoutStore';
 import { useRemoteConfigStore } from '../stores/useRemoteConfigStore';
-import { useQoderAccountStore } from '../stores/useQoderAccountStore';
-import { useTraeAccountStore } from '../stores/useTraeAccountStore';
-import { useWindsurfAccountStore } from '../stores/useWindsurfAccountStore';
-import { useWorkbuddyAccountStore } from '../stores/useWorkbuddyAccountStore';
-import { useZedAccountStore } from '../stores/useZedAccountStore';
 import { useCodebuddyCnInstanceStore } from '../stores/useCodebuddyCnInstanceStore';
 import { useAntigravityLegacyInstanceStore } from '../stores/useAntigravityLegacyInstanceStore';
 import { useClaudeInstanceStore } from '../stores/useClaudeInstanceStore';
@@ -66,7 +55,7 @@ import { useQoderInstanceStore } from '../stores/useQoderInstanceStore';
 import { useTraeInstanceStore } from '../stores/useTraeInstanceStore';
 import { useWindsurfInstanceStore } from '../stores/useWindsurfInstanceStore';
 import { useWorkbuddyInstanceStore } from '../stores/useWorkbuddyInstanceStore';
-import { ALL_PLATFORM_IDS, PLATFORM_PAGE_MAP, PlatformId } from '../types/platform';
+import { ALL_PLATFORM_IDS, isEnabledPlatform, PLATFORM_PAGE_MAP, PlatformId } from '../types/platform';
 import type { InstanceProfile } from '../types/instance';
 import { isPrivacyModeEnabledByDefault, maskSensitiveValue } from '../utils/privacy';
 import { getPlatformLabel, renderPlatformIcon } from '../utils/platformMeta';
@@ -117,18 +106,9 @@ type FloatingCardGeneralConfig = {
 type FloatingCardAccount =
   | ReturnType<typeof useAccountStore.getState>['accounts'][number]
   | ReturnType<typeof useCodexAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useClaudeAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useGitHubCopilotAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useWindsurfAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useKiroAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useCursorAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useGeminiAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useCodebuddyAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useCodebuddyCnAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useQoderAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useTraeAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useWorkbuddyAccountStore.getState>['accounts'][number]
-  | ReturnType<typeof useZedAccountStore.getState>['accounts'][number];
+  | ReturnType<typeof useCursorAccountStore.getState>['accounts'][number];
+
+const EMPTY_FLOATING_CARD_ACCOUNTS: FloatingCardAccount[] = [];
 
 type FloatingCardInstanceStoreApi = Pick<
   InstanceStoreState,
@@ -138,7 +118,7 @@ type FloatingCardInstanceStoreApi = Pick<
 function loadInitialPlatform(): PlatformId {
   try {
     const saved = localStorage.getItem(FLOATING_CARD_PLATFORM_STORAGE_KEY);
-    if (saved && ALL_PLATFORM_IDS.includes(saved as PlatformId)) {
+    if (saved && isEnabledPlatform(saved as PlatformId)) {
       return saved as PlatformId;
     }
   } catch {
@@ -163,6 +143,9 @@ function resolveAppliedTheme(theme: string): 'light' | 'dark' {
 }
 
 function resolveInstanceStoreApi(platformId: PlatformId): FloatingCardInstanceStoreApi | null {
+  if (!isEnabledPlatform(platformId)) {
+    return null;
+  }
   switch (platformId) {
     case 'antigravity':
       return useAntigravityLegacyInstanceStore.getState();
@@ -213,54 +196,32 @@ export function FloatingCardWindow() {
   const fetchRemoteConfigState = useRemoteConfigStore((state) => state.fetchState);
   const { accounts: agAccounts, currentAccount: agCurrent } = useAccountStore();
   const { accounts: codexAccounts, currentAccount: codexCurrent } = useCodexAccountStore();
-  const {
-    accounts: claudeAccounts,
-    currentAccountId: claudeCurrentId,
-  } = useClaudeAccountStore();
-  const {
-    accounts: githubCopilotAccounts,
-    currentAccountId: githubCopilotCurrentId,
-  } = useGitHubCopilotAccountStore();
-  const {
-    accounts: windsurfAccounts,
-    currentAccountId: windsurfCurrentId,
-  } = useWindsurfAccountStore();
-  const {
-    accounts: kiroAccounts,
-    currentAccountId: kiroCurrentId,
-  } = useKiroAccountStore();
+  const claudeAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const claudeCurrentId = null as string | null;
+  const githubCopilotAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const githubCopilotCurrentId = null as string | null;
+  const windsurfAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const windsurfCurrentId = null as string | null;
+  const kiroAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const kiroCurrentId = null as string | null;
   const {
     accounts: cursorAccounts,
     currentAccountId: cursorCurrentId,
   } = useCursorAccountStore();
-  const {
-    accounts: geminiAccounts,
-    currentAccountId: geminiCurrentId,
-  } = useGeminiAccountStore();
-  const {
-    accounts: codebuddyAccounts,
-    currentAccountId: codebuddyCurrentId,
-  } = useCodebuddyAccountStore();
-  const {
-    accounts: codebuddyCnAccounts,
-    currentAccountId: codebuddyCnCurrentId,
-  } = useCodebuddyCnAccountStore();
-  const {
-    accounts: qoderAccounts,
-    currentAccountId: qoderCurrentId,
-  } = useQoderAccountStore();
-  const {
-    accounts: traeAccounts,
-    currentAccountId: traeCurrentId,
-  } = useTraeAccountStore();
-  const {
-    accounts: workbuddyAccounts,
-    currentAccountId: workbuddyCurrentId,
-  } = useWorkbuddyAccountStore();
-  const {
-    accounts: zedAccounts,
-    currentAccountId: zedCurrentId,
-  } = useZedAccountStore();
+  const geminiAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const geminiCurrentId = null as string | null;
+  const codebuddyAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const codebuddyCurrentId = null as string | null;
+  const codebuddyCnAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const codebuddyCnCurrentId = null as string | null;
+  const qoderAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const qoderCurrentId = null as string | null;
+  const traeAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const traeCurrentId = null as string | null;
+  const workbuddyAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const workbuddyCurrentId = null as string | null;
+  const zedAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
+  const zedCurrentId = null as string | null;
   const shellRef = useRef<HTMLDivElement | null>(null);
   const previousInstanceContextRef = useRef<FloatingCardInstanceContext | null>(null);
   const [displayGroups, setDisplayGroups] = useState<DisplayGroup[]>([]);
@@ -288,14 +249,14 @@ export function FloatingCardWindow() {
     const ordered: PlatformId[] = [];
 
     for (const platformId of orderedPlatformIds) {
-      if (!ALL_PLATFORM_IDS.includes(platformId) || seen.has(platformId)) continue;
+      if (!isEnabledPlatform(platformId) || seen.has(platformId)) continue;
       if (remoteHiddenPlatformSet.has(platformId)) continue;
       ordered.push(platformId);
       seen.add(platformId);
     }
 
     for (const platformId of ALL_PLATFORM_IDS) {
-      if (seen.has(platformId)) continue;
+      if (!isEnabledPlatform(platformId) || seen.has(platformId)) continue;
       if (remoteHiddenPlatformSet.has(platformId)) continue;
       ordered.push(platformId);
       seen.add(platformId);
@@ -395,10 +356,14 @@ export function FloatingCardWindow() {
   );
 
   const fetchPlatformData = useCallback(async (platformId: PlatformId) => {
+    if (!isEnabledPlatform(platformId)) {
+      return;
+    }
     setPlatformLoading(true);
     try {
       switch (platformId) {
-        case 'antigravity': {
+        case 'antigravity':
+        case 'antigravity_ide': {
           await Promise.allSettled([
             useAccountStore.getState().fetchAccounts(),
             useAccountStore.getState().fetchCurrentAccount(),
@@ -413,44 +378,10 @@ export function FloatingCardWindow() {
             useCodexAccountStore.getState().fetchCurrentAccount(),
           ]);
           break;
-        case 'claude_manager':
-          await Promise.allSettled([
-            useClaudeAccountStore.getState().fetchAccounts(),
-            useClaudeAccountStore.getState().fetchCurrentAccountId(),
-          ]);
-          break;
-        case 'github-copilot':
-          await useGitHubCopilotAccountStore.getState().fetchAccounts();
-          break;
-        case 'windsurf':
-          await useWindsurfAccountStore.getState().fetchAccounts();
-          break;
-        case 'kiro':
-          await useKiroAccountStore.getState().fetchAccounts();
-          break;
         case 'cursor':
           await useCursorAccountStore.getState().fetchAccounts();
           break;
-        case 'gemini':
-          await useGeminiAccountStore.getState().fetchAccounts();
-          break;
-        case 'codebuddy':
-          await useCodebuddyAccountStore.getState().fetchAccounts();
-          break;
-        case 'codebuddy_cn':
-          await useCodebuddyCnAccountStore.getState().fetchAccounts();
-          break;
-        case 'qoder':
-          await useQoderAccountStore.getState().fetchAccounts();
-          break;
-        case 'trae':
-          await useTraeAccountStore.getState().fetchAccounts();
-          break;
-        case 'workbuddy':
-          await useWorkbuddyAccountStore.getState().fetchAccounts();
-          break;
-        case 'zed':
-          await useZedAccountStore.getState().fetchAccounts();
+        default:
           break;
       }
     } finally {

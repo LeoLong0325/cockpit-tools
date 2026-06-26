@@ -2443,19 +2443,18 @@ fn extract_credit_grants_metrics(root: &serde_json::Value) -> (Option<i64>, Opti
 }
 
 fn credit_grants_has_active_display(root: &serde_json::Value) -> bool {
-    let balance = credit_grants_balance_node(root);
-    if json_get_bool(
-        balance,
-        &["hasCreditGrants", "has_credit_grants"],
-    ) == Some(true)
-    {
-        return true;
-    }
+    credit_grants_has_valid_display_metrics(root)
+}
+
+fn credit_grants_has_valid_display_metrics(root: &serde_json::Value) -> bool {
     let (total, used, remaining) = extract_credit_grants_metrics(root);
     if remaining.unwrap_or(0) > 0 {
         return true;
     }
-    if total.unwrap_or(0) > 0 && used.unwrap_or(0) < total.unwrap_or(0) {
+    if total.unwrap_or(0) > 0 {
+        return true;
+    }
+    if used.unwrap_or(0) > 0 {
         return true;
     }
     false
@@ -2817,7 +2816,19 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     }
 
-    if usage_refreshed {
+    let credit_grants_api_valid = account
+        .cursor_credit_grants_raw
+        .as_ref()
+        .map(credit_grants_has_valid_display_metrics)
+        .unwrap_or(false);
+
+    if credit_grants_api_valid {
+        account.cursor_free_credit_usage_raw = None;
+        logger::log_info(&format!(
+            "[Cursor Refresh] 赠送额度 API 有效，跳过 FREE_CREDIT 事件统计: id={}",
+            account.id
+        ));
+    } else if usage_refreshed {
         if let Some(usage_raw) = account.cursor_usage_raw.as_ref() {
             match fetch_free_credit_usage_with_client(&client, &account, usage_raw).await {
                 Ok(Some(snapshot)) => {
@@ -2828,6 +2839,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
                     ));
                 }
                 Ok(None) => {
+                    account.cursor_free_credit_usage_raw = None;
                     logger::log_info(&format!(
                         "[Cursor Refresh] 无 FREE_CREDIT 用量事件: id={}",
                         account.id

@@ -847,7 +847,9 @@ export function getCursorFreeCreditUsedCents(account: CursorAccount): number | n
   const raw = account.cursor_free_credit_usage_raw;
   if (!raw || typeof raw !== 'object') return null;
   const root = raw as Record<string, unknown>;
-  return parseCentsValue(root.usedCents ?? root.used_cents);
+  const cents = parseCentsValue(root.usedCents ?? root.used_cents);
+  if (cents == null || cents <= 0) return null;
+  return cents;
 }
 
 function deriveCursorGrantUsedCents(grants: CursorCreditGrants): number | null {
@@ -859,12 +861,12 @@ function deriveCursorGrantUsedCents(grants: CursorCreditGrants): number | null {
   );
 }
 
-function shouldFallbackToFreeCreditUsed(
-  grantUsed: number | null,
-  freeCreditUsed: number | null,
-): boolean {
-  if (freeCreditUsed == null || freeCreditUsed <= 0) return false;
-  return grantUsed == null || grantUsed <= 0;
+/** Credit-grants API returned a non-zero / usable balance snapshot. */
+function hasValidCursorCreditGrantsApiData(grants: CursorCreditGrants): boolean {
+  if (grants.remainingCents != null && grants.remainingCents > 0) return true;
+  if (grants.totalCents != null && grants.totalCents > 0) return true;
+  if (grants.usedCents != null && grants.usedCents > 0) return true;
+  return false;
 }
 
 export interface CursorCreditGrantsQuotaDisplay {
@@ -880,38 +882,36 @@ export function resolveCursorCreditGrantsQuotaDisplay(
   const grants = getCursorCreditGrants(account);
   const freeCreditUsed = getCursorFreeCreditUsedCents(account);
 
-  if (grants) {
+  // 1. Credit-grants API has valid metrics → show API data only (ignore FREE_CREDIT events).
+  if (grants && hasValidCursorCreditGrantsApiData(grants)) {
     const total = grants.totalCents;
-    const grantDerivedUsed = deriveCursorGrantUsedCents(grants);
-    const used = shouldFallbackToFreeCreditUsed(grantDerivedUsed, freeCreditUsed)
-      ? freeCreditUsed
-      : grantDerivedUsed;
-    const effectiveTotal = total ?? used ?? 0;
+    const used = deriveCursorGrantUsedCents(grants) ?? 0;
+    const effectiveTotal = total ?? used;
     const percentage =
-      total != null && total > 0 && used != null
+      total != null && total > 0
         ? Math.min(100, Math.max(0, (used / total) * 100))
         : 0;
 
     return {
-      usedCents: used ?? 0,
+      usedCents: used,
       totalCents: effectiveTotal,
       valueText: formatCursorCreditGrantsValue(used, total),
       percentage,
     };
   }
 
-  if (freeCreditUsed == null) return null;
+  // 2. API empty / all-zero → fall back to FREE_CREDIT event aggregate.
+  if (freeCreditUsed != null) {
+    return {
+      usedCents: freeCreditUsed,
+      totalCents: freeCreditUsed,
+      valueText: formatCursorCreditGrantsValue(freeCreditUsed, freeCreditUsed),
+      percentage: 100,
+    };
+  }
 
-  const total = freeCreditUsed;
-  const percentage =
-    total > 0 ? Math.min(100, Math.max(0, (freeCreditUsed / total) * 100)) : 0;
-
-  return {
-    usedCents: freeCreditUsed,
-    totalCents: total,
-    valueText: formatCursorCreditGrantsValue(freeCreditUsed, total),
-    percentage,
-  };
+  // 3. Neither source has data.
+  return null;
 }
 
 export function shouldShowCursorCreditGrantsQuota(account: CursorAccount): boolean {

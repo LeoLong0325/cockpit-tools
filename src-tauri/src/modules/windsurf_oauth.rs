@@ -5,7 +5,8 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::net::{TcpListener, TcpStream};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
+use std::time::Duration;
 use url::Url;
 
 use crate::models::windsurf::{
@@ -22,6 +23,16 @@ const WINDSURF_DEFAULT_API_SERVER_URL: &str = "https://server.codeium.com";
 const WINDSURF_AUTH1_API_SERVER_URL: &str = "https://server.self-serve.windsurf.com";
 const WINDSURF_CLIENT_ID: &str = "3GUryQ7ldAeKEuD2obYnppsnmj58eP5u";
 const APP_USER_AGENT: &str = "antigravity-cockpit-tools";
+const SEAT_MANAGEMENT_HTTP_TIMEOUT: Duration = Duration::from_secs(30);
+static SEAT_MANAGEMENT_HTTP_CLIENT: LazyLock<Result<reqwest::Client, String>> =
+    LazyLock::new(|| {
+        reqwest::Client::builder()
+            .user_agent(APP_USER_AGENT)
+            .timeout(SEAT_MANAGEMENT_HTTP_TIMEOUT)
+            .connect_timeout(Duration::from_secs(12))
+            .build()
+            .map_err(|err| format!("构建 Windsurf HTTP client 失败: {}", err))
+    });
 const OAUTH_TIMEOUT_SECONDS: u64 = 600;
 const OAUTH_STATE_FILE: &str = "windsurf_oauth_pending.json";
 const FIREBASE_API_KEY: &str = "AIzaSyDsOl-1XpT5err0Tcnx8FFod1H8gVGIycY";
@@ -654,13 +665,15 @@ async fn post_seat_management_json(
         "{}/exa.seat_management_pb.SeatManagementService/{}",
         base, method
     );
-    let client = reqwest::Client::new();
+    let client = SEAT_MANAGEMENT_HTTP_CLIENT
+        .as_ref()
+        .map_err(|err| err.clone())?;
 
     let response = client
         .post(url.clone())
-        .header("User-Agent", APP_USER_AGENT)
         .header("Accept", "application/json")
         .header("Content-Type", "application/json")
+        .header("Connect-Protocol-Version", "1")
         .json(&body)
         .send()
         .await
@@ -689,6 +702,39 @@ async fn post_seat_management_json(
             text.len()
         )
     })
+}
+
+fn is_seat_management_transport_error(message: &str) -> bool {
+    let lower = message.to_ascii_lowercase();
+    lower.contains("error sending request")
+        || lower.contains("timed out")
+        || lower.contains("timeout")
+        || lower.contains("connection")
+        || lower.contains("dns")
+        || lower.contains("network")
+}
+
+fn seat_management_base_url_candidates(primary: &str) -> Vec<String> {
+    let primary = primary.trim().trim_end_matches('/').to_string();
+    let mut candidates = Vec::new();
+    for candidate in [
+        primary.as_str(),
+        WINDSURF_DEFAULT_API_SERVER_URL,
+        WINDSURF_AUTH1_API_SERVER_URL,
+    ] {
+        let normalized = candidate.trim().trim_end_matches('/');
+        if normalized.is_empty() {
+            continue;
+        }
+        if candidates
+            .iter()
+            .any(|existing| existing.eq_ignore_ascii_case(normalized))
+        {
+            continue;
+        }
+        candidates.push(normalized.to_string());
+    }
+    candidates
 }
 
 async fn register_user(firebase_id_token: &str) -> Result<RegisterResult, String> {
@@ -764,7 +810,31 @@ async fn get_user_status_by_api_key(api_server_url: &str, api_key: &str) -> Resu
     let payload = json!({
         "metadata": build_user_status_metadata(api_key)
     });
-    post_seat_management_json(api_server_url, "GetUserStatus", payload).await
+    let candidates = seat_management_base_url_candidates(api_server_url);
+    let mut last_err = String::new();
+
+    for base_url in candidates {
+        match post_seat_management_json(&base_url, "GetUserStatus", payload.clone()).await {
+            Ok(value) => {
+                if !base_url.eq_ignore_ascii_case(api_server_url.trim().trim_end_matches('/')) {
+                    logger::log_info(&format!(
+                        "[Windsurf OAuth] GetUserStatus 备用域名成功: primary={}, fallback={}",
+                        api_server_url, base_url
+                    ));
+                }
+                return Ok(value);
+            }
+            Err(err) => {
+                last_err = err;
+                if is_seat_management_transport_error(&last_err) {
+                    continue;
+                }
+                return Err(last_err);
+            }
+        }
+    }
+
+    Err(last_err)
 }
 
 fn merge_plan_snapshot(
@@ -999,7 +1069,7 @@ async fn build_payload_from_firebase_token(
             Ok(value) => Some(value),
             Err(err) => {
                 logger::log_warn(&format!(
-                    "[Windsurf OAuth] GetUserStatus 失败（将导致邮箱/配额缺失）: {}",
+                    "[Windsurf OAuth] GetUserStatus 暂不可用（将保留已有配额）: {}",
                     err
                 ));
                 None
@@ -1030,7 +1100,7 @@ async fn build_payload_from_api_key(
         Ok(value) => Some(value),
         Err(err) => {
             logger::log_warn(&format!(
-                "[Windsurf OAuth] API Key 模式 GetUserStatus 失败（将导致邮箱/配额缺失）: {}",
+                "[Windsurf OAuth] API Key 模式 GetUserStatus 暂不可用（将保留已有配额）: {}",
                 err
             ));
             None

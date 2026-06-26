@@ -1021,8 +1021,8 @@ function normalizeStateData(
     sidebarEntryIds,
     antigravityGroupFirstMigrated:
       raw.antigravityGroupFirstMigrated !== false || options.promoteAntigravityGroupEntry === true,
-    apiRelaySidebarVisible: raw.apiRelaySidebarVisible !== false,
-    apiRelayDashboardVisible: raw.apiRelayDashboardVisible !== false,
+    apiRelaySidebarVisible: raw.apiRelaySidebarVisible === true,
+    apiRelayDashboardVisible: raw.apiRelayDashboardVisible === true,
     apiRelayEntryOrder: normalizeApiRelayEntryOrder(raw.apiRelayEntryOrder, orderedEntryIds.length),
   };
 }
@@ -1044,8 +1044,8 @@ function loadPersistedState(): NormalizedLayoutStateData {
         hiddenEntryIds: [],
         sidebarEntryIds: defaultSidebarEntryIds(defaultGroups),
         antigravityGroupFirstMigrated: true,
-        apiRelaySidebarVisible: true,
-        apiRelayDashboardVisible: true,
+        apiRelaySidebarVisible: false,
+        apiRelayDashboardVisible: false,
         apiRelayEntryOrder: 0,
       });
       return defaults;
@@ -1119,8 +1119,8 @@ function loadPersistedState(): NormalizedLayoutStateData {
       hiddenEntryIds: [],
       sidebarEntryIds: defaultSidebarEntryIds(defaultGroups),
       antigravityGroupFirstMigrated: true,
-      apiRelaySidebarVisible: true,
-      apiRelayDashboardVisible: true,
+      apiRelaySidebarVisible: false,
+      apiRelayDashboardVisible: false,
       apiRelayEntryOrder: 0,
     });
   }
@@ -1652,8 +1652,8 @@ export const usePlatformLayoutStore = create<PlatformLayoutState>((set, get) => 
       orderedEntryIds: buildEntryOrderFromPlatformOrder(defaultOrder, defaults),
       hiddenEntryIds: [],
       sidebarEntryIds: defaultSidebarEntryIds(defaults),
-      apiRelaySidebarVisible: true,
-      apiRelayDashboardVisible: true,
+      apiRelaySidebarVisible: false,
+      apiRelayDashboardVisible: false,
       apiRelayEntryOrder: 0,
     });
 

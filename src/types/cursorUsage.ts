@@ -223,6 +223,7 @@ export function resolveFreeCreditUsage(
     return fromAggregated;
   }
 
+  // Aggregated API row missing or zero → sum USAGE_EVENT_KIND_FREE_CREDIT events.
   const fromEvents = aggregateFreeCreditUsage(events);
   if (fromEvents && hasCursorModelUsage(fromEvents)) {
     return fromEvents;
