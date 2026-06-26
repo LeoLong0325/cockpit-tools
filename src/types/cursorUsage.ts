@@ -45,6 +45,15 @@ export type CursorUsagePeriod = '7days' | '30days' | 'thisMonth' | 'custom';
 
 export const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT = 'USAGE_EVENT_KIND_FREE_CREDIT';
 
+/** Auto-routing / Composer agent models — not gifted-credit API consumption. */
+export function isCursorGiftCreditUsageModel(model: string): boolean {
+  const normalized = model.trim().toLowerCase();
+  if (!normalized || normalized === '—') return false;
+  if (normalized === 'default') return false;
+  if (normalized.startsWith('composer')) return false;
+  return true;
+}
+
 export interface CursorFreeCreditModelUsage {
   model: string;
   input_tokens: string;
@@ -201,7 +210,9 @@ export function buildFreeCreditUsageSummary(
   events: CursorUsageEventDisplay[],
 ): CursorFreeCreditUsageSummary | null {
   const freeCreditEvents = events.filter(
-    (event) => event.kind === CURSOR_USAGE_EVENT_KIND_FREE_CREDIT,
+    (event) =>
+      event.kind === CURSOR_USAGE_EVENT_KIND_FREE_CREDIT
+      && isCursorGiftCreditUsageModel(event.model),
   );
   if (freeCreditEvents.length === 0) return null;
 

@@ -2153,6 +2153,21 @@ fn parse_dollar_string_to_cents(text: &str) -> i64 {
     0
 }
 
+/// Auto-routing (`default`) and Composer agent models are not gifted-credit API usage.
+fn is_gift_credit_usage_model(model: &str) -> bool {
+    let normalized = model.trim().to_ascii_lowercase();
+    if normalized.is_empty() {
+        return false;
+    }
+    if normalized == "default" {
+        return false;
+    }
+    if normalized.starts_with("composer") {
+        return false;
+    }
+    true
+}
+
 fn free_credit_event_cents(event: &serde_json::Value) -> i64 {
     if let Some(token) = event
         .get("tokenUsage")
@@ -2192,6 +2207,13 @@ fn sum_free_credit_cents_from_events_page(root: &serde_json::Value) -> (i64, i32
                 .and_then(|value| value.as_str())
                 .unwrap_or("");
             if kind != CURSOR_USAGE_EVENT_KIND_FREE_CREDIT {
+                continue;
+            }
+            let model = event
+                .get("model")
+                .and_then(|value| value.as_str())
+                .unwrap_or("");
+            if !is_gift_credit_usage_model(model) {
                 continue;
             }
             let cents = free_credit_event_cents(event);
@@ -3271,7 +3293,8 @@ pub fn run_quota_alert_if_needed(
 mod credit_grants_tests {
     use super::{
         build_credit_grants_peak, credit_grants_has_valid_display_metrics,
-        extract_credit_grants_metrics, free_credit_event_cents, merge_credit_grants_preserving_history,
+        extract_credit_grants_metrics, free_credit_event_cents, is_gift_credit_usage_model,
+        merge_credit_grants_preserving_history, sum_free_credit_cents_from_events_page,
     };
     use serde_json::json;
 
@@ -3324,11 +3347,46 @@ mod credit_grants_tests {
     fn free_credit_event_cents_reads_float_token_usage() {
         let event = json!({
             "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
+            "model": "claude-opus-4-8-thinking-high",
             "usageBasedCosts": "$0.00",
             "tokenUsage": {
                 "totalCents": 12.23840045928955
             }
         });
         assert_eq!(free_credit_event_cents(&event), 12);
+    }
+
+    #[test]
+    fn gift_credit_usage_model_excludes_auto_and_composer() {
+        assert!(!is_gift_credit_usage_model("default"));
+        assert!(!is_gift_credit_usage_model("composer-2.5-fast"));
+        assert!(!is_gift_credit_usage_model("composer-2.5"));
+        assert!(is_gift_credit_usage_model("claude-opus-4-8-thinking-high"));
+    }
+
+    #[test]
+    fn sum_free_credit_skips_default_and_composer_even_when_kind_matches() {
+        let page = json!({
+            "usageEventsDisplay": [
+                {
+                    "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
+                    "model": "default",
+                    "tokenUsage": { "totalCents": 606 }
+                },
+                {
+                    "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
+                    "model": "composer-2.5-fast",
+                    "tokenUsage": { "totalCents": 100 }
+                },
+                {
+                    "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
+                    "model": "claude-opus-4-8-thinking-high",
+                    "tokenUsage": { "totalCents": 2288 }
+                }
+            ]
+        });
+        let (sum, count) = sum_free_credit_cents_from_events_page(&page);
+        assert_eq!(sum, 2288);
+        assert_eq!(count, 1);
     }
 }

@@ -999,6 +999,10 @@
   letter-spacing: normal;
 }
 
+.cursor-accounts-page .ghcp-accounts-grid {
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+}
+
 .cursor-accounts-page .cursor-credit-grants .quota-label,
 .cursor-accounts-page .cursor-credit-grants .quota-name {
   color: #b45309;
@@ -1755,9 +1759,11 @@
 .ghcp-account-card .card-actions {
   display: flex;
   gap: 6px;
+  min-width: 0;
 }
 
 .ghcp-account-card .card-action-btn {
+  flex: 0 0 32px;
   width: 32px;
   height: 32px;
   border: none;

@@ -870,12 +870,21 @@
 
 .card-footer-actions-only {
   justify-content: flex-end;
+  min-width: 0;
 }
 
 .card-footer-actions-only .card-actions {
   flex: 1;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.card-footer-actions-only .card-actions::-webkit-scrollbar {
+  display: none;
 }
 
 /* Cursor usage modals */
