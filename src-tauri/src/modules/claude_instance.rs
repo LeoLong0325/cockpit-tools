@@ -1340,7 +1340,7 @@ pub fn detect_and_save_claude_launch_path(force: bool) -> Option<String> {
     #[cfg(not(target_os = "windows"))]
     {
         if !force {
-            if let Some(custom) = normalize_custom_path(&current.claude_app_path) {
+            if let Some(_custom) = normalize_custom_path(&current.claude_app_path) {
                 return Some(current.claude_app_path);
             }
         }

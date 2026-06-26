@@ -728,7 +728,7 @@ fn seat_management_base_url_candidates(primary: &str) -> Vec<String> {
         }
         if candidates
             .iter()
-            .any(|existing| existing.eq_ignore_ascii_case(normalized))
+            .any(|existing: &String| existing.eq_ignore_ascii_case(normalized))
         {
             continue;
         }
