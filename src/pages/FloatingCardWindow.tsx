@@ -8,18 +8,8 @@ import { TauriEvent, emit, listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
 import {
   buildAntigravityAccountPresentation,
-  buildClaudeAccountPresentation,
-  buildCodebuddyAccountPresentation,
   buildCodexAccountPresentation,
   buildCursorAccountPresentation,
-  buildGeminiAccountPresentation,
-  buildGitHubCopilotAccountPresentation,
-  buildKiroAccountPresentation,
-  buildQoderAccountPresentation,
-  buildTraeAccountPresentation,
-  buildWindsurfAccountPresentation,
-  buildWorkbuddyAccountPresentation,
-  buildZedAccountPresentation,
   UnifiedAccountPresentation,
 } from '../presentation/platformAccountPresentation';
 import { DisplayGroup, getDisplayGroups } from '../services/groupService';
@@ -40,21 +30,11 @@ import { useCodexAccountStore } from '../stores/useCodexAccountStore';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
 import { usePlatformLayoutStore } from '../stores/usePlatformLayoutStore';
 import { useRemoteConfigStore } from '../stores/useRemoteConfigStore';
-import { useCodebuddyCnInstanceStore } from '../stores/useCodebuddyCnInstanceStore';
 import { useAntigravityLegacyInstanceStore } from '../stores/useAntigravityLegacyInstanceStore';
-import { useClaudeInstanceStore } from '../stores/useClaudeInstanceStore';
-import { useCodebuddyInstanceStore } from '../stores/useCodebuddyInstanceStore';
 import { useCodexInstanceStore } from '../stores/useCodexInstanceStore';
 import { useCursorInstanceStore } from '../stores/useCursorInstanceStore';
-import { useGeminiInstanceStore } from '../stores/useGeminiInstanceStore';
-import { useGitHubCopilotInstanceStore } from '../stores/useGitHubCopilotInstanceStore';
 import type { InstanceStoreState } from '../stores/createInstanceStore';
 import { useInstanceStore } from '../stores/useInstanceStore';
-import { useKiroInstanceStore } from '../stores/useKiroInstanceStore';
-import { useQoderInstanceStore } from '../stores/useQoderInstanceStore';
-import { useTraeInstanceStore } from '../stores/useTraeInstanceStore';
-import { useWindsurfInstanceStore } from '../stores/useWindsurfInstanceStore';
-import { useWorkbuddyInstanceStore } from '../stores/useWorkbuddyInstanceStore';
 import { ALL_PLATFORM_IDS, isEnabledPlatform, PLATFORM_PAGE_MAP, PlatformId } from '../types/platform';
 import type { InstanceProfile } from '../types/instance';
 import { isPrivacyModeEnabledByDefault, maskSensitiveValue } from '../utils/privacy';
@@ -62,20 +42,8 @@ import { getPlatformLabel, renderPlatformIcon } from '../utils/platformMeta';
 import { getAntigravityRuntimeTarget } from '../utils/antigravityRuntimeTarget';
 import {
   getRecommendedAntigravityAccount,
-  getRecommendedClaudeAccount,
-  getRecommendedCodebuddyAccount,
-  getRecommendedCodebuddyCnAccount,
   getRecommendedCodexAccount,
   getRecommendedCursorAccount,
-  getRecommendedGeminiAccount,
-  getRecommendedGitHubCopilotAccount,
-  getRecommendedKiroAccount,
-  getRecommendedQoderAccount,
-  getRecommendedTraeAccount,
-  getRecommendedWindsurfAccount,
-  getRecommendedWorkbuddyAccount,
-  getRecommendedZedAccount,
-  resolveCurrentOrMostRecentAccount,
 } from '../utils/floatingCardSelectors';
 import { changeLanguage, normalizeLanguage } from '../i18n';
 import {
@@ -143,9 +111,6 @@ function resolveAppliedTheme(theme: string): 'light' | 'dark' {
 }
 
 function resolveInstanceStoreApi(platformId: PlatformId): FloatingCardInstanceStoreApi | null {
-  if (!isEnabledPlatform(platformId)) {
-    return null;
-  }
   switch (platformId) {
     case 'antigravity':
       return useAntigravityLegacyInstanceStore.getState();
@@ -153,29 +118,9 @@ function resolveInstanceStoreApi(platformId: PlatformId): FloatingCardInstanceSt
       return useInstanceStore.getState();
     case 'codex':
       return useCodexInstanceStore.getState();
-    case 'claude_manager':
-      return useClaudeInstanceStore.getState();
-    case 'github-copilot':
-      return useGitHubCopilotInstanceStore.getState();
-    case 'windsurf':
-      return useWindsurfInstanceStore.getState();
-    case 'kiro':
-      return useKiroInstanceStore.getState();
     case 'cursor':
       return useCursorInstanceStore.getState();
-    case 'gemini':
-      return useGeminiInstanceStore.getState();
-    case 'codebuddy':
-      return useCodebuddyInstanceStore.getState();
-    case 'codebuddy_cn':
-      return useCodebuddyCnInstanceStore.getState();
-    case 'qoder':
-      return useQoderInstanceStore.getState();
-    case 'trae':
-      return useTraeInstanceStore.getState();
-    case 'workbuddy':
-      return useWorkbuddyInstanceStore.getState();
-    case 'zed':
+    default:
       return null;
   }
 }
@@ -196,32 +141,10 @@ export function FloatingCardWindow() {
   const fetchRemoteConfigState = useRemoteConfigStore((state) => state.fetchState);
   const { accounts: agAccounts, currentAccount: agCurrent } = useAccountStore();
   const { accounts: codexAccounts, currentAccount: codexCurrent } = useCodexAccountStore();
-  const claudeAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const claudeCurrentId = null as string | null;
-  const githubCopilotAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const githubCopilotCurrentId = null as string | null;
-  const windsurfAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const windsurfCurrentId = null as string | null;
-  const kiroAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const kiroCurrentId = null as string | null;
   const {
     accounts: cursorAccounts,
     currentAccountId: cursorCurrentId,
   } = useCursorAccountStore();
-  const geminiAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const geminiCurrentId = null as string | null;
-  const codebuddyAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const codebuddyCurrentId = null as string | null;
-  const codebuddyCnAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const codebuddyCnCurrentId = null as string | null;
-  const qoderAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const qoderCurrentId = null as string | null;
-  const traeAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const traeCurrentId = null as string | null;
-  const workbuddyAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const workbuddyCurrentId = null as string | null;
-  const zedAccounts = EMPTY_FLOATING_CARD_ACCOUNTS;
-  const zedCurrentId = null as string | null;
   const shellRef = useRef<HTMLDivElement | null>(null);
   const previousInstanceContextRef = useRef<FloatingCardInstanceContext | null>(null);
   const [displayGroups, setDisplayGroups] = useState<DisplayGroup[]>([]);
@@ -602,49 +525,9 @@ export function FloatingCardWindow() {
     }
   }, [instanceContext, selectedPlatform]);
 
-  const githubCopilotCurrent = useMemo(
-    () => resolveCurrentOrMostRecentAccount(githubCopilotAccounts, githubCopilotCurrentId),
-    [githubCopilotAccounts, githubCopilotCurrentId],
-  );
-  const windsurfCurrent = useMemo(
-    () => resolveCurrentAccountById(windsurfAccounts, windsurfCurrentId),
-    [windsurfAccounts, windsurfCurrentId],
-  );
-  const kiroCurrent = useMemo(
-    () => resolveCurrentAccountById(kiroAccounts, kiroCurrentId),
-    [kiroAccounts, kiroCurrentId],
-  );
   const cursorCurrent = useMemo(
     () => resolveCurrentAccountById(cursorAccounts, cursorCurrentId),
     [cursorAccounts, cursorCurrentId],
-  );
-  const geminiCurrent = useMemo(
-    () => resolveCurrentAccountById(geminiAccounts, geminiCurrentId),
-    [geminiAccounts, geminiCurrentId],
-  );
-  const codebuddyCurrent = useMemo(
-    () => resolveCurrentAccountById(codebuddyAccounts, codebuddyCurrentId),
-    [codebuddyAccounts, codebuddyCurrentId],
-  );
-  const codebuddyCnCurrent = useMemo(
-    () => resolveCurrentAccountById(codebuddyCnAccounts, codebuddyCnCurrentId),
-    [codebuddyCnAccounts, codebuddyCnCurrentId],
-  );
-  const qoderCurrent = useMemo(
-    () => resolveCurrentAccountById(qoderAccounts, qoderCurrentId),
-    [qoderAccounts, qoderCurrentId],
-  );
-  const traeCurrent = useMemo(
-    () => resolveCurrentAccountById(traeAccounts, traeCurrentId),
-    [traeAccounts, traeCurrentId],
-  );
-  const workbuddyCurrent = useMemo(
-    () => resolveCurrentAccountById(workbuddyAccounts, workbuddyCurrentId),
-    [workbuddyAccounts, workbuddyCurrentId],
-  );
-  const zedCurrent = useMemo(
-    () => resolveCurrentAccountById(zedAccounts, zedCurrentId),
-    [zedAccounts, zedCurrentId],
   );
 
   const selectedState = useMemo(() => {
@@ -660,97 +543,25 @@ export function FloatingCardWindow() {
           accounts: codexAccounts,
           actualCurrentAccount: codexCurrent,
         };
-      case 'claude_manager':
-        return {
-          accounts: claudeAccounts,
-          actualCurrentAccount: resolveCurrentAccountById(claudeAccounts, claudeCurrentId),
-        };
-      case 'github-copilot':
-        return {
-          accounts: githubCopilotAccounts,
-          actualCurrentAccount: githubCopilotCurrent,
-        };
-      case 'windsurf':
-        return {
-          accounts: windsurfAccounts,
-          actualCurrentAccount: windsurfCurrent,
-        };
-      case 'kiro':
-        return {
-          accounts: kiroAccounts,
-          actualCurrentAccount: kiroCurrent,
-        };
       case 'cursor':
         return {
           accounts: cursorAccounts,
           actualCurrentAccount: cursorCurrent,
         };
-      case 'gemini':
+      default:
         return {
-          accounts: geminiAccounts,
-          actualCurrentAccount: geminiCurrent,
-        };
-      case 'codebuddy':
-        return {
-          accounts: codebuddyAccounts,
-          actualCurrentAccount: codebuddyCurrent,
-        };
-      case 'codebuddy_cn':
-        return {
-          accounts: codebuddyCnAccounts,
-          actualCurrentAccount: codebuddyCnCurrent,
-        };
-      case 'qoder':
-        return {
-          accounts: qoderAccounts,
-          actualCurrentAccount: qoderCurrent,
-        };
-      case 'trae':
-        return {
-          accounts: traeAccounts,
-          actualCurrentAccount: traeCurrent,
-        };
-      case 'workbuddy':
-        return {
-          accounts: workbuddyAccounts,
-          actualCurrentAccount: workbuddyCurrent,
-        };
-      case 'zed':
-        return {
-          accounts: zedAccounts,
-          actualCurrentAccount: zedCurrent,
+          accounts: EMPTY_FLOATING_CARD_ACCOUNTS,
+          actualCurrentAccount: null,
         };
     }
   }, [
     agAccounts,
     agCurrent,
-    claudeAccounts,
-    claudeCurrentId,
-    codebuddyAccounts,
-    codebuddyCnAccounts,
-    codebuddyCnCurrent,
-    codebuddyCurrent,
     codexAccounts,
     codexCurrent,
     cursorAccounts,
     cursorCurrent,
-    geminiAccounts,
-    geminiCurrent,
-    githubCopilotAccounts,
-    githubCopilotCurrent,
-    kiroAccounts,
-    kiroCurrent,
-    qoderAccounts,
-    qoderCurrent,
     selectedPlatform,
-    traeAccounts,
-    traeCurrent,
-    windsurfAccounts,
-    windsurfCurrent,
-    workbuddyAccounts,
-    workbuddyCurrent,
-    zedAccounts,
-    zedCurrent,
   ]);
 
   const accounts = selectedState.accounts as FloatingCardAccount[];
@@ -771,48 +582,17 @@ export function FloatingCardWindow() {
         return getRecommendedAntigravityAccount(agAccounts, effectiveCurrentId);
       case 'codex':
         return getRecommendedCodexAccount(codexAccounts, effectiveCurrentId);
-      case 'claude_manager':
-        return getRecommendedClaudeAccount(claudeAccounts, effectiveCurrentId);
-      case 'github-copilot':
-        return getRecommendedGitHubCopilotAccount(githubCopilotAccounts, effectiveCurrentId);
-      case 'windsurf':
-        return getRecommendedWindsurfAccount(windsurfAccounts, effectiveCurrentId);
-      case 'kiro':
-        return getRecommendedKiroAccount(kiroAccounts, effectiveCurrentId);
       case 'cursor':
         return getRecommendedCursorAccount(cursorAccounts, effectiveCurrentId);
-      case 'gemini':
-        return getRecommendedGeminiAccount(geminiAccounts, effectiveCurrentId);
-      case 'codebuddy':
-        return getRecommendedCodebuddyAccount(codebuddyAccounts, effectiveCurrentId);
-      case 'codebuddy_cn':
-        return getRecommendedCodebuddyCnAccount(codebuddyCnAccounts, effectiveCurrentId);
-      case 'qoder':
-        return getRecommendedQoderAccount(qoderAccounts, effectiveCurrentId);
-      case 'trae':
-        return getRecommendedTraeAccount(traeAccounts, effectiveCurrentId);
-      case 'workbuddy':
-        return getRecommendedWorkbuddyAccount(workbuddyAccounts, effectiveCurrentId);
-      case 'zed':
-        return getRecommendedZedAccount(zedAccounts, effectiveCurrentId);
+      default:
+        return null;
     }
   }, [
     agAccounts,
-    claudeAccounts,
-    codebuddyAccounts,
-    codebuddyCnAccounts,
     codexAccounts,
     currentAccount?.id,
     cursorAccounts,
-    geminiAccounts,
-    githubCopilotAccounts,
-    kiroAccounts,
-    qoderAccounts,
     selectedPlatform,
-    traeAccounts,
-    windsurfAccounts,
-    workbuddyAccounts,
-    zedAccounts,
   ]) as FloatingCardAccount | null;
   const viewedAccountId = viewedAccountIds[selectedPlatform] ?? null;
   const viewedAccount = useMemo(() => {
@@ -859,50 +639,19 @@ export function FloatingCardWindow() {
         return buildAntigravityAccountPresentation(viewedAccount as typeof agAccounts[number], displayGroups, t);
       case 'codex':
         return buildCodexAccountPresentation(viewedAccount as typeof codexAccounts[number], t);
-      case 'claude_manager':
-        return buildClaudeAccountPresentation(viewedAccount as typeof claudeAccounts[number], t);
-      case 'github-copilot':
-        return buildGitHubCopilotAccountPresentation(viewedAccount as typeof githubCopilotAccounts[number], t);
-      case 'windsurf':
-        return buildWindsurfAccountPresentation(viewedAccount as typeof windsurfAccounts[number], t);
-      case 'kiro':
-        return buildKiroAccountPresentation(viewedAccount as typeof kiroAccounts[number], t);
       case 'cursor':
         return buildCursorAccountPresentation(viewedAccount as typeof cursorAccounts[number], t);
-      case 'gemini':
-        return buildGeminiAccountPresentation(viewedAccount as typeof geminiAccounts[number], t);
-      case 'codebuddy':
-        return buildCodebuddyAccountPresentation(viewedAccount as typeof codebuddyAccounts[number], t);
-      case 'codebuddy_cn':
-        return buildCodebuddyAccountPresentation(viewedAccount as typeof codebuddyCnAccounts[number], t);
-      case 'qoder':
-        return buildQoderAccountPresentation(viewedAccount as typeof qoderAccounts[number], t);
-      case 'trae':
-        return buildTraeAccountPresentation(viewedAccount as typeof traeAccounts[number], t);
-      case 'workbuddy':
-        return buildWorkbuddyAccountPresentation(viewedAccount as typeof workbuddyAccounts[number], t);
-      case 'zed':
-        return buildZedAccountPresentation(viewedAccount as typeof zedAccounts[number], t);
+      default:
+        return null;
     }
   }, [
     agAccounts,
-    claudeAccounts,
-    codebuddyAccounts,
-    codebuddyCnAccounts,
     codexAccounts,
     cursorAccounts,
     displayGroups,
-    geminiAccounts,
-    githubCopilotAccounts,
-    kiroAccounts,
-    qoderAccounts,
     selectedPlatform,
     t,
-    traeAccounts,
     viewedAccount,
-    windsurfAccounts,
-    workbuddyAccounts,
-    zedAccounts,
   ]);
 
   const isCurrentViewed = Boolean(viewedAccount?.id && viewedAccount.id === currentAccount?.id);
@@ -946,41 +695,8 @@ export function FloatingCardWindow() {
           case 'codex':
             await useCodexAccountStore.getState().refreshQuota(viewedAccount.id);
             break;
-          case 'claude_manager':
-            await useClaudeAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'github-copilot':
-            await useGitHubCopilotAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'windsurf':
-            await useWindsurfAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'kiro':
-            await useKiroAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
           case 'cursor':
             await useCursorAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'gemini':
-            await useGeminiAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'codebuddy':
-            await useCodebuddyAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'codebuddy_cn':
-            await useCodebuddyCnAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'qoder':
-            await useQoderAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'trae':
-            await useTraeAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'workbuddy':
-            await useWorkbuddyAccountStore.getState().refreshToken(viewedAccount.id);
-            break;
-          case 'zed':
-            await useZedAccountStore.getState().refreshToken(viewedAccount.id);
             break;
         }
       } catch (error) {
@@ -1062,42 +778,8 @@ export function FloatingCardWindow() {
             await useCodexAccountStore.getState().switchAccount(viewedAccount.id);
             await useCodexAccountStore.getState().fetchCurrentAccount();
             break;
-          case 'claude_manager':
-            await useClaudeAccountStore.getState().switchAccount(viewedAccount.id);
-            await useClaudeAccountStore.getState().fetchCurrentAccountId();
-            break;
-          case 'github-copilot':
-            await useGitHubCopilotAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
-          case 'windsurf':
-            await useWindsurfAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
-          case 'kiro':
-            await useKiroAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
           case 'cursor':
             await useCursorAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
-          case 'gemini':
-            await useGeminiAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
-          case 'codebuddy':
-            await useCodebuddyAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
-          case 'codebuddy_cn':
-            await useCodebuddyCnAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
-          case 'qoder':
-            await useQoderAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
-          case 'trae':
-            await useTraeAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
-          case 'workbuddy':
-            await useWorkbuddyAccountStore.getState().switchAccount(viewedAccount.id);
-            break;
-          case 'zed':
-            await useZedAccountStore.getState().switchAccount(viewedAccount.id);
             break;
         }
       }
