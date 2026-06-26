@@ -5,6 +5,7 @@ import { useEscClose } from '../hooks/useEscClose';
 import * as cursorService from '../services/cursorService';
 import { formatCursorUsageDollars } from '../types/cursor';
 import {
+  buildFreeCreditUsageSummary,
   getCursorUsageDateRange,
   getCursorUsageEventKindLabel,
   parseCursorAggregatedUsage,
@@ -12,6 +13,7 @@ import {
   parseCursorUserAnalytics,
   type CursorAggregatedUsageData,
   type CursorFilteredUsageEventsData,
+  type CursorFreeCreditUsageSummary,
   type CursorUsagePeriod,
   type CursorUserAnalyticsData,
 } from '../types/cursorUsage';
@@ -245,6 +247,7 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usageData, setUsageData] = useState<CursorAggregatedUsageData | null>(null);
+  const [freeCreditSummary, setFreeCreditSummary] = useState<CursorFreeCreditUsageSummary | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   useEscClose(isOpen && !detailsOpen, onClose);
 
@@ -280,13 +283,25 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
     setLoading(true);
     setError(null);
     setUsageData(null);
+    setFreeCreditSummary(null);
     try {
-      const raw = await cursorService.fetchCursorAggregatedUsage(
-        accountId,
-        range.startMs,
-        range.endMs,
+      const [rawAggregated, rawEvents] = await Promise.all([
+        cursorService.fetchCursorAggregatedUsage(
+          accountId,
+          range.startMs,
+          range.endMs,
+        ),
+        cursorService.fetchAllCursorUsageEvents(
+          accountId,
+          range.startMs,
+          range.endMs,
+        ),
+      ]);
+      setUsageData(parseCursorAggregatedUsage(rawAggregated));
+      const events = parseCursorUsageEvents(rawEvents);
+      setFreeCreditSummary(
+        events ? buildFreeCreditUsageSummary(events.usageEventsDisplay) : null,
       );
-      setUsageData(parseCursorAggregatedUsage(raw));
     } catch (err) {
       setError(String(err));
     } finally {
@@ -300,6 +315,7 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
     setCustomStartDate('');
     setCustomEndDate('');
     setDetailsOpen(false);
+    setFreeCreditSummary(null);
     void fetchUsage('30days');
   }, [accountId, isOpen]);
 
@@ -420,6 +436,60 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
                         </div>
                       </div>
                     ))}
+                  </div>
+                ) : null}
+
+                {freeCreditSummary ? (
+                  <div className="cursor-usage-free-credit-section">
+                    <div className="cursor-usage-summary-head">
+                      <h3>
+                        {t('cursor.usage.freeCreditSummaryTitle', '赠送额度统计')} — {periodLabel}
+                      </h3>
+                    </div>
+
+                    <div className="cursor-usage-summary-grid">
+                      <div className="cursor-usage-summary-card gift">
+                        <span>{t('cursor.usage.freeCreditTotalCost', '赠送额度使用总额')}</span>
+                        <strong>{formatCursorUsageDollars(freeCreditSummary.total_cost_cents)}</strong>
+                      </div>
+                      <div className="cursor-usage-summary-card events">
+                        <span>{t('cursor.usage.freeCreditEventCount', '使用次数')}</span>
+                        <strong>{freeCreditSummary.event_count.toLocaleString()}</strong>
+                      </div>
+                      <div className="cursor-usage-summary-card input">
+                        <span>{t('cursor.usage.totalInput', '总输入 TOKEN')}</span>
+                        <strong>{formatTokenCount(freeCreditSummary.total_input_tokens)}</strong>
+                      </div>
+                      <div className="cursor-usage-summary-card output">
+                        <span>{t('cursor.usage.totalOutput', '总输出 TOKEN')}</span>
+                        <strong>{formatTokenCount(freeCreditSummary.total_output_tokens)}</strong>
+                      </div>
+                    </div>
+
+                    {freeCreditSummary.models.length > 0 ? (
+                      <div className="cursor-usage-model-list">
+                        <h4>{t('cursor.usage.freeCreditModelBreakdown', '赠送额度使用详情')}</h4>
+                        {freeCreditSummary.models.map((model) => (
+                          <div key={model.model} className="cursor-usage-model-item">
+                            <div className="cursor-usage-model-item-head">
+                              <span className="cursor-usage-model-pill cursor-usage-kind-pill included">
+                                {model.model}
+                              </span>
+                              <strong>{formatCursorUsageDollars(model.total_cents)}</strong>
+                            </div>
+                            <div className="cursor-usage-model-item-meta">
+                              <span>
+                                {t('cursor.usage.freeCreditEventCount', '使用次数')}: {model.event_count.toLocaleString()}
+                              </span>
+                              <span>{t('cursor.usage.inputTokens', '输入')}: {formatTokenCount(model.input_tokens)}</span>
+                              <span>{t('cursor.usage.outputTokens', '输出')}: {formatTokenCount(model.output_tokens)}</span>
+                              <span>{t('cursor.usage.cacheWriteTokens', '缓存写入')}: {formatTokenCount(model.cache_write_tokens)}</span>
+                              <span>{t('cursor.usage.cacheReadTokens', '缓存读取')}: {formatTokenCount(model.cache_read_tokens)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </>

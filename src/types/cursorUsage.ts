@@ -45,6 +45,26 @@ export type CursorUsagePeriod = '7days' | '30days' | 'thisMonth' | 'custom';
 
 export const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT = 'USAGE_EVENT_KIND_FREE_CREDIT';
 
+export interface CursorFreeCreditModelUsage {
+  model: string;
+  input_tokens: string;
+  output_tokens: string;
+  cache_write_tokens: string;
+  cache_read_tokens: string;
+  total_cents: number;
+  event_count: number;
+}
+
+export interface CursorFreeCreditUsageSummary {
+  total_input_tokens: string;
+  total_output_tokens: string;
+  total_cache_write_tokens: string;
+  total_cache_read_tokens: string;
+  total_cost_cents: number;
+  event_count: number;
+  models: CursorFreeCreditModelUsage[];
+}
+
 function pickString(obj: Record<string, unknown>, ...keys: string[]): string {
   for (const key of keys) {
     const value = obj[key];
@@ -169,9 +189,17 @@ function parseUsageCostCents(value: string | null | undefined): number {
   return Math.round(parsed * 100);
 }
 
-export function aggregateFreeCreditUsage(
+export function parseFreeCreditEventCents(event: CursorUsageEventDisplay): number {
+  let cents = event.tokenUsage?.totalCents ?? 0;
+  if (cents <= 0) {
+    cents = parseUsageCostCents(event.usageBasedCosts);
+  }
+  return cents > 0 ? Math.round(cents) : 0;
+}
+
+export function buildFreeCreditUsageSummary(
   events: CursorUsageEventDisplay[],
-): CursorModelUsage | null {
+): CursorFreeCreditUsageSummary | null {
   const freeCreditEvents = events.filter(
     (event) => event.kind === CURSOR_USAGE_EVENT_KIND_FREE_CREDIT,
   );
@@ -182,33 +210,80 @@ export function aggregateFreeCreditUsage(
   let cacheWriteTokens = 0;
   let cacheReadTokens = 0;
   let totalCents = 0;
+  let chargedEventCount = 0;
+  const modelMap = new Map<string, CursorFreeCreditModelUsage>();
 
   freeCreditEvents.forEach((event) => {
-    const tokenUsage = event.tokenUsage;
-    let eventCents = tokenUsage?.totalCents ?? 0;
-    if (eventCents <= 0) {
-      eventCents = parseUsageCostCents(event.usageBasedCosts);
-    }
+    const eventCents = parseFreeCreditEventCents(event);
     if (eventCents <= 0) return;
 
+    chargedEventCount += 1;
+    totalCents += eventCents;
+
+    const tokenUsage = event.tokenUsage;
+    const modelName = event.model.trim() || '—';
+    const existing = modelMap.get(modelName) ?? {
+      model: modelName,
+      input_tokens: '0',
+      output_tokens: '0',
+      cache_write_tokens: '0',
+      cache_read_tokens: '0',
+      total_cents: 0,
+      event_count: 0,
+    };
+
     if (tokenUsage) {
+      const nextInput = parseTokenCount(existing.input_tokens) + (tokenUsage.inputTokens ?? 0);
+      const nextOutput = parseTokenCount(existing.output_tokens) + (tokenUsage.outputTokens ?? 0);
+      const nextCacheWrite =
+        parseTokenCount(existing.cache_write_tokens) + (tokenUsage.cacheWriteTokens ?? 0);
+      const nextCacheRead =
+        parseTokenCount(existing.cache_read_tokens) + (tokenUsage.cacheReadTokens ?? 0);
+      existing.input_tokens = String(nextInput);
+      existing.output_tokens = String(nextOutput);
+      existing.cache_write_tokens = String(nextCacheWrite);
+      existing.cache_read_tokens = String(nextCacheRead);
       inputTokens += tokenUsage.inputTokens ?? 0;
       outputTokens += tokenUsage.outputTokens ?? 0;
       cacheWriteTokens += tokenUsage.cacheWriteTokens ?? 0;
       cacheReadTokens += tokenUsage.cacheReadTokens ?? 0;
     }
-    totalCents += eventCents;
+
+    existing.total_cents += eventCents;
+    existing.event_count += 1;
+    modelMap.set(modelName, existing);
   });
 
   if (totalCents <= 0) return null;
 
+  const models = Array.from(modelMap.values()).sort(
+    (left, right) => right.total_cents - left.total_cents,
+  );
+
+  return {
+    total_input_tokens: String(inputTokens),
+    total_output_tokens: String(outputTokens),
+    total_cache_write_tokens: String(cacheWriteTokens),
+    total_cache_read_tokens: String(cacheReadTokens),
+    total_cost_cents: totalCents,
+    event_count: chargedEventCount,
+    models,
+  };
+}
+
+export function aggregateFreeCreditUsage(
+  events: CursorUsageEventDisplay[],
+): CursorModelUsage | null {
+  const summary = buildFreeCreditUsageSummary(events);
+  if (!summary) return null;
+
   return {
     model_intent: CURSOR_USAGE_EVENT_KIND_FREE_CREDIT,
-    input_tokens: String(inputTokens),
-    output_tokens: String(outputTokens),
-    cache_write_tokens: String(cacheWriteTokens),
-    cache_read_tokens: String(cacheReadTokens),
-    total_cents: totalCents,
+    input_tokens: summary.total_input_tokens,
+    output_tokens: summary.total_output_tokens,
+    cache_write_tokens: summary.total_cache_write_tokens,
+    cache_read_tokens: summary.total_cache_read_tokens,
+    total_cents: summary.total_cost_cents,
   };
 }
 
