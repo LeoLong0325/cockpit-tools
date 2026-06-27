@@ -3904,6 +3904,10 @@
       "pastDue": "逾期"
     },
     "injectToCursor": "切换到 Cursor",
+
+    "filterTagged": "售出",
+    "filterTaggedWithCount": "售出 ({{count}})",
+    "filterTaggedTitle": "筛选已添加标签的账号",
     "quota": {
       "onDemand": "按需使用",
       "credits": "赠送额度",

@@ -3603,6 +3603,10 @@
   "cursor": {
     "subscription": "Abonelik",
     "injectToCursor": "Cursor'a geç",
+
+    "filterTagged": "Satıldı",
+    "filterTaggedWithCount": "Satıldı ({{count}})",
+    "filterTaggedTitle": "Etiketli hesapları göster",
     "quota": {
       "onDemand": "İsteğe bağlı",
       "credits": "Krediler",

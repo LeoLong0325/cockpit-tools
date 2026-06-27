@@ -27,6 +27,7 @@ import {
   BookOpen,
   Gift,
   BarChart3,
+  Tags,
 } from 'lucide-react';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
 import * as cursorService from '../services/cursorService';
@@ -127,6 +128,7 @@ export function CursorAccountsPage() {
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralError, setReferralError] = useState<string | null>(null);
   const [referralEligibleOnly, setReferralEligibleOnly] = useState(false);
+  const [taggedOnly, setTaggedOnly] = useState(false);
   const [filterTypes, setFilterTypes] = useState<string[]>(() =>
     readAccountsOverviewFilterPersistenceEnabled(CURSOR_FILTER_PERSISTENCE_SCOPE)
       ? readAccountsOverviewFilterStringArray(CURSOR_FILTER_PERSISTENCE_SCOPE, FILTER_TYPES_FIELD)
@@ -236,6 +238,11 @@ export function CursorAccountsPage() {
   const referralEligibleCount = useMemo(
     () => accounts.filter((account) => hasCursorReferralEligibility(account)).length,
     [accounts],
+  );
+
+  const taggedAccountCount = useMemo(
+    () => accounts.filter((account) => (account.tags || []).some((tag) => normalizeTag(tag))).length,
+    [accounts, normalizeTag],
   );
 
   // ─── Platform-specific: Plan resolution ────────────────────────────
@@ -629,10 +636,14 @@ export function CursorAccountsPage() {
       result = result.filter((account) => hasCursorReferralEligibility(account));
     }
 
+    if (taggedOnly) {
+      result = result.filter((account) => (account.tags || []).some((tag) => normalizeTag(tag)));
+    }
+
     result.sort(compareAccountsBySort);
 
     return result;
-  }, [accounts, compareAccountsBySort, filterTypes, isAbnormalAccount, normalizeTag, referralEligibleOnly, resolvePlanKey, searchQuery, tagFilter]);
+  }, [accounts, compareAccountsBySort, filterTypes, isAbnormalAccount, normalizeTag, referralEligibleOnly, resolvePlanKey, searchQuery, tagFilter, taggedOnly]);
 
   const filteredIds = useMemo(() => filteredAccounts.map((account) => account.id), [filteredAccounts]);
   const exportSelectionCount = getScopedSelectedCount(filteredIds);
@@ -1173,6 +1184,20 @@ export function CursorAccountsPage() {
               </div>
             )}
           </div>
+
+          <button
+            type="button"
+            className={`tag-filter-btn tagged-only-filter-btn ${taggedOnly ? 'active' : ''}`}
+            onClick={() => setTaggedOnly((prev) => !prev)}
+            disabled={taggedAccountCount === 0}
+            title={t('cursor.filterTaggedTitle', '筛选已添加标签的账号')}
+            aria-label={t('cursor.filterTaggedTitle', '筛选已添加标签的账号')}
+          >
+            <Tags size={14} />
+            {taggedAccountCount > 0
+              ? t('cursor.filterTaggedWithCount', '售出 ({{count}})', { count: taggedAccountCount })
+              : t('cursor.filterTagged', '售出')}
+          </button>
 
           <button
             type="button"

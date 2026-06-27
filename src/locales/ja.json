@@ -3603,6 +3603,10 @@
   "cursor": {
     "subscription": "サブスクリプション",
     "injectToCursor": "Cursor に切り替え",
+
+    "filterTagged": "売却",
+    "filterTaggedWithCount": "売却 ({{count}})",
+    "filterTaggedTitle": "タグ付きアカウントを表示",
     "quota": {
       "onDemand": "オンデマンド",
       "credits": "クレジット",

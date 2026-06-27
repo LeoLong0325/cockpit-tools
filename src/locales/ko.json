@@ -3603,6 +3603,10 @@
   "cursor": {
     "subscription": "구독",
     "injectToCursor": "Cursor로 전환",
+
+    "filterTagged": "판매",
+    "filterTaggedWithCount": "판매 ({{count}})",
+    "filterTaggedTitle": "태그가 있는 계정 표시",
     "quota": {
       "onDemand": "온디맨드",
       "credits": "크레딧",

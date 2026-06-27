@@ -3904,6 +3904,10 @@
       "pastDue": "Past due"
     },
     "injectToCursor": "Switch to Cursor",
+
+    "filterTagged": "Sold",
+    "filterTaggedWithCount": "Sold ({{count}})",
+    "filterTaggedTitle": "Show accounts with tags",
     "quota": {
       "onDemand": "On-Demand",
       "credits": "Credits",

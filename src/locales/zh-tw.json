@@ -3603,6 +3603,10 @@
   "cursor": {
     "subscription": "訂閱方案",
     "injectToCursor": "切換至 Cursor",
+
+    "filterTagged": "售出",
+    "filterTaggedWithCount": "售出 ({{count}})",
+    "filterTaggedTitle": "篩選已新增標籤的帳號",
     "quota": {
       "onDemand": "按需使用",
       "credits": "贈送額度",

@@ -3603,6 +3603,10 @@
   "cursor": {
     "subscription": "Подписка",
     "injectToCursor": "Переключиться на Cursor",
+
+    "filterTagged": "Продано",
+    "filterTaggedWithCount": "Продано ({{count}})",
+    "filterTaggedTitle": "Показать аккаунты с тегами",
     "quota": {
       "onDemand": "По запросу",
       "credits": "Кредиты",

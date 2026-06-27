@@ -3603,6 +3603,10 @@
   "cursor": {
     "subscription": "Subskrypcja",
     "injectToCursor": "Przełącz na Cursor",
+
+    "filterTagged": "Sprzedane",
+    "filterTaggedWithCount": "Sprzedane ({{count}})",
+    "filterTaggedTitle": "Pokaż konta z tagami",
     "quota": {
       "onDemand": "Na żądanie",
       "credits": "Kredyty",

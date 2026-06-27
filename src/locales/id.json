@@ -3749,6 +3749,10 @@
   "cursor": {
     "subscription": "Subscription​",
     "injectToCursor": "Switch to Cursor​",
+
+    "filterTagged": "Terjual",
+    "filterTaggedWithCount": "Terjual ({{count}})",
+    "filterTaggedTitle": "Tampilkan akun ber-tag",
     "quota": {
       "onDemand": "Sesuai permintaan",
       "credits": "Kredit",

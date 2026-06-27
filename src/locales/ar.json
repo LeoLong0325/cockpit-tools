@@ -3649,6 +3649,10 @@
   "cursor": {
     "subscription": "الاشتراك",
     "injectToCursor": "التبديل إلى Cursor",
+
+    "filterTagged": "مباع",
+    "filterTaggedWithCount": "مباع ({{count}})",
+    "filterTaggedTitle": "عرض الحسابات ذات الوسوم",
     "quota": {
       "onDemand": "حسب الطلب",
       "credits": "الأرصدة",

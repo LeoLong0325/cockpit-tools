@@ -3603,6 +3603,10 @@
   "cursor": {
     "subscription": "Gói đăng ký",
     "injectToCursor": "Chuyển sang Cursor",
+
+    "filterTagged": "Đã bán",
+    "filterTaggedWithCount": "Đã bán ({{count}})",
+    "filterTaggedTitle": "Hiển thị tài khoản có thẻ",
     "quota": {
       "onDemand": "Theo yêu cầu",
       "credits": "Tín dụng",

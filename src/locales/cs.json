@@ -3603,6 +3603,10 @@
   "cursor": {
     "subscription": "Předplatné",
     "injectToCursor": "Přepnout na Cursor",
+
+    "filterTagged": "Prodáno",
+    "filterTaggedWithCount": "Prodáno ({{count}})",
+    "filterTaggedTitle": "Zobrazit účty se štítky",
     "quota": {
       "onDemand": "Na vyžádání",
       "credits": "Kredity",
