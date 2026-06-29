@@ -123,11 +123,12 @@ export async function fetchAllCursorUsageEvents(
   teamId = 0,
   pageSize = 500,
 ): Promise<unknown> {
+  const maxPages = 200;
   let page = 1;
   let totalCount = 0;
   const usageEventsDisplay: CursorUsageEventDisplay[] = [];
 
-  while (true) {
+  while (page <= maxPages) {
     const raw = await fetchCursorUsageEvents(
       accountId,
       startDate,
@@ -139,20 +140,24 @@ export async function fetchAllCursorUsageEvents(
     const parsed = parseCursorUsageEvents(raw);
     if (!parsed) break;
 
-    totalCount = parsed.totalUsageEventsCount;
-    usageEventsDisplay.push(...parsed.usageEventsDisplay);
+    totalCount = Math.max(totalCount, parsed.totalUsageEventsCount);
+    const pageEvents = parsed.usageEventsDisplay;
+    usageEventsDisplay.push(...pageEvents);
 
-    if (
-      parsed.usageEventsDisplay.length === 0
-      || usageEventsDisplay.length >= totalCount
-    ) {
+    if (pageEvents.length === 0) {
+      break;
+    }
+    if (pageEvents.length < pageSize) {
+      break;
+    }
+    if (totalCount > 0 && usageEventsDisplay.length >= totalCount) {
       break;
     }
     page += 1;
   }
 
   return {
-    totalUsageEventsCount: totalCount,
+    totalUsageEventsCount: Math.max(totalCount, usageEventsDisplay.length),
     usageEventsDisplay,
   };
 }

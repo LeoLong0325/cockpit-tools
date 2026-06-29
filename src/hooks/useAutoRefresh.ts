@@ -74,7 +74,9 @@ interface PlatformRefreshDescriptor {
 
 const STARTUP_AUTO_REFRESH_SETUP_DELAY_MS = 2500;
 const AUTO_REFRESH_TICK_MS = 5_000;
-const AUTO_REFRESH_MAX_CONCURRENT = 1;
+/** 各平台（antigravity / codex / cursor）可并行刷新，同平台内仍串行 */
+const AUTO_REFRESH_MAX_CONCURRENT = 3;
+const AUTO_REFRESH_MAX_CONCURRENT_PER_GROUP = 1;
 
 function minutesToMs(minutes: number): number {
   return minutes * 60 * 1000;
@@ -161,9 +163,9 @@ export function useAutoRefresh() {
       task: () => Promise<void>,
       startMessage: string | null,
       errorMessage: string,
-    ) => {
+    ): Promise<boolean> => {
       if (refreshingRef.current) {
-        return;
+        return false;
       }
 
       refreshingRef.current = true;
@@ -172,8 +174,10 @@ export function useAutoRefresh() {
           console.log(startMessage);
         }
         await task();
+        return true;
       } catch (error) {
         console.error(errorMessage, error);
+        return true;
       } finally {
         refreshingRef.current = false;
       }
@@ -382,6 +386,7 @@ export function useAutoRefresh() {
                 key: `full:${descriptor.key}`,
                 label: `${descriptor.label} 全量刷新`,
                 intervalMs: minutesToMs(descriptor.intervalMinutes),
+                concurrencyGroup: descriptor.key,
                 run: () =>
                   executeWithGuard(
                     descriptor.fullRefreshingRef,
@@ -400,6 +405,7 @@ export function useAutoRefresh() {
                 key: `current:${descriptor.key}`,
                 label: `${descriptor.label} 当前账号刷新`,
                 intervalMs: minutesToMs(descriptor.currentMinutes),
+                concurrencyGroup: descriptor.key,
                 shouldSkip: () => descriptor.fullRefreshingRef.current,
                 run: () =>
                   executeWithGuard(
@@ -418,6 +424,7 @@ export function useAutoRefresh() {
             const scheduler = createAutoRefreshScheduler(tasks, {
               tickMs: AUTO_REFRESH_TICK_MS,
               maxConcurrent: AUTO_REFRESH_MAX_CONCURRENT,
+              maxConcurrentPerGroup: AUTO_REFRESH_MAX_CONCURRENT_PER_GROUP,
             });
             scheduler.start();
             schedulerRef.current = scheduler;

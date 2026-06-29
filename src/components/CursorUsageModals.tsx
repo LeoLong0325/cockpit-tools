@@ -11,6 +11,9 @@ import {
   parseCursorAggregatedUsage,
   parseCursorUsageEvents,
   parseCursorUserAnalytics,
+  resolveCursorUsageEventsMaxPage,
+  resolveCursorUsageEventsNewestApiPage,
+  sortCursorUsageEventsDescending,
   type CursorAggregatedUsageData,
   type CursorFilteredUsageEventsData,
   type CursorFreeCreditUsageSummary,
@@ -37,23 +40,28 @@ interface CursorUsageDetailsModalProps {
   accountId: string;
   startMs: number;
   endMs: number;
+  periodLabel: string;
   onClose: () => void;
 }
 
 export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
-  const { isOpen, accountId, startMs, endMs, onClose } = props;
+  const { isOpen, accountId, startMs, endMs, periodLabel, onClose } = props;
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'events' | 'analytics'>('events');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [eventsData, setEventsData] = useState<CursorFilteredUsageEventsData | null>(null);
   const [analyticsData, setAnalyticsData] = useState<CursorUserAnalyticsData | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentApiPage, setCurrentApiPage] = useState<number | null>(null);
+  const [maxApiPage, setMaxApiPage] = useState(1);
   const pageSize = 20;
   useEscClose(isOpen, onClose);
 
   const loadData = useCallback(async () => {
     if (!isOpen || !accountId) return;
+    if (activeTab === 'events' && currentApiPage == null) {
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -62,10 +70,23 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
           accountId,
           startMs,
           endMs,
-          currentPage,
+          currentApiPage as number,
           pageSize,
         );
-        setEventsData(parseCursorUsageEvents(raw));
+        const parsed = parseCursorUsageEvents(raw);
+        if (!parsed) {
+          setEventsData(null);
+          return;
+        }
+        const computedMaxPage = resolveCursorUsageEventsMaxPage(
+          parsed.totalUsageEventsCount,
+          pageSize,
+        );
+        setMaxApiPage(computedMaxPage);
+        setEventsData({
+          ...parsed,
+          usageEventsDisplay: sortCursorUsageEventsDescending(parsed.usageEventsDisplay),
+        });
       } else {
         const raw = await cursorService.fetchCursorUserAnalytics(accountId, startMs, endMs);
         setAnalyticsData(parseCursorUserAnalytics(raw));
@@ -75,7 +96,46 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
     } finally {
       setLoading(false);
     }
-  }, [accountId, activeTab, currentPage, endMs, isOpen, startMs]);
+  }, [accountId, activeTab, currentApiPage, endMs, isOpen, startMs]);
+
+  useEffect(() => {
+    if (!isOpen || !accountId || activeTab !== 'events') {
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      setEventsData(null);
+      setCurrentApiPage(null);
+      try {
+        const raw = await cursorService.fetchCursorUsageEvents(
+          accountId,
+          startMs,
+          endMs,
+          1,
+          pageSize,
+        );
+        if (cancelled) return;
+        const parsed = parseCursorUsageEvents(raw);
+        const newestPage = parsed
+          ? resolveCursorUsageEventsNewestApiPage(parsed.totalUsageEventsCount, pageSize)
+          : 1;
+        setMaxApiPage(newestPage);
+        setCurrentApiPage(newestPage);
+      } catch (err) {
+        if (!cancelled) {
+          setError(String(err));
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, activeTab, endMs, isOpen, startMs]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -85,7 +145,8 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
   useEffect(() => {
     if (!isOpen) {
       setActiveTab('events');
-      setCurrentPage(1);
+      setCurrentApiPage(null);
+      setMaxApiPage(1);
       setEventsData(null);
       setAnalyticsData(null);
       setError(null);
@@ -95,14 +156,14 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
   if (!isOpen) return null;
 
   const maxPage = eventsData
-    ? Math.max(1, Math.ceil(eventsData.totalUsageEventsCount / pageSize))
-    : 1;
+    ? resolveCursorUsageEventsMaxPage(eventsData.totalUsageEventsCount, pageSize)
+    : maxApiPage;
 
   return (
     <div className="modal-overlay cursor-usage-details-overlay" onClick={onClose}>
       <div className="modal cursor-usage-details-modal" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
-          <h2>{t('cursor.usage.detailsTitle', '使用详情 (最近30天)')}</h2>
+          <h2>{t('cursor.usage.detailsTitleWithPeriod', '使用详情 ({{period}})', { period: periodLabel })}</h2>
           <button className="modal-close" onClick={onClose} aria-label={t('common.close', '关闭')}>
             <X />
           </button>
@@ -115,7 +176,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
               className={`cursor-usage-tab ${activeTab === 'events' ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab('events');
-                setCurrentPage(1);
+                setCurrentApiPage(null);
               }}
             >
               {t('cursor.usage.eventsTab', '使用事件明细')}
@@ -178,7 +239,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
               <div className="cursor-usage-pagination">
                 <span>
                   {t('cursor.usage.pageInfo', '第 {{page}} / {{total}} 页，共 {{count}} 条', {
-                    page: currentPage,
+                    page: currentApiPage ?? maxPage,
                     total: maxPage,
                     count: eventsData.totalUsageEventsCount,
                   })}
@@ -187,16 +248,16 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
-                    disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={(currentApiPage ?? maxPage) <= 1}
+                    onClick={() => setCurrentApiPage((page) => Math.max(1, (page ?? maxPage) - 1))}
                   >
                     {t('cursor.usage.prevPage', '上一页')}
                   </button>
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
-                    disabled={currentPage >= maxPage}
-                    onClick={() => setCurrentPage((page) => page + 1)}
+                    disabled={(currentApiPage ?? maxPage) >= maxPage}
+                    onClick={() => setCurrentApiPage((page) => Math.min(maxPage, (page ?? maxPage) + 1))}
                   >
                     {t('cursor.usage.nextPage', '下一页')}
                   </button>
@@ -249,6 +310,7 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
   const [usageData, setUsageData] = useState<CursorAggregatedUsageData | null>(null);
   const [freeCreditSummary, setFreeCreditSummary] = useState<CursorFreeCreditUsageSummary | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsRange, setDetailsRange] = useState<{ startMs: number; endMs: number } | null>(null);
   useEscClose(isOpen && !detailsOpen, onClose);
 
   const dateRange = useMemo(
@@ -394,7 +456,14 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
               <>
                 <div className="cursor-usage-summary-head">
                   <h3>{t('cursor.usage.summaryTitle', '用量统计')} — {periodLabel}</h3>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setDetailsOpen(true)}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      setDetailsRange(getCursorUsageDateRange(selectedPeriod, customStartDate, customEndDate));
+                      setDetailsOpen(true);
+                    }}
+                  >
                     <ClipboardList size={14} />
                     {t('cursor.usage.viewDetails', '查看明细')}
                   </button>
@@ -507,8 +576,9 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
       <CursorUsageDetailsModal
         isOpen={detailsOpen}
         accountId={accountId}
-        startMs={dateRange.startMs}
-        endMs={dateRange.endMs}
+        startMs={detailsRange?.startMs ?? dateRange.startMs}
+        endMs={detailsRange?.endMs ?? dateRange.endMs}
+        periodLabel={periodLabel}
         onClose={() => setDetailsOpen(false)}
       />
     </>

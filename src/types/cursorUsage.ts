@@ -173,6 +173,42 @@ export function parseCursorUsageEvents(raw: unknown): CursorFilteredUsageEventsD
   };
 }
 
+function parseEventTimestampMs(timestamp: string): number {
+  const ms = Number(timestamp);
+  if (Number.isFinite(ms) && ms > 0) {
+    return ms;
+  }
+  const parsed = Date.parse(timestamp);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/** Cursor dashboard API 分页按时间升序返回，展示前需倒序以便最新记录在前。 */
+export function sortCursorUsageEventsDescending(
+  events: CursorUsageEventDisplay[],
+): CursorUsageEventDisplay[] {
+  return [...events].sort(
+    (left, right) => parseEventTimestampMs(right.timestamp) - parseEventTimestampMs(left.timestamp),
+  );
+}
+
+export function resolveCursorUsageEventsMaxPage(totalCount: number, pageSize: number): number {
+  if (!Number.isFinite(totalCount) || totalCount <= 0 || pageSize <= 0) {
+    return 1;
+  }
+  return Math.max(1, Math.ceil(totalCount / pageSize));
+}
+
+/**
+ * Cursor filtered usage API 按时间升序分页：最后一页是最新记录。
+ * 返回默认应展示的 API 页码（即最后一页）。
+ */
+export function resolveCursorUsageEventsNewestApiPage(
+  totalCount: number,
+  pageSize: number,
+): number {
+  return resolveCursorUsageEventsMaxPage(totalCount, pageSize);
+}
+
 function parseTokenCount(value: string | number | null | undefined): number {
   if (value == null || value === '') return 0;
   const num = typeof value === 'number' ? value : Number(String(value).replace(/,/g, ''));
