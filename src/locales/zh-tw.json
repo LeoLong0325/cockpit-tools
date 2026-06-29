@@ -3685,6 +3685,7 @@
       "customDateRequired": "請選擇開始和結束日期",
       "summaryTitle": "用量統計",
       "viewDetails": "查看明細",
+      "refreshLatest": "刷新最新",
       "totalInput": "總輸入 TOKEN",
       "totalOutput": "總輸出 TOKEN",
       "totalCacheRead": "快取讀取 TOKEN",

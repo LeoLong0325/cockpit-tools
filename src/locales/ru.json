@@ -3685,6 +3685,7 @@
       "customDateRequired": "Выберите даты начала и окончания",
       "summaryTitle": "Сводка использования",
       "viewDetails": "Подробности",
+      "refreshLatest": "Обновить последние",
       "totalInput": "Всего входных токенов",
       "totalOutput": "Всего выходных токенов",
       "totalCacheRead": "Токены чтения кэша",

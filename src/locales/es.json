@@ -3685,6 +3685,7 @@
       "customDateRequired": "Seleccione las fechas de inicio y fin",
       "summaryTitle": "Resumen de uso",
       "viewDetails": "Ver detalles",
+      "refreshLatest": "Actualizar lo más reciente",
       "totalInput": "Tokens de entrada totales",
       "totalOutput": "Tokens de salida totales",
       "totalCacheRead": "Tokens de lectura en caché",

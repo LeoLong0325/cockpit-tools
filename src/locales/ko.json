@@ -3685,6 +3685,7 @@
       "customDateRequired": "시작일과 종료일을 선택하세요",
       "summaryTitle": "사용량 요약",
       "viewDetails": "상세 보기",
+      "refreshLatest": "최신 새로고침",
       "totalInput": "총 입력 토큰",
       "totalOutput": "총 출력 토큰",
       "totalCacheRead": "캐시 읽기 토큰",

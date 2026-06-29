@@ -3685,6 +3685,7 @@
       "customDateRequired": "開始日と終了日を選択してください",
       "summaryTitle": "使用量サマリー",
       "viewDetails": "詳細を見る",
+      "refreshLatest": "最新を更新",
       "totalInput": "入力トークン合計",
       "totalOutput": "出力トークン合計",
       "totalCacheRead": "キャッシュ読取トークン",

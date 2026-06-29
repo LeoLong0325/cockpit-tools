@@ -3685,6 +3685,7 @@
       "customDateRequired": "Başlangıç ve bitiş tarihlerini seçin",
       "summaryTitle": "Kullanım özeti",
       "viewDetails": "Ayrıntıları görüntüle",
+      "refreshLatest": "En yeniyi yenile",
       "totalInput": "Toplam giriş tokenı",
       "totalOutput": "Toplam çıkış tokenı",
       "totalCacheRead": "Önbellek okuma tokenı",

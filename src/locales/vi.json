@@ -3685,6 +3685,7 @@
       "customDateRequired": "Vui lòng chọn ngày bắt đầu và kết thúc",
       "summaryTitle": "Tóm tắt sử dụng",
       "viewDetails": "Xem chi tiết",
+      "refreshLatest": "Làm mới mới nhất",
       "totalInput": "Tổng token đầu vào",
       "totalOutput": "Tổng token đầu ra",
       "totalCacheRead": "Token đọc cache",

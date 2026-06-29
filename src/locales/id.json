@@ -3831,6 +3831,7 @@
       "customDateRequired": "Pilih tanggal mulai dan akhir",
       "summaryTitle": "Ringkasan penggunaan",
       "viewDetails": "Lihat detail",
+      "refreshLatest": "Segarkan terbaru",
       "totalInput": "Total token input",
       "totalOutput": "Total token output",
       "totalCacheRead": "Token baca cache",

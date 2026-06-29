@@ -3685,6 +3685,7 @@
       "customDateRequired": "Vyberte datum začátku a konce",
       "summaryTitle": "Souhrn využití",
       "viewDetails": "Zobrazit podrobnosti",
+      "refreshLatest": "Obnovit nejnovější",
       "totalInput": "Celkem vstupních tokenů",
       "totalOutput": "Celkem výstupních tokenů",
       "totalCacheRead": "Tokeny čtení cache",
