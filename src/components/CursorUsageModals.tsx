@@ -12,7 +12,6 @@ import {
   parseCursorUsageEvents,
   parseCursorUserAnalytics,
   resolveCursorUsageEventsMaxPage,
-  resolveCursorUsageEventsNewestApiPage,
   sortCursorUsageEventsDescending,
   type CursorAggregatedUsageData,
   type CursorFilteredUsageEventsData,
@@ -52,16 +51,12 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [eventsData, setEventsData] = useState<CursorFilteredUsageEventsData | null>(null);
   const [analyticsData, setAnalyticsData] = useState<CursorUserAnalyticsData | null>(null);
-  const [currentApiPage, setCurrentApiPage] = useState<number | null>(null);
-  const [maxApiPage, setMaxApiPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
   useEscClose(isOpen, onClose);
 
   const loadData = useCallback(async () => {
     if (!isOpen || !accountId) return;
-    if (activeTab === 'events' && currentApiPage == null) {
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
@@ -70,7 +65,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
           accountId,
           startMs,
           endMs,
-          currentApiPage as number,
+          currentPage,
           pageSize,
         );
         const parsed = parseCursorUsageEvents(raw);
@@ -78,11 +73,6 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
           setEventsData(null);
           return;
         }
-        const computedMaxPage = resolveCursorUsageEventsMaxPage(
-          parsed.totalUsageEventsCount,
-          pageSize,
-        );
-        setMaxApiPage(computedMaxPage);
         setEventsData({
           ...parsed,
           usageEventsDisplay: sortCursorUsageEventsDescending(parsed.usageEventsDisplay),
@@ -96,46 +86,12 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
     } finally {
       setLoading(false);
     }
-  }, [accountId, activeTab, currentApiPage, endMs, isOpen, startMs]);
+  }, [accountId, activeTab, currentPage, endMs, isOpen, startMs]);
 
   useEffect(() => {
-    if (!isOpen || !accountId || activeTab !== 'events') {
-      return;
-    }
-
-    let cancelled = false;
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      setEventsData(null);
-      setCurrentApiPage(null);
-      try {
-        const raw = await cursorService.fetchCursorUsageEvents(
-          accountId,
-          startMs,
-          endMs,
-          1,
-          pageSize,
-        );
-        if (cancelled) return;
-        const parsed = parseCursorUsageEvents(raw);
-        const newestPage = parsed
-          ? resolveCursorUsageEventsNewestApiPage(parsed.totalUsageEventsCount, pageSize)
-          : 1;
-        setMaxApiPage(newestPage);
-        setCurrentApiPage(newestPage);
-      } catch (err) {
-        if (!cancelled) {
-          setError(String(err));
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accountId, activeTab, endMs, isOpen, startMs]);
+    if (!isOpen) return;
+    setCurrentPage(1);
+  }, [accountId, endMs, isOpen, startMs]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -145,8 +101,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
   useEffect(() => {
     if (!isOpen) {
       setActiveTab('events');
-      setCurrentApiPage(null);
-      setMaxApiPage(1);
+      setCurrentPage(1);
       setEventsData(null);
       setAnalyticsData(null);
       setError(null);
@@ -157,7 +112,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
 
   const maxPage = eventsData
     ? resolveCursorUsageEventsMaxPage(eventsData.totalUsageEventsCount, pageSize)
-    : maxApiPage;
+    : 1;
 
   return (
     <div className="modal-overlay cursor-usage-details-overlay" onClick={onClose}>
@@ -176,7 +131,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
               className={`cursor-usage-tab ${activeTab === 'events' ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab('events');
-                setCurrentApiPage(null);
+                setCurrentPage(1);
               }}
             >
               {t('cursor.usage.eventsTab', '使用事件明细')}
@@ -239,7 +194,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
               <div className="cursor-usage-pagination">
                 <span>
                   {t('cursor.usage.pageInfo', '第 {{page}} / {{total}} 页，共 {{count}} 条', {
-                    page: currentApiPage ?? maxPage,
+                    page: currentPage,
                     total: maxPage,
                     count: eventsData.totalUsageEventsCount,
                   })}
@@ -248,16 +203,16 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
-                    disabled={(currentApiPage ?? maxPage) <= 1}
-                    onClick={() => setCurrentApiPage((page) => Math.max(1, (page ?? maxPage) - 1))}
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                   >
                     {t('cursor.usage.prevPage', '上一页')}
                   </button>
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
-                    disabled={(currentApiPage ?? maxPage) >= maxPage}
-                    onClick={() => setCurrentApiPage((page) => Math.min(maxPage, (page ?? maxPage) + 1))}
+                    disabled={currentPage >= maxPage}
+                    onClick={() => setCurrentPage((page) => page + 1)}
                   >
                     {t('cursor.usage.nextPage', '下一页')}
                   </button>

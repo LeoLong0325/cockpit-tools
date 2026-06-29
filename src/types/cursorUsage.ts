@@ -182,7 +182,7 @@ function parseEventTimestampMs(timestamp: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-/** Cursor dashboard API 分页按时间升序返回，展示前需倒序以便最新记录在前。 */
+/** Cursor dashboard API 返回升序/降序混排时，展示前统一按时间倒序。 */
 export function sortCursorUsageEventsDescending(
   events: CursorUsageEventDisplay[],
 ): CursorUsageEventDisplay[] {
@@ -191,22 +191,12 @@ export function sortCursorUsageEventsDescending(
   );
 }
 
+/** Cursor dashboard API 分页按时间降序返回：第 1 页是最新记录。 */
 export function resolveCursorUsageEventsMaxPage(totalCount: number, pageSize: number): number {
   if (!Number.isFinite(totalCount) || totalCount <= 0 || pageSize <= 0) {
     return 1;
   }
   return Math.max(1, Math.ceil(totalCount / pageSize));
-}
-
-/**
- * Cursor filtered usage API 按时间升序分页：最后一页是最新记录。
- * 返回默认应展示的 API 页码（即最后一页）。
- */
-export function resolveCursorUsageEventsNewestApiPage(
-  totalCount: number,
-  pageSize: number,
-): number {
-  return resolveCursorUsageEventsMaxPage(totalCount, pageSize);
 }
 
 function parseTokenCount(value: string | number | null | undefined): number {
