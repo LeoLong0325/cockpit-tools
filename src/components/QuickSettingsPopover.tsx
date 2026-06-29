@@ -47,6 +47,7 @@ import {
   resolveAccountsOverviewScopeFromQuickSettingsType,
   setAccountsOverviewFilterPersistenceEnabled,
 } from '../utils/accountsOverviewFilterPersistence';
+import { CURSOR_QUOTA_REFRESH_PRESET_VALUES } from '../types/cursorUsage';
 import './QuickSettingsPopover.css';
 
 /** GeneralConfig from backend */
@@ -372,6 +373,8 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
   );
   const modalRef = useRef<HTMLDivElement>(null);
   const refreshPresets = ['-1', '2', '5', '10', '15'];
+  const quotaRefreshPresets =
+    type === 'cursor' ? [...CURSOR_QUOTA_REFRESH_PRESET_VALUES] : refreshPresets;
   const thresholdPresets = ['0', '20', '40', '60'];
   const creditsThresholdPresets = ['0', '5', '10', '20'];
   const antigravityScopeTypeOptions = useMemo(
@@ -1393,7 +1396,7 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
   };
 
   const refreshValue = config ? (config[getRefreshKey()] as number) : 10;
-  const isPreset = refreshPresets.includes(String(refreshValue));
+  const isPreset = quotaRefreshPresets.includes(String(refreshValue));
   const showRefreshInput = refreshEditing;
   const currentAccountRefreshPlatform = getCurrentAccountRefreshPlatformForType(type);
   const currentAccountRefreshValue = currentAccountRefreshMap[currentAccountRefreshPlatform] ?? 1;
@@ -2002,10 +2005,13 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
                       </option>
                     )}
                     <option value="-1">{t('settings.general.autoRefreshDisabled')}</option>
-                    <option value="2">2 {t('settings.general.minutes')}</option>
-                    <option value="5">5 {t('settings.general.minutes')}</option>
-                    <option value="10">10 {t('settings.general.minutes')}</option>
-                    <option value="15">15 {t('settings.general.minutes')}</option>
+                    {quotaRefreshPresets
+                      .filter((preset) => preset !== '-1')
+                      .map((preset) => (
+                        <option key={preset} value={preset}>
+                          {preset} {t('settings.general.minutes')}
+                        </option>
+                      ))}
                     <option value="custom">{t('quickSettings.customInput', '自定义')}</option>
                   </select>
                 )}

@@ -14,10 +14,19 @@ const ACCOUNTS_INDEX_FILE: &str = "cursor_accounts.json";
 const ACCOUNTS_DIR: &str = "cursor_accounts";
 const CURSOR_QUOTA_ALERT_COOLDOWN_SECONDS: i64 = 10 * 60;
 const CURSOR_ACCESS_TOKEN_REFRESH_THRESHOLD_SECONDS: i64 = 5 * 60;
+/// 批量刷新并发上限：并行提速，同时限制峰值内存与 API 压力
+const CURSOR_REFRESH_MAX_CONCURRENT: usize = 3;
+/// FREE_CREDIT 事件汇总分页大小（较小页降低单账号峰值内存）
+const FREE_CREDIT_USAGE_EVENTS_PAGE_SIZE: i32 = 100;
 
 lazy_static::lazy_static! {
     static ref CURSOR_ACCOUNT_INDEX_LOCK: Mutex<()> = Mutex::new(());
     static ref CURSOR_QUOTA_ALERT_LAST_SENT: Mutex<HashMap<String, i64>> = Mutex::new(HashMap::new());
+    static ref CURSOR_HTTP_CLIENT: reqwest::Client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .pool_max_idle_per_host(CURSOR_REFRESH_MAX_CONCURRENT)
+        .build()
+        .expect("failed to build shared Cursor HTTP client");
 }
 
 fn now_ts() -> i64 {
@@ -1568,10 +1577,7 @@ struct CursorRefreshTokenResponse {
 }
 
 fn build_cursor_http_client() -> Result<reqwest::Client, String> {
-    reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| format!("创建 HTTP 客户端失败: {}", e))
+    Ok(CURSOR_HTTP_CLIENT.clone())
 }
 
 fn extract_workos_user_id(jwt: &str) -> Option<String> {
@@ -2275,10 +2281,12 @@ async fn post_dashboard_json_body_with_client(
 async fn fetch_free_credit_usage_with_client(
     client: &reqwest::Client,
     account: &CursorAccount,
-    usage_raw: &serde_json::Value,
+    usage_raw: Option<&serde_json::Value>,
 ) -> Result<Option<serde_json::Value>, String> {
-    let (start_date, end_date) = resolve_billing_cycle_range_ms(usage_raw);
-    let page_size = 500_i32;
+    let empty_usage = serde_json::json!({});
+    let usage_ref = usage_raw.unwrap_or(&empty_usage);
+    let (start_date, end_date) = resolve_billing_cycle_range_ms(usage_ref);
+    let page_size = FREE_CREDIT_USAGE_EVENTS_PAGE_SIZE;
     let mut page = 1_i32;
     let mut used_cents = 0_i64;
     let mut free_credit_event_count = 0_i32;
@@ -2355,43 +2363,8 @@ async fn post_dashboard_json_body_for_account(
     referer: &str,
     body: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    let cookie = account_dashboard_cookie(account)?;
-    let client = reqwest::Client::new();
-    let response = client
-        .post(url)
-        .header("Accept", "application/json")
-        .header("Content-Type", "application/json")
-        .header("Cookie", &cookie)
-        .header("Origin", "https://cursor.com")
-        .header("Referer", referer)
-        .header(
-            "User-Agent",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-        )
-        .json(&body)
-        .timeout(std::time::Duration::from_secs(40))
-        .send()
-        .await
-        .map_err(|e| format!("请求 Cursor dashboard API 失败: {}", e))?;
-
-    let status = response.status().as_u16();
-    if status == 401 || status == 403 {
-        return Err(format!(
-            "Cursor 会话已过期或未认证，请重新导入账号 (HTTP {})",
-            status
-        ));
-    }
-    if status != 200 {
-        return Err(format!("Cursor dashboard API 返回异常状态码: {}", status));
-    }
-
-    let body = response
-        .text()
-        .await
-        .map_err(|e| format!("读取 Cursor dashboard 响应失败: {}", e))?;
-
-    serde_json::from_str::<serde_json::Value>(&body)
-        .map_err(|e| format!("解析 Cursor dashboard JSON 失败: {}", e))
+    let client = build_cursor_http_client()?;
+    post_dashboard_json_body_with_client(&client, account, url, referer, body).await
 }
 
 pub async fn fetch_cursor_aggregated_usage(
@@ -2956,12 +2929,13 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
             account.id
         ));
     } else {
-        let usage_raw = account
-            .cursor_usage_raw
-            .as_ref()
-            .cloned()
-            .unwrap_or_else(|| serde_json::json!({}));
-        match fetch_free_credit_usage_with_client(&client, &account, &usage_raw).await {
+        match fetch_free_credit_usage_with_client(
+            &client,
+            &account,
+            account.cursor_usage_raw.as_ref(),
+        )
+        .await
+        {
             Ok(Some(snapshot)) => {
                 account.cursor_free_credit_usage_raw = Some(snapshot);
                 logger::log_info(&format!(
@@ -3006,8 +2980,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         account.usage_updated_at = Some(refreshed_at);
     }
     account.last_used = refreshed_at;
-    let updated = account.clone();
-    upsert_account_record(account)?;
+    let updated = upsert_account_record(account)?;
     logger::log_info(&format!(
         "[Cursor Refresh] 刷新完成: id={}, email={}",
         updated.id, updated.email
@@ -3024,18 +2997,46 @@ pub async fn refresh_account_async(account_id: &str) -> Result<CursorAccount, St
 }
 
 pub async fn refresh_all_tokens() -> Result<Vec<(String, Result<CursorAccount, String>)>, String> {
-    let accounts = list_accounts();
-    let active_accounts: Vec<CursorAccount> = accounts
+    use futures::future::join_all;
+    use std::sync::Arc;
+    use tokio::sync::Semaphore;
+
+    let active_accounts: Vec<CursorAccount> = list_accounts()
         .into_iter()
         .filter(|account| !is_banned_account(account))
         .collect();
 
-    let mut results = Vec::with_capacity(active_accounts.len());
-    for account in active_accounts {
-        let id = account.id.clone();
-        let result = refresh_account_async(&id).await;
-        results.push((id, result));
+    if active_accounts.is_empty() {
+        return Ok(Vec::new());
     }
+
+    logger::log_info(&format!(
+        "[Cursor Refresh] 批量刷新开始: accounts={}, maxConcurrent={}",
+        active_accounts.len(),
+        CURSOR_REFRESH_MAX_CONCURRENT
+    ));
+
+    let semaphore = Arc::new(Semaphore::new(CURSOR_REFRESH_MAX_CONCURRENT));
+    let tasks: Vec<_> = active_accounts
+        .into_iter()
+        .map(|account| {
+            let account_id = account.id;
+            let semaphore = semaphore.clone();
+            async move {
+                let _permit = semaphore.acquire_owned().await.map_err(|e| {
+                    format!("获取 Cursor 刷新并发许可失败: {}", e)
+                })?;
+                let result = refresh_account_async(&account_id).await;
+                Ok::<(String, Result<CursorAccount, String>), String>((account_id, result))
+            }
+        })
+        .collect();
+
+    let mut results = Vec::with_capacity(tasks.len());
+    for task in join_all(tasks).await {
+        results.push(task?);
+    }
+
     Ok(results)
 }
 

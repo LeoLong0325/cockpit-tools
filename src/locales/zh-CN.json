@@ -3983,6 +3983,7 @@
       "customDateRequired": "请选择开始和结束日期",
       "summaryTitle": "用量统计",
       "viewDetails": "查看明细",
+      "refreshLatest": "刷新最新",
       "totalInput": "总输入 TOKEN",
       "totalOutput": "总输出 TOKEN",
       "totalCacheRead": "缓存读取 TOKEN",

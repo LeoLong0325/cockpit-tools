@@ -43,6 +43,9 @@ export interface CursorUserAnalyticsData {
 
 export type CursorUsagePeriod = '7days' | '30days' | 'thisMonth' | 'custom';
 
+/** Cursor 配额自动刷新预设（含 1 分钟） */
+export const CURSOR_QUOTA_REFRESH_PRESET_VALUES = ['-1', '1', '2', '5', '10', '15'] as const;
+
 export const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT = 'USAGE_EVENT_KIND_FREE_CREDIT';
 
 /** Auto-routing / Composer agent models — not gifted-credit API consumption. */
@@ -411,4 +414,17 @@ export function getCursorUsageDateRange(period: CursorUsagePeriod, customStart?:
     return { startMs, endMs };
   }
   return { startMs: now - 30 * 24 * 60 * 60 * 1000, endMs: now };
+}
+
+/** 拉取用量时使用当前时刻作为结束时间，避免缓存的 endMs 漏掉最新记录。 */
+export function getCursorUsageLiveEndMs(startMs: number): number {
+  return Math.max(startMs + 1, Date.now());
+}
+
+export function getCursorUsageFetchRange(startMs: number, endMs?: number) {
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  if (typeof endMs === 'number' && Number.isFinite(endMs) && endMs < Date.now() - oneDayMs) {
+    return { startMs, endMs: Math.max(startMs + 1, endMs) };
+  }
+  return { startMs, endMs: getCursorUsageLiveEndMs(startMs) };
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ClipboardList, X } from 'lucide-react';
+import { ClipboardList, RefreshCw, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useEscClose } from '../hooks/useEscClose';
 import * as cursorService from '../services/cursorService';
@@ -7,6 +7,7 @@ import { formatCursorUsageDollars } from '../types/cursor';
 import {
   buildFreeCreditUsageSummary,
   getCursorUsageDateRange,
+  getCursorUsageFetchRange,
   getCursorUsageEventKindLabel,
   parseCursorAggregatedUsage,
   parseCursorUsageEvents,
@@ -52,8 +53,14 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
   const [eventsData, setEventsData] = useState<CursorFilteredUsageEventsData | null>(null);
   const [analyticsData, setAnalyticsData] = useState<CursorUserAnalyticsData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [reloadSeq, setReloadSeq] = useState(0);
   const pageSize = 20;
   useEscClose(isOpen, onClose);
+
+  const fetchRange = useMemo(
+    () => getCursorUsageFetchRange(startMs, endMs),
+    [endMs, reloadSeq, startMs],
+  );
 
   const loadData = useCallback(async () => {
     if (!isOpen || !accountId) return;
@@ -63,8 +70,8 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
       if (activeTab === 'events') {
         const raw = await cursorService.fetchCursorUsageEvents(
           accountId,
-          startMs,
-          endMs,
+          fetchRange.startMs,
+          fetchRange.endMs,
           currentPage,
           pageSize,
         );
@@ -78,7 +85,11 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
           usageEventsDisplay: sortCursorUsageEventsDescending(parsed.usageEventsDisplay),
         });
       } else {
-        const raw = await cursorService.fetchCursorUserAnalytics(accountId, startMs, endMs);
+        const raw = await cursorService.fetchCursorUserAnalytics(
+          accountId,
+          fetchRange.startMs,
+          fetchRange.endMs,
+        );
         setAnalyticsData(parseCursorUserAnalytics(raw));
       }
     } catch (err) {
@@ -86,11 +97,17 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
     } finally {
       setLoading(false);
     }
-  }, [accountId, activeTab, currentPage, endMs, isOpen, startMs]);
+  }, [accountId, activeTab, currentPage, fetchRange.endMs, fetchRange.startMs, isOpen]);
+
+  const handleRefreshLatest = useCallback(() => {
+    setCurrentPage(1);
+    setReloadSeq((seq) => seq + 1);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
     setCurrentPage(1);
+    setReloadSeq((seq) => seq + 1);
   }, [accountId, endMs, isOpen, startMs]);
 
   useEffect(() => {
@@ -118,7 +135,21 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
     <div className="modal-overlay cursor-usage-details-overlay" onClick={onClose}>
       <div className="modal cursor-usage-details-modal" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
-          <h2>{t('cursor.usage.detailsTitleWithPeriod', '使用详情 ({{period}})', { period: periodLabel })}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+            <h2 style={{ margin: 0 }}>
+              {t('cursor.usage.detailsTitleWithPeriod', '使用详情 ({{period}})', { period: periodLabel })}
+            </h2>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={handleRefreshLatest}
+              disabled={loading}
+              title={t('cursor.usage.refreshLatest', '刷新最新明细')}
+            >
+              <RefreshCw size={14} className={loading ? 'spin' : undefined} />
+              {t('cursor.usage.refreshLatest', '刷新最新')}
+            </button>
+          </div>
           <button className="modal-close" onClick={onClose} aria-label={t('common.close', '关闭')}>
             <X />
           </button>
@@ -131,7 +162,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
               className={`cursor-usage-tab ${activeTab === 'events' ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab('events');
-                setCurrentPage(1);
+                handleRefreshLatest();
               }}
             >
               {t('cursor.usage.eventsTab', '使用事件明细')}
@@ -288,15 +319,12 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
 
   const fetchUsage = useCallback(async (period: CursorUsagePeriod) => {
     if (!accountId) return;
-    const range = getCursorUsageDateRange(
-      period,
-      customStartDate,
-      customEndDate,
-    );
     if (period === 'custom' && (!customStartDate || !customEndDate)) {
       setError(t('cursor.usage.customDateRequired', '请选择开始和结束日期'));
       return;
     }
+    const periodRange = getCursorUsageDateRange(period, customStartDate, customEndDate);
+    const range = getCursorUsageFetchRange(periodRange.startMs, periodRange.endMs);
     setLoading(true);
     setError(null);
     setUsageData(null);
@@ -415,7 +443,12 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
                     type="button"
                     className="btn btn-secondary btn-sm"
                     onClick={() => {
-                      setDetailsRange(getCursorUsageDateRange(selectedPeriod, customStartDate, customEndDate));
+                      const periodRange = getCursorUsageDateRange(
+                        selectedPeriod,
+                        customStartDate,
+                        customEndDate,
+                      );
+                      setDetailsRange(getCursorUsageFetchRange(periodRange.startMs, periodRange.endMs));
                       setDetailsOpen(true);
                     }}
                   >

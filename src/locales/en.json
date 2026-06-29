@@ -3983,6 +3983,7 @@
       "customDateRequired": "Please select start and end dates",
       "summaryTitle": "Usage Summary",
       "viewDetails": "View Details",
+      "refreshLatest": "Refresh Latest",
       "totalInput": "Total Input Tokens",
       "totalOutput": "Total Output Tokens",
       "totalCacheRead": "Cache Read Tokens",

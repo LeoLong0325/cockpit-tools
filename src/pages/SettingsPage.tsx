@@ -214,6 +214,7 @@ type ClaudeDesktopLaunchCandidate = {
   supports_multi_instance: boolean;
 };
 const REFRESH_PRESET_VALUES = ['-1', '2', '5', '10', '15'];
+const CURSOR_REFRESH_PRESET_VALUES = ['-1', '1', '2', '5', '10', '15'];
 const CURRENT_ACCOUNT_REFRESH_PRESET_VALUES = ['1', '2', '5', '10', '15'];
 const THRESHOLD_PRESET_VALUES = ['0', '20', '40', '60'];
 const CREDITS_THRESHOLD_PRESET_VALUES = ['0', '5', '10', '20'];
@@ -2224,7 +2225,7 @@ export function SettingsPage() {
   const qoderAutoRefreshIsPreset = REFRESH_PRESET_VALUES.includes(qoderAutoRefresh);
   const traeAutoRefreshIsPreset = REFRESH_PRESET_VALUES.includes(traeAutoRefresh);
   const zedAutoRefreshIsPreset = REFRESH_PRESET_VALUES.includes(zedAutoRefresh);
-  const cursorAutoRefreshIsPreset = REFRESH_PRESET_VALUES.includes(cursorAutoRefresh);
+  const cursorAutoRefreshIsPreset = CURSOR_REFRESH_PRESET_VALUES.includes(cursorAutoRefresh);
   const geminiAutoRefreshIsPreset = REFRESH_PRESET_VALUES.includes(geminiAutoRefresh);
   const autoSwitchThresholdIsPreset = THRESHOLD_PRESET_VALUES.includes(autoSwitchThreshold);
   const autoSwitchCreditsThresholdIsPreset = CREDITS_THRESHOLD_PRESET_VALUES.includes(
@@ -5514,6 +5515,7 @@ export function SettingsPage() {
                           </option>
                         )}
                         <option value="-1">{t('settings.general.autoRefreshDisabled')}</option>
+                        <option value="1">1 {t('settings.general.minutes')}</option>
                         <option value="2">2 {t('settings.general.minutes')}</option>
                         <option value="5">5 {t('settings.general.minutes')}</option>
                         <option value="10">10 {t('settings.general.minutes')}</option>
