@@ -93,6 +93,29 @@ jobs:
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+          shared-key: build-matrix
+          cache-on-failure: true
+
+      - name: Configure Cargo network resilience
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo_home="${CARGO_HOME:-$HOME/.cargo}"
+          mkdir -p "$cargo_home"
+          cat >> "$cargo_home/config.toml" <<'EOF'
+
+          [net]
+          retry = 10
+          git-fetch-with-cli = true
+
+          [http]
+          multiplexing = false
+          EOF
+
       - name: Go setup
         uses: actions/setup-go@v5
         with:
@@ -126,9 +149,25 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_NET_RETRY: 10
+          CARGO_HTTP_MULTIPLEXING: false
         run: |
           set -euo pipefail
-          npx tauri build --ci --config src-tauri/tauri.ci.conf.json ${{ matrix.args }} 2>&1 | tee "build-${{ matrix.label }}.log"
+          max_attempts=3
+          attempt=1
+          while [ "$attempt" -le "$max_attempts" ]; do
+            echo "=== Build attempt ${attempt}/${max_attempts} (${{ matrix.label }}) ==="
+            if npx tauri build --ci --config src-tauri/tauri.ci.conf.json ${{ matrix.args }} 2>&1 | tee "build-${{ matrix.label }}.log"; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$max_attempts" ]; then
+              echo "Build failed after ${max_attempts} attempts."
+              exit 1
+            fi
+            echo "Build failed (attempt ${attempt}/${max_attempts}), retrying in 30s..."
+            sleep 30
+            attempt=$((attempt + 1))
+          done
 
       - name: Print build logs on failure
         if: failure()
