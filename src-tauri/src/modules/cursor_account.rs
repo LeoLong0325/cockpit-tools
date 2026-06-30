@@ -1183,6 +1183,40 @@ fn build_cursor_export_item(account: CursorAccount) -> Value {
     Value::Object(obj)
 }
 
+fn cursor_dashboard_host_allowed(host: &str) -> bool {
+    let host = host.trim_end_matches('.').to_ascii_lowercase();
+    host == "cursor.com"
+        || host.ends_with(".cursor.com")
+        || host == "cursor.sh"
+        || host.ends_with(".cursor.sh")
+}
+
+fn cursor_dashboard_url_stays_in_webview(url: &url::Url) -> bool {
+    match url.scheme() {
+        "https" | "http" => url
+            .host_str()
+            .map(cursor_dashboard_host_allowed)
+            .unwrap_or(false),
+        "about" => url.path() == "blank",
+        _ => false,
+    }
+}
+
+fn cursor_dashboard_open_external(app: &tauri::AppHandle, url: &url::Url) {
+    use tauri_plugin_opener::OpenerExt;
+
+    logger::log_info(&format!(
+        "[Cursor Dashboard] 在系统浏览器打开外部链接: {}",
+        url
+    ));
+    if let Err(err) = app.opener().open_url(url.as_str(), None::<String>) {
+        logger::log_warn(&format!(
+            "[Cursor Dashboard] 打开外部链接失败: url={}, error={}",
+            url, err
+        ));
+    }
+}
+
 #[cfg(target_os = "linux")]
 fn cursor_dashboard_linux_scroll_wheel_fix_script() -> &'static str {
     r#"
@@ -1289,6 +1323,8 @@ pub async fn open_cursor_dashboard(
     }
 
     let init_script = build_cursor_dashboard_init_script(&workos_token);
+    let app_for_navigation = app.clone();
+    let app_for_new_window = app.clone();
 
     let window = WebviewWindowBuilder::new(
         app,
@@ -1304,6 +1340,22 @@ pub async fn open_cursor_dashboard(
     .resizable(true)
     .user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36")
     .initialization_script(&init_script)
+    .on_navigation(move |url| {
+        if cursor_dashboard_url_stays_in_webview(url) {
+            true
+        } else {
+            cursor_dashboard_open_external(&app_for_navigation, url);
+            false
+        }
+    })
+    .on_new_window(move |url, _features| {
+        if cursor_dashboard_url_stays_in_webview(&url) {
+            tauri::webview::NewWindowResponse::Allow
+        } else {
+            cursor_dashboard_open_external(&app_for_new_window, &url);
+            tauri::webview::NewWindowResponse::Deny
+        }
+    })
     .build()
     .map_err(|e| format!("打开 Cursor 主页失败: {}", e))?;
 
