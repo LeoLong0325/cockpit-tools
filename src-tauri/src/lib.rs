@@ -895,6 +895,7 @@ pub fn run() {
             commands::cursor::refresh_all_cursor_tokens,
             commands::cursor::add_cursor_account_with_token,
             commands::cursor::open_cursor_dashboard,
+            commands::cursor::open_cursor_stripe_billing,
             commands::cursor::fetch_cursor_referral_status,
             commands::cursor::fetch_cursor_aggregated_usage,
             commands::cursor::fetch_cursor_usage_events,

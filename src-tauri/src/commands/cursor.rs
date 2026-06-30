@@ -150,6 +150,11 @@ pub async fn open_cursor_dashboard(app: AppHandle, account_id: String) -> Result
 }
 
 #[tauri::command]
+pub async fn open_cursor_stripe_billing(app: AppHandle, account_id: String) -> Result<(), String> {
+    cursor_account::open_cursor_stripe_billing(&app, &account_id).await
+}
+
+#[tauri::command]
 pub async fn fetch_cursor_aggregated_usage(
     account_id: String,
     start_date: u64,

@@ -64,6 +64,10 @@ export async function openCursorDashboard(accountId: string): Promise<void> {
   return await invoke('open_cursor_dashboard', { accountId });
 }
 
+export async function openCursorStripeBilling(accountId: string): Promise<void> {
+  return await invoke('open_cursor_stripe_billing', { accountId });
+}
+
 export async function fetchCursorReferralStatus(accountId: string): Promise<CursorAccount> {
   return await invoke('fetch_cursor_referral_status', { accountId });
 }

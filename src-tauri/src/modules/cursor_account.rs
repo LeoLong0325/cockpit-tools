@@ -1284,6 +1284,73 @@ fn cursor_dashboard_linux_scroll_wheel_fix_script() -> &'static str {
     ""
 }
 
+fn cursor_dashboard_stripe_fallback_script() -> &'static str {
+    r#"
+(function installCursorDashboardStripeFallback() {
+  const STRIPE_BUTTON_PATTERN = /manage in stripe|manage subscription|stripe billing|管理 stripe|stripe 账单/i;
+
+  function toSessionCookieValue(token) {
+    if (token.includes('::')) {
+      const idx = token.indexOf('::');
+      return token.slice(0, idx) + '%3A%3A' + token.slice(idx + 2);
+    }
+    return token;
+  }
+
+  function setSessionCookies(token) {
+    const secure = location.protocol === 'https:' ? '; Secure' : '';
+    const sessionValue = toSessionCookieValue(token);
+    document.cookie = 'generaltranslation.locale-routing-enabled=true; domain=.cursor.com; path=/; SameSite=Lax' + secure;
+    document.cookie = 'NEXT_LOCALE=cn; domain=.cursor.com; path=/; SameSite=Lax' + secure;
+    document.cookie = 'WorkosCursorSessionToken=' + sessionValue + '; domain=.cursor.com; path=/; SameSite=Lax' + secure;
+  }
+
+  function normalizePortalUrl(raw) {
+    return String(raw || '').trim().replace(/^"+|"+$/g, '');
+  }
+
+  async function openStripePortalFromApi() {
+    const res = await fetch('https://cursor.com/api/stripeSession', {
+      method: 'GET',
+      credentials: 'include',
+      headers: { Accept: '*/*' },
+    });
+    if (!res.ok) {
+      throw new Error('stripeSession HTTP ' + res.status);
+    }
+    const url = normalizePortalUrl(await res.text());
+    if (!url.startsWith('http')) {
+      throw new Error('invalid stripe portal url');
+    }
+    window.location.assign(url);
+  }
+
+  function installStripeClickFallback(token) {
+    if (window.__cockpitCursorStripeClickFallbackInstalled) return;
+    window.__cockpitCursorStripeClickFallbackInstalled = true;
+    document.addEventListener('click', function (event) {
+      const el = event.target && event.target.closest
+        ? event.target.closest('button, a, [role="button"]')
+        : null;
+      if (!el) return;
+      const text = (el.textContent || '').trim();
+      if (!STRIPE_BUTTON_PATTERN.test(text)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setSessionCookies(token);
+      openStripePortalFromApi().catch(function (err) {
+        console.error('[cockpit-tools] Stripe portal failed', err);
+        alert('无法打开 Stripe 账单页: ' + err);
+      });
+    }, true);
+  }
+
+  window.__cockpitCursorDashboardOpenStripe = openStripePortalFromApi;
+  return { setSessionCookies, installStripeClickFallback };
+})();
+"#
+}
+
 fn build_cursor_dashboard_init_script(workos_token: &str) -> String {
     let token_json =
         serde_json::to_string(workos_token).unwrap_or_else(|_| "\"\"".to_string());
@@ -1291,9 +1358,9 @@ fn build_cursor_dashboard_init_script(workos_token: &str) -> String {
         r#"(function() {{
   try {{
     const token = {token_json};
-    document.cookie = 'generaltranslation.locale-routing-enabled=true; domain=.cursor.com; path=/';
-    document.cookie = 'NEXT_LOCALE=cn; domain=.cursor.com; path=/';
-    document.cookie = 'WorkosCursorSessionToken=' + token + '; domain=.cursor.com; path=/';
+    const helpers = {stripe_helpers};
+    helpers.setSessionCookies(token);
+    helpers.installStripeClickFallback(token);
     if (!window.location.pathname.includes('/dashboard')) {{
       window.location.replace('https://cursor.com/cn/dashboard');
     }}
@@ -1303,6 +1370,7 @@ fn build_cursor_dashboard_init_script(workos_token: &str) -> String {
 }})();
 {scroll_fix}"#,
         token_json = token_json,
+        stripe_helpers = cursor_dashboard_stripe_fallback_script().trim(),
         scroll_fix = cursor_dashboard_linux_scroll_wheel_fix_script()
     )
 }
@@ -1316,6 +1384,11 @@ pub async fn open_cursor_dashboard(
     let account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
     let workos_token = read_workos_session_token(&account)
         .ok_or_else(|| "无法解析 WorkOS Session Token，请重新导入账号".to_string())?;
+
+    logger::log_info(&format!(
+        "[Cursor Dashboard] 打开窗口: account_id={}, email={}",
+        account.id, account.email
+    ));
 
     if let Some(existing_window) = app.get_webview_window("cursor_dashboard") {
         let _ = existing_window.close();
@@ -1361,6 +1434,64 @@ pub async fn open_cursor_dashboard(
 
     let _ = window.set_focus();
 
+    Ok(())
+}
+
+async fn fetch_stripe_billing_portal_url(account: &CursorAccount) -> Result<String, String> {
+    let client = build_cursor_http_client()?;
+    let cookie = account_dashboard_cookie(account)?;
+    let response = client
+        .get(CURSOR_STRIPE_SESSION_URL)
+        .header("Accept", "*/*")
+        .header("Cookie", &cookie)
+        .header("Origin", "https://cursor.com")
+        .header("Referer", "https://cursor.com/dashboard")
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        )
+        .timeout(std::time::Duration::from_secs(40))
+        .send()
+        .await
+        .map_err(|e| format!("请求 Stripe 账单入口失败: {}", e))?;
+
+    let status = response.status().as_u16();
+    if status == 401 || status == 403 {
+        return Err("Cursor 会话已过期或未认证，请重新导入账号".to_string());
+    }
+    if !response.status().is_success() {
+        return Err(format!("Stripe 账单入口返回异常状态码: {}", status));
+    }
+
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("读取 Stripe 账单入口响应失败: {}", e))?;
+    let url = body.trim().trim_matches('"').to_string();
+    if !url.starts_with("http") {
+        return Err(format!("Stripe 账单入口 URL 无效: {}", url));
+    }
+    Ok(url)
+}
+
+pub async fn open_cursor_stripe_billing(
+    app: &tauri::AppHandle,
+    account_id: &str,
+) -> Result<(), String> {
+    let account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
+    logger::log_info(&format!(
+        "[Cursor Dashboard] 请求 Stripe 账单入口: account_id={}, email={}",
+        account.id, account.email
+    ));
+    let url_str = fetch_stripe_billing_portal_url(&account).await?;
+    logger::log_info(&format!(
+        "[Cursor Dashboard] Stripe 账单入口获取成功: account_id={}",
+        account.id
+    ));
+    let url = url_str
+        .parse::<url::Url>()
+        .map_err(|e| format!("Stripe 账单入口 URL 解析失败: {}", e))?;
+    cursor_dashboard_open_external(app, &url);
     Ok(())
 }
 
@@ -2136,6 +2267,7 @@ async fn post_dashboard_json_with_client(
 const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT: &str = "USAGE_EVENT_KIND_FREE_CREDIT";
 const CURSOR_FILTERED_USAGE_EVENTS_URL: &str =
     "https://cursor.com/api/dashboard/get-filtered-usage-events";
+const CURSOR_STRIPE_SESSION_URL: &str = "https://cursor.com/api/stripeSession";
 
 fn parse_usage_timestamp_ms(value: &serde_json::Value) -> Option<i64> {
     if let Some(n) = value.as_i64() {
