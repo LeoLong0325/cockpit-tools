@@ -5,7 +5,8 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use crate::models::cursor::{CursorAccount, CursorAccountIndex, CursorImportPayload};
 use crate::modules::{account, logger};
@@ -1183,12 +1184,23 @@ fn build_cursor_export_item(account: CursorAccount) -> Value {
     Value::Object(obj)
 }
 
-fn cursor_dashboard_host_allowed(host: &str) -> bool {
-    let host = host.trim_end_matches('.').to_ascii_lowercase();
+fn cursor_dashboard_cursor_host(host: &str) -> bool {
     host == "cursor.com"
         || host.ends_with(".cursor.com")
         || host == "cursor.sh"
         || host.ends_with(".cursor.sh")
+}
+
+/// Stripe.js 在 Dashboard 初始化时会创建 controller / m-outer 等隐藏 iframe。
+/// 这些 URL 必须在 WebView 内加载；若误判为外部链接并在系统浏览器打开，
+/// 点击「查看主页」时就会出现两个 js.stripe.com 标签页。
+fn cursor_dashboard_stripe_embed_host(host: &str) -> bool {
+    host == "js.stripe.com" || host == "m.stripe.com"
+}
+
+fn cursor_dashboard_host_allowed(host: &str) -> bool {
+    let host = host.trim_end_matches('.').to_ascii_lowercase();
+    cursor_dashboard_cursor_host(&host) || cursor_dashboard_stripe_embed_host(&host)
 }
 
 fn cursor_dashboard_url_stays_in_webview(url: &url::Url) -> bool {
@@ -1202,8 +1214,46 @@ fn cursor_dashboard_url_stays_in_webview(url: &url::Url) -> bool {
     }
 }
 
-fn cursor_dashboard_open_external(app: &tauri::AppHandle, url: &url::Url) {
+#[derive(Default)]
+struct CursorDashboardExternalOpenDeduper {
+    last_url: Option<String>,
+    last_at: Option<Instant>,
+}
+
+impl CursorDashboardExternalOpenDeduper {
+    fn should_open(&mut self, url: &url::Url) -> bool {
+        let key = url.as_str();
+        let now = Instant::now();
+        if let (Some(last_url), Some(last_at)) = (&self.last_url, self.last_at) {
+            if last_url == key && now.duration_since(last_at) < Duration::from_millis(800) {
+                logger::log_info(&format!(
+                    "[Cursor Dashboard] 跳过重复的外部链接打开: {}",
+                    url
+                ));
+                return false;
+            }
+        }
+        self.last_url = Some(key.to_string());
+        self.last_at = Some(now);
+        true
+    }
+}
+
+fn cursor_dashboard_open_external(
+    app: &tauri::AppHandle,
+    url: &url::Url,
+    deduper: &Arc<Mutex<CursorDashboardExternalOpenDeduper>>,
+) {
     use tauri_plugin_opener::OpenerExt;
+
+    {
+        let mut guard = deduper
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if !guard.should_open(url) {
+            return;
+        }
+    }
 
     logger::log_info(&format!(
         "[Cursor Dashboard] 在系统浏览器打开外部链接: {}",
@@ -1396,8 +1446,11 @@ pub async fn open_cursor_dashboard(
     }
 
     let init_script = build_cursor_dashboard_init_script(&workos_token);
+    let external_open_deduper = Arc::new(Mutex::new(CursorDashboardExternalOpenDeduper::default()));
     let app_for_navigation = app.clone();
     let app_for_new_window = app.clone();
+    let deduper_for_navigation = Arc::clone(&external_open_deduper);
+    let deduper_for_new_window = Arc::clone(&external_open_deduper);
 
     let window = WebviewWindowBuilder::new(
         app,
@@ -1417,7 +1470,7 @@ pub async fn open_cursor_dashboard(
         if cursor_dashboard_url_stays_in_webview(url) {
             true
         } else {
-            cursor_dashboard_open_external(&app_for_navigation, url);
+            cursor_dashboard_open_external(&app_for_navigation, url, &deduper_for_navigation);
             false
         }
     })
@@ -1425,7 +1478,7 @@ pub async fn open_cursor_dashboard(
         if cursor_dashboard_url_stays_in_webview(&url) {
             tauri::webview::NewWindowResponse::Allow
         } else {
-            cursor_dashboard_open_external(&app_for_new_window, &url);
+            cursor_dashboard_open_external(&app_for_new_window, &url, &deduper_for_new_window);
             tauri::webview::NewWindowResponse::Deny
         }
     })
@@ -1491,7 +1544,11 @@ pub async fn open_cursor_stripe_billing(
     let url = url_str
         .parse::<url::Url>()
         .map_err(|e| format!("Stripe 账单入口 URL 解析失败: {}", e))?;
-    cursor_dashboard_open_external(app, &url);
+    cursor_dashboard_open_external(
+        app,
+        &url,
+        &Arc::new(Mutex::new(CursorDashboardExternalOpenDeduper::default())),
+    );
     Ok(())
 }
 
@@ -3573,5 +3630,30 @@ mod credit_grants_tests {
         let (sum, count) = sum_free_credit_cents_from_events_page(&page);
         assert_eq!(sum, 2288);
         assert_eq!(count, 1);
+    }
+}
+
+#[cfg(test)]
+mod dashboard_navigation_tests {
+    use super::cursor_dashboard_url_stays_in_webview;
+
+    #[test]
+    fn stripe_js_embed_urls_stay_in_webview() {
+        let controller = "https://js.stripe.com/v3/controller-with-preconnect.html"
+            .parse()
+            .expect("controller url");
+        let m_outer = "http://js.stripe.com/v3/m-outer-3437.html#url=https%3A%2F%2Fcursor.com%2Fdashboard"
+            .parse()
+            .expect("m-outer url");
+        assert!(cursor_dashboard_url_stays_in_webview(&controller));
+        assert!(cursor_dashboard_url_stays_in_webview(&m_outer));
+    }
+
+    #[test]
+    fn stripe_billing_portal_opens_externally() {
+        let billing = "https://billing.stripe.com/p/session/test"
+            .parse()
+            .expect("billing url");
+        assert!(!cursor_dashboard_url_stays_in_webview(&billing));
     }
 }
