@@ -24,7 +24,6 @@ import {
   EyeOff,
   Lock,
   Home,
-  CreditCard,
   BookOpen,
   Gift,
   BarChart3,
@@ -295,20 +294,6 @@ export function CursorAccountsPage() {
         text: t('cursor.dashboard.openFailed', {
           error: String(error).replace(/^Error:\s*/, ''),
           defaultValue: '打开主页失败: {{error}}',
-        }),
-      });
-    }
-  }, [setMessage, t]);
-
-  const handleOpenStripeBilling = useCallback(async (accountId: string) => {
-    try {
-      await cursorService.openCursorStripeBilling(accountId);
-    } catch (error) {
-      setMessage({
-        tone: 'error',
-        text: t('cursor.dashboard.stripeOpenFailed', {
-          error: String(error).replace(/^Error:\s*/, ''),
-          defaultValue: '打开 Stripe 账单失败: {{error}}',
         }),
       });
     }
@@ -900,14 +885,6 @@ export function CursorAccountsPage() {
                 <Home size={14} />
               </button>
               <button
-                className="card-action-btn"
-                onClick={() => handleOpenStripeBilling(account.id)}
-                disabled={isBanned}
-                title={t('cursor.dashboard.manageStripe', 'Stripe 账单')}
-              >
-                <CreditCard size={14} />
-              </button>
-              <button
                 className="card-action-btn export-btn"
                 onClick={() => handleExportByIds([account.id], resolveSingleExportBaseName(account))}
                 title={t('common.shared.export.title', '导出')}
@@ -1096,14 +1073,6 @@ export function CursorAccountsPage() {
                 title={t('cursor.dashboard.viewHome', '查看主页')}
               >
                 <Home size={14} />
-              </button>
-              <button
-                className="action-btn"
-                onClick={() => handleOpenStripeBilling(account.id)}
-                disabled={isBanned}
-                title={t('cursor.dashboard.manageStripe', 'Stripe 账单')}
-              >
-                <CreditCard size={14} />
               </button>
               <button
                 className="action-btn"
