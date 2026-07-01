@@ -1191,11 +1191,19 @@ fn cursor_dashboard_cursor_host(host: &str) -> bool {
         || host.ends_with(".cursor.sh")
 }
 
-/// Stripe.js 在 Dashboard 初始化时会创建 controller / m-outer 等隐藏 iframe。
+/// Stripe.js 在 Dashboard 初始化 / 账单流程中会创建多种隐藏 iframe：
+/// - js.stripe.com: controller / m-outer
+/// - m.stripe.network: StripeM-Inner 消息桥
+/// - b.stripecdn.com: hCaptcha 等第三方嵌入页
 /// 这些 URL 必须在 WebView 内加载；若误判为外部链接并在系统浏览器打开，
-/// 点击「查看主页」时就会出现两个 js.stripe.com 标签页。
+/// 会在「查看主页」或点击 Stripe 账单时弹出无关标签页。
 fn cursor_dashboard_stripe_embed_host(host: &str) -> bool {
-    host == "js.stripe.com" || host == "m.stripe.com"
+    host == "js.stripe.com"
+        || host == "m.stripe.com"
+        || host == "m.stripe.network"
+        || host.ends_with(".stripe.network")
+        || host == "b.stripecdn.com"
+        || host.ends_with(".stripecdn.com")
 }
 
 fn cursor_dashboard_host_allowed(host: &str) -> bool {
@@ -3645,8 +3653,16 @@ mod dashboard_navigation_tests {
         let m_outer = "http://js.stripe.com/v3/m-outer-3437.html#url=https%3A%2F%2Fcursor.com%2Fdashboard"
             .parse()
             .expect("m-outer url");
+        let m_inner = "https://m.stripe.network/inner.html#url=https%3A%2F%2Fcursor.com%2Fdashboard"
+            .parse()
+            .expect("m-inner url");
+        let hcaptcha = "https://b.stripecdn.com/stripethirdparty-srv/assets/v32.18/HCaptchaInvisible.html?id=test&origin=https%3A%2F%2Fjs.stripe.com"
+            .parse()
+            .expect("hcaptcha url");
         assert!(cursor_dashboard_url_stays_in_webview(&controller));
         assert!(cursor_dashboard_url_stays_in_webview(&m_outer));
+        assert!(cursor_dashboard_url_stays_in_webview(&m_inner));
+        assert!(cursor_dashboard_url_stays_in_webview(&hcaptcha));
     }
 
     #[test]
