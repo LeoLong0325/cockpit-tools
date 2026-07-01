@@ -1191,35 +1191,66 @@ fn cursor_dashboard_cursor_host(host: &str) -> bool {
         || host.ends_with(".cursor.sh")
 }
 
-/// Stripe.js 在 Dashboard 初始化 / 账单流程中会创建多种隐藏 iframe：
-/// - js.stripe.com: controller / m-outer
-/// - m.stripe.network: StripeM-Inner 消息桥
-/// - b.stripecdn.com: hCaptcha 等第三方嵌入页
-/// 这些 URL 必须在 WebView 内加载；若误判为外部链接并在系统浏览器打开，
-/// 会在「查看主页」或点击 Stripe 账单时弹出无关标签页。
-fn cursor_dashboard_stripe_embed_host(host: &str) -> bool {
+/// Stripe.js / 反欺诈 SDK 在 Dashboard 内创建的 iframe 基础设施域名。
+fn cursor_dashboard_embed_infrastructure_host(host: &str) -> bool {
     host == "js.stripe.com"
         || host == "m.stripe.com"
         || host == "m.stripe.network"
         || host.ends_with(".stripe.network")
         || host == "b.stripecdn.com"
         || host.ends_with(".stripecdn.com")
+        || host == "hcaptcha.com"
+        || host.ends_with(".hcaptcha.com")
+        || host == "px-cloud.net"
+        || host.ends_with(".px-cloud.net")
+}
+
+/// 用户主动点击后应在系统浏览器打开的 Stripe 账单/支付页。
+fn cursor_dashboard_should_open_in_browser_host(host: &str) -> bool {
+    host == "billing.stripe.com"
+        || host == "checkout.stripe.com"
+        || host == "invoice.stripe.com"
+        || host == "pay.stripe.com"
+        || ((host.starts_with("billing.") || host.starts_with("checkout."))
+            && host.ends_with(".stripe.com"))
 }
 
 fn cursor_dashboard_host_allowed(host: &str) -> bool {
     let host = host.trim_end_matches('.').to_ascii_lowercase();
-    cursor_dashboard_cursor_host(&host) || cursor_dashboard_stripe_embed_host(&host)
+    cursor_dashboard_cursor_host(&host) || cursor_dashboard_embed_infrastructure_host(&host)
+}
+
+enum CursorDashboardNavigationAction {
+    AllowInWebview,
+    OpenInBrowser,
+    DenySilently,
+}
+
+fn cursor_dashboard_navigation_action(url: &url::Url) -> CursorDashboardNavigationAction {
+    match url.scheme() {
+        "about" if url.path() == "blank" => CursorDashboardNavigationAction::AllowInWebview,
+        "https" | "http" => {
+            let Some(host) = url.host_str() else {
+                return CursorDashboardNavigationAction::DenySilently;
+            };
+            let host = host.trim_end_matches('.').to_ascii_lowercase();
+            if cursor_dashboard_host_allowed(&host) {
+                CursorDashboardNavigationAction::AllowInWebview
+            } else if cursor_dashboard_should_open_in_browser_host(&host) {
+                CursorDashboardNavigationAction::OpenInBrowser
+            } else {
+                CursorDashboardNavigationAction::DenySilently
+            }
+        }
+        _ => CursorDashboardNavigationAction::DenySilently,
+    }
 }
 
 fn cursor_dashboard_url_stays_in_webview(url: &url::Url) -> bool {
-    match url.scheme() {
-        "https" | "http" => url
-            .host_str()
-            .map(cursor_dashboard_host_allowed)
-            .unwrap_or(false),
-        "about" => url.path() == "blank",
-        _ => false,
-    }
+    matches!(
+        cursor_dashboard_navigation_action(url),
+        CursorDashboardNavigationAction::AllowInWebview
+    )
 }
 
 #[derive(Default)]
@@ -1475,19 +1506,27 @@ pub async fn open_cursor_dashboard(
     .user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36")
     .initialization_script(&init_script)
     .on_navigation(move |url| {
-        if cursor_dashboard_url_stays_in_webview(url) {
-            true
-        } else {
-            cursor_dashboard_open_external(&app_for_navigation, url, &deduper_for_navigation);
-            false
+        match cursor_dashboard_navigation_action(url) {
+            CursorDashboardNavigationAction::AllowInWebview => true,
+            CursorDashboardNavigationAction::OpenInBrowser => {
+                cursor_dashboard_open_external(&app_for_navigation, url, &deduper_for_navigation);
+                false
+            }
+            CursorDashboardNavigationAction::DenySilently => false,
         }
     })
     .on_new_window(move |url, _features| {
-        if cursor_dashboard_url_stays_in_webview(&url) {
-            tauri::webview::NewWindowResponse::Allow
-        } else {
-            cursor_dashboard_open_external(&app_for_new_window, &url, &deduper_for_new_window);
-            tauri::webview::NewWindowResponse::Deny
+        match cursor_dashboard_navigation_action(&url) {
+            CursorDashboardNavigationAction::AllowInWebview => {
+                tauri::webview::NewWindowResponse::Allow
+            }
+            CursorDashboardNavigationAction::OpenInBrowser => {
+                cursor_dashboard_open_external(&app_for_new_window, &url, &deduper_for_new_window);
+                tauri::webview::NewWindowResponse::Deny
+            }
+            CursorDashboardNavigationAction::DenySilently => {
+                tauri::webview::NewWindowResponse::Deny
+            }
         }
     })
     .build()
@@ -3643,26 +3682,28 @@ mod credit_grants_tests {
 
 #[cfg(test)]
 mod dashboard_navigation_tests {
-    use super::cursor_dashboard_url_stays_in_webview;
+    use super::{
+        cursor_dashboard_navigation_action, cursor_dashboard_url_stays_in_webview,
+        CursorDashboardNavigationAction,
+    };
 
     #[test]
-    fn stripe_js_embed_urls_stay_in_webview() {
-        let controller = "https://js.stripe.com/v3/controller-with-preconnect.html"
-            .parse()
-            .expect("controller url");
-        let m_outer = "http://js.stripe.com/v3/m-outer-3437.html#url=https%3A%2F%2Fcursor.com%2Fdashboard"
-            .parse()
-            .expect("m-outer url");
-        let m_inner = "https://m.stripe.network/inner.html#url=https%3A%2F%2Fcursor.com%2Fdashboard"
-            .parse()
-            .expect("m-inner url");
-        let hcaptcha = "https://b.stripecdn.com/stripethirdparty-srv/assets/v32.18/HCaptchaInvisible.html?id=test&origin=https%3A%2F%2Fjs.stripe.com"
-            .parse()
-            .expect("hcaptcha url");
-        assert!(cursor_dashboard_url_stays_in_webview(&controller));
-        assert!(cursor_dashboard_url_stays_in_webview(&m_outer));
-        assert!(cursor_dashboard_url_stays_in_webview(&m_inner));
-        assert!(cursor_dashboard_url_stays_in_webview(&hcaptcha));
+    fn stripe_and_fraud_embed_urls_stay_in_webview() {
+        let urls = [
+            "https://js.stripe.com/v3/controller-with-preconnect.html",
+            "http://js.stripe.com/v3/m-outer-3437.html#url=https%3A%2F%2Fcursor.com%2Fdashboard",
+            "https://m.stripe.network/inner.html#url=https%3A%2F%2Fcursor.com%2Fdashboard",
+            "https://b.stripecdn.com/stripethirdparty-srv/assets/v32.18/HCaptchaInvisible.html?id=test",
+            "https://newassets.hcaptcha.com/captcha/v1/test/static/hcaptcha.html#frame=challenge",
+            "https://ri.px-cloud.net/index.html?f=7r5,g34r&v=test",
+        ];
+        for raw in urls {
+            let url = raw.parse().expect("url");
+            assert!(
+                cursor_dashboard_url_stays_in_webview(&url),
+                "expected webview embed: {raw}"
+            );
+        }
     }
 
     #[test]
@@ -3670,6 +3711,20 @@ mod dashboard_navigation_tests {
         let billing = "https://billing.stripe.com/p/session/test"
             .parse()
             .expect("billing url");
-        assert!(!cursor_dashboard_url_stays_in_webview(&billing));
+        assert!(matches!(
+            cursor_dashboard_navigation_action(&billing),
+            CursorDashboardNavigationAction::OpenInBrowser
+        ));
+    }
+
+    #[test]
+    fn unknown_third_party_urls_are_silently_denied() {
+        let random = "https://example.com/track"
+            .parse()
+            .expect("random url");
+        assert!(matches!(
+            cursor_dashboard_navigation_action(&random),
+            CursorDashboardNavigationAction::DenySilently
+        ));
     }
 }

@@ -3904,6 +3904,7 @@
       "pastDue": "逾期"
     },
     "injectToCursor": "切换到 Cursor",
+    "searchPlaceholder": "搜索账号、标签...",
 
     "filterTagged": "售出",
     "filterTaggedWithCount": "售出 ({{count}})",

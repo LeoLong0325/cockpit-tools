@@ -601,6 +601,7 @@ export function CursorAccountsPage() {
           account.auth_id ?? '',
           account.membership_type ?? '',
           account.subscription_status ?? '',
+          ...(account.tags || []),
         ];
         return haystacks.some((item) => item.toLowerCase().includes(query));
       });
@@ -1127,7 +1128,7 @@ export function CursorAccountsPage() {
         <div className="toolbar-left">
           <div className="search-box">
             <Search size={16} className="search-icon" />
-            <input type="text" placeholder={t('common.shared.search', '搜索账号...')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <input type="text" placeholder={t('cursor.searchPlaceholder', '搜索账号、标签...')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
 
           <div className="view-switcher">

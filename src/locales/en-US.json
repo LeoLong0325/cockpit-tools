@@ -3904,6 +3904,7 @@
       "pastDue": "Past due"
     },
     "injectToCursor": "Switch to Cursor",
+    "searchPlaceholder": "Search accounts or tags...",
 
     "filterTagged": "Sold",
     "filterTaggedWithCount": "Sold ({{count}})",
