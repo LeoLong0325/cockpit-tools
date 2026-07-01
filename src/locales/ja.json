@@ -3603,6 +3603,7 @@
   "cursor": {
     "subscription": "サブスクリプション",
     "injectToCursor": "Cursor に切り替え",
+    "searchPlaceholder": "アカウントまたはタグを検索...",
 
     "filterTagged": "売却",
     "filterTaggedWithCount": "売却 ({{count}})",

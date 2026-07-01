@@ -3603,6 +3603,7 @@
   "cursor": {
     "subscription": "Subskrypcja",
     "injectToCursor": "Przełącz na Cursor",
+    "searchPlaceholder": "Szukaj kont lub tagów...",
 
     "filterTagged": "Sprzedane",
     "filterTaggedWithCount": "Sprzedane ({{count}})",

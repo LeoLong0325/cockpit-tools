@@ -3603,6 +3603,7 @@
   "cursor": {
     "subscription": "Gói đăng ký",
     "injectToCursor": "Chuyển sang Cursor",
+    "searchPlaceholder": "Tìm tài khoản hoặc thẻ...",
 
     "filterTagged": "Đã bán",
     "filterTaggedWithCount": "Đã bán ({{count}})",

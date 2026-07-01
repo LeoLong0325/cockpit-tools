@@ -3603,6 +3603,7 @@
   "cursor": {
     "subscription": "Předplatné",
     "injectToCursor": "Přepnout na Cursor",
+    "searchPlaceholder": "Hledat účty nebo štítky...",
 
     "filterTagged": "Prodáno",
     "filterTaggedWithCount": "Prodáno ({{count}})",

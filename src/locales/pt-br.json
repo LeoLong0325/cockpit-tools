@@ -3603,6 +3603,7 @@
   "cursor": {
     "subscription": "Assinatura",
     "injectToCursor": "Alternar para Cursor",
+    "searchPlaceholder": "Buscar contas ou tags...",
 
     "filterTagged": "Vendido",
     "filterTaggedWithCount": "Vendido ({{count}})",

@@ -3649,6 +3649,7 @@
   "cursor": {
     "subscription": "الاشتراك",
     "injectToCursor": "التبديل إلى Cursor",
+    "searchPlaceholder": "البحث عن حسابات أو وسوم...",
 
     "filterTagged": "مباع",
     "filterTaggedWithCount": "مباع ({{count}})",

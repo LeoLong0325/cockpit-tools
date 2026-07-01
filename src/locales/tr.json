@@ -3603,6 +3603,7 @@
   "cursor": {
     "subscription": "Abonelik",
     "injectToCursor": "Cursor'a geç",
+    "searchPlaceholder": "Hesap veya etiket ara...",
 
     "filterTagged": "Satıldı",
     "filterTaggedWithCount": "Satıldı ({{count}})",

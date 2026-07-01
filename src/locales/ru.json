@@ -3603,6 +3603,7 @@
   "cursor": {
     "subscription": "Подписка",
     "injectToCursor": "Переключиться на Cursor",
+    "searchPlaceholder": "Поиск аккаунтов или тегов...",
 
     "filterTagged": "Продано",
     "filterTaggedWithCount": "Продано ({{count}})",

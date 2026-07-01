@@ -3603,6 +3603,7 @@
   "cursor": {
     "subscription": "訂閱方案",
     "injectToCursor": "切換至 Cursor",
+    "searchPlaceholder": "搜尋帳號、標籤...",
 
     "filterTagged": "售出",
     "filterTaggedWithCount": "售出 ({{count}})",

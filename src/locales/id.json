@@ -3749,6 +3749,7 @@
   "cursor": {
     "subscription": "Subscription​",
     "injectToCursor": "Switch to Cursor​",
+    "searchPlaceholder": "Cari akun atau tag...",
 
     "filterTagged": "Terjual",
     "filterTaggedWithCount": "Terjual ({{count}})",
