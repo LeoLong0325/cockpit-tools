@@ -3604,7 +3604,6 @@
     "subscription": "Abonnement",
     "injectToCursor": "Zu Cursor wechseln",
     "searchPlaceholder": "Konten oder Tags suchen...",
-
     "filterTagged": "Verkauft",
     "filterTaggedWithCount": "Verkauft ({{count}})",
     "filterTaggedTitle": "Konten mit Tags anzeigen",
@@ -3676,6 +3675,7 @@
       "title": "Kontonutzung",
       "detailsTitle": "Nutzungsdetails",
       "periodSelect": "Zeitraum",
+      "periodBillingCycle": "Abrechnungszeitraum",
       "period7Days": "Letzte 7 Tage",
       "period30Days": "Letzte 30 Tage",
       "periodThisMonth": "Dieser Monat",
@@ -3714,7 +3714,8 @@
       "periodRange": "Zeitraum",
       "teamMembers": "Teammitglieder",
       "dailyMetrics": "Tägliche Metriken",
-      "empty": "Keine Nutzungsdaten"
+      "empty": "Keine Nutzungsdaten",
+      "billingCycleRange": "Aktueller Abrechnungszeitraum: {{range}}"
     }
   },
   "breakout": {

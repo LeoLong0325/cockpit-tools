@@ -933,6 +933,12 @@
   background: rgba(59, 130, 246, 0.08);
 }
 
+.cursor-usage-billing-cycle-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .cursor-usage-custom-range {
   display: flex;
   flex-wrap: wrap;
@@ -948,12 +954,125 @@
   color: var(--text-secondary);
 }
 
-.cursor-usage-custom-range input[type='date'] {
-  padding: 6px 8px;
+.cursor-usage-custom-range .simple-date-field {
+  position: relative;
+  min-width: 148px;
+}
+
+.simple-date-field-trigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--bg-primary);
   color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.simple-date-field-trigger:hover {
+  border-color: var(--primary);
+}
+
+.simple-date-field.is-open .simple-date-field-trigger {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.simple-date-field-placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.simple-date-field-popover {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+}
+
+.simple-date-field-month-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.simple-date-field-month-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.simple-date-field-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.simple-date-field-nav:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.simple-date-field-weekdays,
+.simple-date-field-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.simple-date-field-weekdays {
+  margin-bottom: 4px;
+}
+
+.simple-date-field-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+.simple-date-field-day {
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.simple-date-field-day:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.simple-date-field-day.is-outside {
+  color: var(--text-secondary);
+  opacity: 0.45;
+}
+
+.simple-date-field-day.is-today:not(.is-selected) {
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.simple-date-field-day.is-selected {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
 }
 
 .cursor-usage-summary-head {

@@ -3604,7 +3604,6 @@
     "subscription": "サブスクリプション",
     "injectToCursor": "Cursor に切り替え",
     "searchPlaceholder": "アカウントまたはタグを検索...",
-
     "filterTagged": "売却",
     "filterTaggedWithCount": "売却 ({{count}})",
     "filterTaggedTitle": "タグ付きアカウントを表示",
@@ -3676,6 +3675,7 @@
       "title": "アカウント使用量",
       "detailsTitle": "使用詳細",
       "periodSelect": "期間選択",
+      "periodBillingCycle": "課金周期",
       "period7Days": "直近7日",
       "period30Days": "直近30日",
       "periodThisMonth": "今月",
@@ -3714,7 +3714,8 @@
       "periodRange": "期間",
       "teamMembers": "チームメンバー数",
       "dailyMetrics": "日次指標数",
-      "empty": "使用量データがありません"
+      "empty": "使用量データがありません",
+      "billingCycleRange": "現在の課金周期：{{range}}"
     }
   },
   "breakout": {

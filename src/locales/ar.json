@@ -3650,7 +3650,6 @@
     "subscription": "الاشتراك",
     "injectToCursor": "التبديل إلى Cursor",
     "searchPlaceholder": "البحث عن حسابات أو وسوم...",
-
     "filterTagged": "مباع",
     "filterTaggedWithCount": "مباع ({{count}})",
     "filterTaggedTitle": "عرض الحسابات ذات الوسوم",
@@ -3722,6 +3721,7 @@
       "title": "استخدام الحساب",
       "detailsTitle": "تفاصيل الاستخدام",
       "periodSelect": "الفترة",
+      "periodBillingCycle": "دورة الفوترة",
       "period7Days": "آخر 7 أيام",
       "period30Days": "آخر 30 يومًا",
       "periodThisMonth": "هذا الشهر",
@@ -3760,7 +3760,8 @@
       "periodRange": "الفترة",
       "teamMembers": "أعضاء الفريق",
       "dailyMetrics": "المقاييس اليومية",
-      "empty": "لا توجد بيانات استخدام"
+      "empty": "لا توجد بيانات استخدام",
+      "billingCycleRange": "دورة الفوترة الحالية: {{range}}"
     }
   },
   "breakout": {

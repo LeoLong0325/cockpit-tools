@@ -3604,7 +3604,6 @@
     "subscription": "구독",
     "injectToCursor": "Cursor로 전환",
     "searchPlaceholder": "계정 또는 태그 검색...",
-
     "filterTagged": "판매",
     "filterTaggedWithCount": "판매 ({{count}})",
     "filterTaggedTitle": "태그가 있는 계정 표시",
@@ -3676,6 +3675,7 @@
       "title": "계정 사용량",
       "detailsTitle": "사용 상세",
       "periodSelect": "기간 선택",
+      "periodBillingCycle": "결제 주기",
       "period7Days": "최근 7일",
       "period30Days": "최근 30일",
       "periodThisMonth": "이번 달",
@@ -3714,7 +3714,8 @@
       "periodRange": "기간",
       "teamMembers": "팀원 수",
       "dailyMetrics": "일별 지표 수",
-      "empty": "사용량 데이터 없음"
+      "empty": "사용량 데이터 없음",
+      "billingCycleRange": "현재 결제 주기: {{range}}"
     }
   },
   "breakout": {

@@ -3905,7 +3905,6 @@
     },
     "injectToCursor": "Switch to Cursor",
     "searchPlaceholder": "Search accounts or tags...",
-
     "filterTagged": "Sold",
     "filterTaggedWithCount": "Sold ({{count}})",
     "filterTaggedTitle": "Show accounts with tags",
@@ -3974,6 +3973,7 @@
       "title": "Account Usage",
       "detailsTitle": "Usage Details",
       "periodSelect": "Time Period",
+      "periodBillingCycle": "Billing Cycle",
       "period7Days": "Last 7 Days",
       "period30Days": "Last 30 Days",
       "periodThisMonth": "This Month",
@@ -4012,7 +4012,8 @@
       "periodRange": "Period",
       "teamMembers": "Team Members",
       "dailyMetrics": "Daily Metrics",
-      "empty": "No usage data"
+      "empty": "No usage data",
+      "billingCycleRange": "Current billing cycle: {{range}}"
     }
   },
   "gemini": {

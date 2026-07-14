@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ClipboardList, RefreshCw, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useEscClose } from '../hooks/useEscClose';
+import { SimpleDateField } from './SimpleDateField';
 import * as cursorService from '../services/cursorService';
-import { formatCursorUsageDollars } from '../types/cursor';
+import { formatCursorUsageDollars, getCursorBillingCycleRangeMs, type CursorAccount } from '../types/cursor';
 import {
   buildFreeCreditUsageSummary,
   getCursorUsageDateRange,
@@ -282,13 +283,14 @@ interface CursorAccountUsageModalProps {
   isOpen: boolean;
   accountLabel: string;
   accountId: string;
+  account?: CursorAccount | null;
   onClose: () => void;
 }
 
 export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
-  const { isOpen, accountLabel, accountId, onClose } = props;
+  const { isOpen, accountLabel, accountId, account, onClose } = props;
   const { t } = useTranslation();
-  const [selectedPeriod, setSelectedPeriod] = useState<CursorUsagePeriod>('30days');
+  const [selectedPeriod, setSelectedPeriod] = useState<CursorUsagePeriod>('billingCycle');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [loading, setLoading] = useState(false);
@@ -299,13 +301,29 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
   const [detailsRange, setDetailsRange] = useState<{ startMs: number; endMs: number } | null>(null);
   useEscClose(isOpen && !detailsOpen, onClose);
 
-  const dateRange = useMemo(
-    () => getCursorUsageDateRange(selectedPeriod, customStartDate, customEndDate),
-    [customEndDate, customStartDate, selectedPeriod],
+  const billingCycleRange = useMemo(
+    () => getCursorBillingCycleRangeMs(account),
+    [account],
   );
+
+  const dateRange = useMemo(
+    () => getCursorUsageDateRange(selectedPeriod, customStartDate, customEndDate, billingCycleRange),
+    [billingCycleRange, customEndDate, customStartDate, selectedPeriod],
+  );
+
+  const billingCycleRangeLabel = useMemo(() => {
+    const start = new Date(billingCycleRange.startMs);
+    const end = new Date(billingCycleRange.endMs);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return '';
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+    return `${fmt(start)} – ${fmt(end)}`;
+  }, [billingCycleRange]);
 
   const periodLabel = useMemo(() => {
     switch (selectedPeriod) {
+      case 'billingCycle':
+        return t('cursor.usage.periodBillingCycle', '计费周期');
       case '7days':
         return t('cursor.usage.period7Days', '最近7天');
       case 'thisMonth':
@@ -323,7 +341,12 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
       setError(t('cursor.usage.customDateRequired', '请选择开始和结束日期'));
       return;
     }
-    const periodRange = getCursorUsageDateRange(period, customStartDate, customEndDate);
+    const periodRange = getCursorUsageDateRange(
+      period,
+      customStartDate,
+      customEndDate,
+      billingCycleRange,
+    );
     const range = getCursorUsageFetchRange(periodRange.startMs, periodRange.endMs);
     setLoading(true);
     setError(null);
@@ -352,16 +375,16 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
     } finally {
       setLoading(false);
     }
-  }, [accountId, customEndDate, customStartDate, t]);
+  }, [accountId, billingCycleRange, customEndDate, customStartDate, t]);
 
   useEffect(() => {
     if (!isOpen || !accountId) return;
-    setSelectedPeriod('30days');
+    setSelectedPeriod('billingCycle');
     setCustomStartDate('');
     setCustomEndDate('');
     setDetailsOpen(false);
     setFreeCreditSummary(null);
-    void fetchUsage('30days');
+    void fetchUsage('billingCycle');
   }, [accountId, isOpen]);
 
   const handlePeriodChange = (period: CursorUsagePeriod) => {
@@ -391,34 +414,52 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
             <div className="cursor-usage-period-row">
               <span className="cursor-usage-period-label">{t('cursor.usage.periodSelect', '时间段选择')}</span>
               <div className="cursor-usage-period-actions">
-                {(['7days', '30days', 'thisMonth', 'custom'] as CursorUsagePeriod[]).map((period) => (
+                {(['billingCycle', '7days', '30days', 'thisMonth', 'custom'] as CursorUsagePeriod[]).map((period) => (
                   <button
                     key={period}
                     type="button"
                     className={`btn btn-secondary btn-sm ${selectedPeriod === period ? 'active' : ''}`}
                     onClick={() => handlePeriodChange(period)}
                   >
-                    {period === '7days'
-                      ? t('cursor.usage.period7Days', '最近7天')
-                      : period === '30days'
-                        ? t('cursor.usage.period30Days', '最近30天')
-                        : period === 'thisMonth'
-                          ? t('cursor.usage.periodThisMonth', '本月')
-                          : t('cursor.usage.periodCustom', '自定义')}
+                    {period === 'billingCycle'
+                      ? t('cursor.usage.periodBillingCycle', '计费周期')
+                      : period === '7days'
+                        ? t('cursor.usage.period7Days', '最近7天')
+                        : period === '30days'
+                          ? t('cursor.usage.period30Days', '最近30天')
+                          : period === 'thisMonth'
+                            ? t('cursor.usage.periodThisMonth', '本月')
+                            : t('cursor.usage.periodCustom', '自定义')}
                   </button>
                 ))}
               </div>
             </div>
 
+            {selectedPeriod === 'billingCycle' && billingCycleRangeLabel ? (
+              <p className="cursor-usage-billing-cycle-hint">
+                {t('cursor.usage.billingCycleRange', '当前计费周期：{{range}}', {
+                  range: billingCycleRangeLabel,
+                })}
+              </p>
+            ) : null}
+
             {selectedPeriod === 'custom' ? (
               <div className="cursor-usage-custom-range">
                 <label>
                   <span>{t('cursor.usage.startDate', '开始日期')}</span>
-                  <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} />
+                  <SimpleDateField
+                    value={customStartDate}
+                    onChange={setCustomStartDate}
+                    aria-label={t('cursor.usage.startDate', '开始日期')}
+                  />
                 </label>
                 <label>
                   <span>{t('cursor.usage.endDate', '结束日期')}</span>
-                  <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} />
+                  <SimpleDateField
+                    value={customEndDate}
+                    onChange={setCustomEndDate}
+                    aria-label={t('cursor.usage.endDate', '结束日期')}
+                  />
                 </label>
                 <button
                   type="button"
@@ -447,6 +488,7 @@ export function CursorAccountUsageModal(props: CursorAccountUsageModalProps) {
                         selectedPeriod,
                         customStartDate,
                         customEndDate,
+                        billingCycleRange,
                       );
                       setDetailsRange(getCursorUsageFetchRange(periodRange.startMs, periodRange.endMs));
                       setDetailsOpen(true);

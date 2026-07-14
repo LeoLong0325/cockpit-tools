@@ -3604,7 +3604,6 @@
     "subscription": "Gói đăng ký",
     "injectToCursor": "Chuyển sang Cursor",
     "searchPlaceholder": "Tìm tài khoản hoặc thẻ...",
-
     "filterTagged": "Đã bán",
     "filterTaggedWithCount": "Đã bán ({{count}})",
     "filterTaggedTitle": "Hiển thị tài khoản có thẻ",
@@ -3676,6 +3675,7 @@
       "title": "Mức sử dụng tài khoản",
       "detailsTitle": "Chi tiết sử dụng",
       "periodSelect": "Khoảng thời gian",
+      "periodBillingCycle": "Chu kỳ thanh toán",
       "period7Days": "7 ngày qua",
       "period30Days": "30 ngày qua",
       "periodThisMonth": "Tháng này",
@@ -3714,7 +3714,8 @@
       "periodRange": "Khoảng thời gian",
       "teamMembers": "Thành viên nhóm",
       "dailyMetrics": "Chỉ số hàng ngày",
-      "empty": "Không có dữ liệu sử dụng"
+      "empty": "Không có dữ liệu sử dụng",
+      "billingCycleRange": "Chu kỳ thanh toán hiện tại: {{range}}"
     }
   },
   "breakout": {

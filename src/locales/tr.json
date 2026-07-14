@@ -3604,7 +3604,6 @@
     "subscription": "Abonelik",
     "injectToCursor": "Cursor'a geç",
     "searchPlaceholder": "Hesap veya etiket ara...",
-
     "filterTagged": "Satıldı",
     "filterTaggedWithCount": "Satıldı ({{count}})",
     "filterTaggedTitle": "Etiketli hesapları göster",
@@ -3676,6 +3675,7 @@
       "title": "Hesap kullanımı",
       "detailsTitle": "Kullanım ayrıntıları",
       "periodSelect": "Dönem",
+      "periodBillingCycle": "Faturalama dönemi",
       "period7Days": "Son 7 gün",
       "period30Days": "Son 30 gün",
       "periodThisMonth": "Bu ay",
@@ -3714,7 +3714,8 @@
       "periodRange": "Dönem",
       "teamMembers": "Ekip üyeleri",
       "dailyMetrics": "Günlük metrikler",
-      "empty": "Kullanım verisi yok"
+      "empty": "Kullanım verisi yok",
+      "billingCycleRange": "Geçerli faturalama dönemi: {{range}}"
     }
   },
   "breakout": {

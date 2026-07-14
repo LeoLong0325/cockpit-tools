@@ -297,6 +297,49 @@ function pickString(obj: unknown, ...candidateKeys: string[]): string | null {
   return null;
 }
 
+/** Align with Rust `parse_usage_timestamp_ms` for billingCycleStart/End. */
+export function parseCursorUsageTimestampMs(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const n = Math.trunc(value);
+    return n > 1_000_000_000_000 ? n : n * 1000;
+  }
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    const n = Math.trunc(Number(trimmed));
+    if (!Number.isFinite(n)) return null;
+    return n > 1_000_000_000_000 ? n : n * 1000;
+  }
+  const parsed = Date.parse(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/**
+ * Current billing-cycle window for usage queries.
+ * Mirrors Rust `resolve_billing_cycle_range_ms` (same source as the reset field).
+ */
+export function getCursorBillingCycleRangeMs(
+  account: CursorAccount | null | undefined,
+): { startMs: number; endMs: number } {
+  const nowMs = Date.now();
+  const raw = account?.cursor_usage_raw;
+  const rawObj = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null;
+  const cycleEndMs =
+    parseCursorUsageTimestampMs(
+      rawObj?.billingCycleEnd ?? rawObj?.billing_cycle_end,
+    ) ?? nowMs;
+  const endMs = Math.min(nowMs, cycleEndMs);
+  const defaultStartMs = endMs - 30 * 24 * 60 * 60 * 1000;
+  const startMs = Math.min(
+    parseCursorUsageTimestampMs(
+      rawObj?.billingCycleStart ?? rawObj?.billing_cycle_start,
+    ) ?? defaultStartMs,
+    endMs,
+  );
+  return { startMs, endMs };
+}
+
 export function getCursorUsage(account: CursorAccount): CursorUsage {
   const raw = account.cursor_usage_raw;
   if (!raw || typeof raw !== 'object') {
@@ -373,13 +416,11 @@ export function getCursorUsage(account: CursorAccount): CursorUsage {
     typeof limitTypeRaw === 'string' && limitTypeRaw.trim()
       ? limitTypeRaw.trim().toLowerCase()
       : null;
-  const billingEndRaw =
-    rawObj.billingCycleEnd ?? rawObj.billing_cycle_end;
-  let resetAt: number | null = null;
-  if (typeof billingEndRaw === 'string' && billingEndRaw) {
-    const ts = new Date(billingEndRaw).getTime();
-    if (Number.isFinite(ts)) resetAt = Math.floor(ts / 1000);
-  }
+  const billingEndMs = parseCursorUsageTimestampMs(
+    rawObj.billingCycleEnd ?? rawObj.billing_cycle_end,
+  );
+  const resetAt =
+    billingEndMs != null ? Math.floor(billingEndMs / 1000) : null;
 
   const ratioPct =
     planUsed != null && planLimit != null && planLimit > 0

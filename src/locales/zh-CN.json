@@ -3905,7 +3905,6 @@
     },
     "injectToCursor": "切换到 Cursor",
     "searchPlaceholder": "搜索账号、标签...",
-
     "filterTagged": "售出",
     "filterTaggedWithCount": "售出 ({{count}})",
     "filterTaggedTitle": "筛选已添加标签的账号",
@@ -3974,6 +3973,7 @@
       "title": "账户用量详情",
       "detailsTitle": "使用详情",
       "periodSelect": "时间段选择",
+      "periodBillingCycle": "计费周期",
       "period7Days": "最近7天",
       "period30Days": "最近30天",
       "periodThisMonth": "本月",
@@ -4012,7 +4012,8 @@
       "periodRange": "时间范围",
       "teamMembers": "团队成员数",
       "dailyMetrics": "每日指标条数",
-      "empty": "暂无用量数据"
+      "empty": "暂无用量数据",
+      "billingCycleRange": "当前计费周期：{{range}}"
     }
   },
   "gemini": {

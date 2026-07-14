@@ -3750,7 +3750,6 @@
     "subscription": "Subscription​",
     "injectToCursor": "Switch to Cursor​",
     "searchPlaceholder": "Cari akun atau tag...",
-
     "filterTagged": "Terjual",
     "filterTaggedWithCount": "Terjual ({{count}})",
     "filterTaggedTitle": "Tampilkan akun ber-tag",
@@ -3822,6 +3821,7 @@
       "title": "Penggunaan akun",
       "detailsTitle": "Detail penggunaan",
       "periodSelect": "Periode",
+      "periodBillingCycle": "Siklus penagihan",
       "period7Days": "7 hari terakhir",
       "period30Days": "30 hari terakhir",
       "periodThisMonth": "Bulan ini",
@@ -3860,7 +3860,8 @@
       "periodRange": "Periode",
       "teamMembers": "Anggota tim",
       "dailyMetrics": "Metrik harian",
-      "empty": "Tidak ada data penggunaan"
+      "empty": "Tidak ada data penggunaan",
+      "billingCycleRange": "Siklus penagihan saat ini: {{range}}"
     }
   },
   "gemini": {

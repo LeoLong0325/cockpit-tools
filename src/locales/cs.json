@@ -3604,7 +3604,6 @@
     "subscription": "Předplatné",
     "injectToCursor": "Přepnout na Cursor",
     "searchPlaceholder": "Hledat účty nebo štítky...",
-
     "filterTagged": "Prodáno",
     "filterTaggedWithCount": "Prodáno ({{count}})",
     "filterTaggedTitle": "Zobrazit účty se štítky",
@@ -3676,6 +3675,7 @@
       "title": "Využití účtu",
       "detailsTitle": "Podrobnosti využití",
       "periodSelect": "Období",
+      "periodBillingCycle": "Fakturační období",
       "period7Days": "Posledních 7 dní",
       "period30Days": "Posledních 30 dní",
       "periodThisMonth": "Tento měsíc",
@@ -3714,7 +3714,8 @@
       "periodRange": "Období",
       "teamMembers": "Členové týmu",
       "dailyMetrics": "Denní metriky",
-      "empty": "Žádná data o využití"
+      "empty": "Žádná data o využití",
+      "billingCycleRange": "Aktuální fakturační období: {{range}}"
     }
   },
   "breakout": {

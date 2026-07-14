@@ -3604,7 +3604,6 @@
     "subscription": "Подписка",
     "injectToCursor": "Переключиться на Cursor",
     "searchPlaceholder": "Поиск аккаунтов или тегов...",
-
     "filterTagged": "Продано",
     "filterTaggedWithCount": "Продано ({{count}})",
     "filterTaggedTitle": "Показать аккаунты с тегами",
@@ -3676,6 +3675,7 @@
       "title": "Использование аккаунта",
       "detailsTitle": "Детали использования",
       "periodSelect": "Период",
+      "periodBillingCycle": "Расчётный период",
       "period7Days": "Последние 7 дней",
       "period30Days": "Последние 30 дней",
       "periodThisMonth": "Этот месяц",
@@ -3714,7 +3714,8 @@
       "periodRange": "Период",
       "teamMembers": "Участники команды",
       "dailyMetrics": "Ежедневные метрики",
-      "empty": "Нет данных об использовании"
+      "empty": "Нет данных об использовании",
+      "billingCycleRange": "Текущий расчётный период: {{range}}"
     }
   },
   "breakout": {

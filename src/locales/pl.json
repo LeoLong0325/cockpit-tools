@@ -3604,7 +3604,6 @@
     "subscription": "Subskrypcja",
     "injectToCursor": "Przełącz na Cursor",
     "searchPlaceholder": "Szukaj kont lub tagów...",
-
     "filterTagged": "Sprzedane",
     "filterTaggedWithCount": "Sprzedane ({{count}})",
     "filterTaggedTitle": "Pokaż konta z tagami",
@@ -3676,6 +3675,7 @@
       "title": "Użycie konta",
       "detailsTitle": "Szczegóły użycia",
       "periodSelect": "Okres",
+      "periodBillingCycle": "Okres rozliczeniowy",
       "period7Days": "Ostatnie 7 dni",
       "period30Days": "Ostatnie 30 dni",
       "periodThisMonth": "Ten miesiąc",
@@ -3714,7 +3714,8 @@
       "periodRange": "Okres",
       "teamMembers": "Członkowie zespołu",
       "dailyMetrics": "Metryki dzienne",
-      "empty": "Brak danych o użyciu"
+      "empty": "Brak danych o użyciu",
+      "billingCycleRange": "Bieżący okres rozliczeniowy: {{range}}"
     }
   },
   "breakout": {

@@ -3604,7 +3604,6 @@
     "subscription": "Assinatura",
     "injectToCursor": "Alternar para Cursor",
     "searchPlaceholder": "Buscar contas ou tags...",
-
     "filterTagged": "Vendido",
     "filterTaggedWithCount": "Vendido ({{count}})",
     "filterTaggedTitle": "Mostrar contas com tags",
@@ -3676,6 +3675,7 @@
       "title": "Uso da conta",
       "detailsTitle": "Detalhes de uso",
       "periodSelect": "Período",
+      "periodBillingCycle": "Ciclo de cobrança",
       "period7Days": "Últimos 7 dias",
       "period30Days": "Últimos 30 dias",
       "periodThisMonth": "Este mês",
@@ -3714,7 +3714,8 @@
       "periodRange": "Período",
       "teamMembers": "Membros da equipe",
       "dailyMetrics": "Métricas diárias",
-      "empty": "Sem dados de uso"
+      "empty": "Sem dados de uso",
+      "billingCycleRange": "Ciclo de cobrança atual: {{range}}"
     }
   },
   "breakout": {

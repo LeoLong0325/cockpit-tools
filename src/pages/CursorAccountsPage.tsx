@@ -1571,6 +1571,7 @@ export function CursorAccountsPage() {
       <CursorAccountUsageModal
         isOpen={!!usageModalAccountId}
         accountId={usageModalAccountId ?? ''}
+        account={usageModalAccount}
         accountLabel={usageModalAccount ? resolveDisplayEmail(usageModalAccount) : ''}
         onClose={closeUsageModal}
       />

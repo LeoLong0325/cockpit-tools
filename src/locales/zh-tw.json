@@ -3604,7 +3604,6 @@
     "subscription": "訂閱方案",
     "injectToCursor": "切換至 Cursor",
     "searchPlaceholder": "搜尋帳號、標籤...",
-
     "filterTagged": "售出",
     "filterTaggedWithCount": "售出 ({{count}})",
     "filterTaggedTitle": "篩選已新增標籤的帳號",
@@ -3676,6 +3675,7 @@
       "title": "帳戶用量詳情",
       "detailsTitle": "使用詳情",
       "periodSelect": "時間段選擇",
+      "periodBillingCycle": "計費週期",
       "period7Days": "最近7天",
       "period30Days": "最近30天",
       "periodThisMonth": "本月",
@@ -3714,7 +3714,8 @@
       "periodRange": "時間範圍",
       "teamMembers": "團隊成員數",
       "dailyMetrics": "每日指標條數",
-      "empty": "暫無用量資料"
+      "empty": "暫無用量資料",
+      "billingCycleRange": "目前計費週期：{{range}}"
     }
   },
   "breakout": {

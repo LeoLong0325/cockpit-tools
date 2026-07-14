@@ -41,7 +41,12 @@ export interface CursorUserAnalyticsData {
   totalMembersInTeam: number;
 }
 
-export type CursorUsagePeriod = '7days' | '30days' | 'thisMonth' | 'custom';
+export type CursorUsagePeriod =
+  | 'billingCycle'
+  | '7days'
+  | '30days'
+  | 'thisMonth'
+  | 'custom';
 
 /** Cursor 配额自动刷新预设（含 1 分钟） */
 export const CURSOR_QUOTA_REFRESH_PRESET_VALUES = ['-1', '1', '2', '5', '10', '15'] as const;
@@ -397,8 +402,26 @@ export function getCursorUsageEventKindLabel(kind: string): string {
   return map[kind] || kind;
 }
 
-export function getCursorUsageDateRange(period: CursorUsagePeriod, customStart?: string, customEnd?: string) {
+export function getCursorUsageDateRange(
+  period: CursorUsagePeriod,
+  customStart?: string,
+  customEnd?: string,
+  billingCycle?: { startMs: number; endMs: number } | null,
+) {
   const now = Date.now();
+  if (period === 'billingCycle') {
+    if (
+      billingCycle &&
+      Number.isFinite(billingCycle.startMs) &&
+      Number.isFinite(billingCycle.endMs)
+    ) {
+      return {
+        startMs: Math.min(billingCycle.startMs, billingCycle.endMs),
+        endMs: Math.max(billingCycle.startMs, billingCycle.endMs),
+      };
+    }
+    return { startMs: now - 30 * 24 * 60 * 60 * 1000, endMs: now };
+  }
   if (period === '7days') {
     return { startMs: now - 7 * 24 * 60 * 60 * 1000, endMs: now };
   }

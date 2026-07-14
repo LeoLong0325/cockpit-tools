@@ -3604,7 +3604,6 @@
     "subscription": "Suscripción",
     "injectToCursor": "Cambiar a Cursor",
     "searchPlaceholder": "Buscar cuentas o etiquetas...",
-
     "filterTagged": "Vendido",
     "filterTaggedWithCount": "Vendido ({{count}})",
     "filterTaggedTitle": "Mostrar cuentas con etiquetas",
@@ -3676,6 +3675,7 @@
       "title": "Uso de la cuenta",
       "detailsTitle": "Detalles de uso",
       "periodSelect": "Periodo",
+      "periodBillingCycle": "Ciclo de facturación",
       "period7Days": "Últimos 7 días",
       "period30Days": "Últimos 30 días",
       "periodThisMonth": "Este mes",
@@ -3714,7 +3714,8 @@
       "periodRange": "Periodo",
       "teamMembers": "Miembros del equipo",
       "dailyMetrics": "Métricas diarias",
-      "empty": "Sin datos de uso"
+      "empty": "Sin datos de uso",
+      "billingCycleRange": "Ciclo de facturación actual: {{range}}"
     }
   },
   "breakout": {
