@@ -4000,7 +4000,7 @@
       "cacheWriteTokens": "Cache Write",
       "cacheReadTokens": "Cache Read",
       "eventsTab": "Usage Events",
-      "analyticsTab": "User Analytics",
+      "analyticsTab": "Daily Usage",
       "colTime": "Time",
       "colModel": "Model",
       "colKind": "Type",
@@ -4013,7 +4013,12 @@
       "teamMembers": "Team Members",
       "dailyMetrics": "Daily Metrics",
       "empty": "No usage data",
-      "billingCycleRange": "Current billing cycle: {{range}}"
+      "billingCycleRange": "Current billing cycle: {{range}}",
+      "dailyUsageTitle": "Daily Paid Model Usage",
+      "dailyUsageHint": "Counts chargeable models (e.g. Claude), including gift-credit spend. Excludes default / Composer.",
+      "dailyUsageTotal": "Total",
+      "dailyUsagePeak": "Peak day",
+      "dailyUsageEmpty": "No paid-model daily usage yet"
     }
   },
   "gemini": {

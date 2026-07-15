@@ -240,6 +240,84 @@ export function parseFreeCreditEventCents(event: CursorUsageEventDisplay): numbe
   return cents > 0 ? Math.round(cents) : 0;
 }
 
+export interface CursorDailyPaidUsagePoint {
+  /** Local calendar day key YYYY-MM-DD */
+  day: string;
+  /** Display label MM/DD */
+  label: string;
+  /** Day start timestamp (local midnight) */
+  dayStartMs: number;
+  costCents: number;
+  eventCount: number;
+}
+
+function toLocalDayKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function toLocalDayLabel(dayKey: string): string {
+  const parts = dayKey.split('-');
+  if (parts.length !== 3) return dayKey;
+  return `${parts[1]}/${parts[2]}`;
+}
+
+/**
+ * Daily cost series for chargeable models only (same model filter as gift-credit stats:
+ * excludes `default` / `composer*`). Includes gift-credit and other event kinds.
+ */
+export function buildPaidModelDailyUsageSeries(
+  events: CursorUsageEventDisplay[],
+  startMs: number,
+  endMs: number,
+): CursorDailyPaidUsagePoint[] {
+  const start = new Date(startMs);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(Math.max(startMs, endMs));
+  end.setHours(0, 0, 0, 0);
+
+  const dayMap = new Map<string, { costCents: number; eventCount: number; dayStartMs: number }>();
+  for (
+    let cursor = new Date(start);
+    cursor.getTime() <= end.getTime();
+    cursor.setDate(cursor.getDate() + 1)
+  ) {
+    const dayStartMs = cursor.getTime();
+    const day = toLocalDayKey(cursor);
+    dayMap.set(day, { costCents: 0, eventCount: 0, dayStartMs });
+  }
+
+  events.forEach((event) => {
+    if (!isCursorGiftCreditUsageModel(event.model)) return;
+    const eventCents = parseFreeCreditEventCents(event);
+    if (eventCents <= 0) return;
+    const ts = parseEventTimestampMs(event.timestamp);
+    if (!ts || ts < startMs || ts > endMs) return;
+    const dayDate = new Date(ts);
+    dayDate.setHours(0, 0, 0, 0);
+    const day = toLocalDayKey(dayDate);
+    const existing = dayMap.get(day);
+    if (!existing) {
+      dayMap.set(day, { costCents: eventCents, eventCount: 1, dayStartMs: dayDate.getTime() });
+      return;
+    }
+    existing.costCents += eventCents;
+    existing.eventCount += 1;
+  });
+
+  return Array.from(dayMap.entries())
+    .sort((a, b) => a[1].dayStartMs - b[1].dayStartMs)
+    .map(([day, value]) => ({
+      day,
+      label: toLocalDayLabel(day),
+      dayStartMs: value.dayStartMs,
+      costCents: value.costCents,
+      eventCount: value.eventCount,
+    }));
+}
+
 export function buildFreeCreditUsageSummary(
   events: CursorUsageEventDisplay[],
 ): CursorFreeCreditUsageSummary | null {

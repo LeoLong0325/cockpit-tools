@@ -3702,7 +3702,7 @@
       "cacheWriteTokens": "快取寫入",
       "cacheReadTokens": "快取讀取",
       "eventsTab": "使用事件明細",
-      "analyticsTab": "使用者分析資料",
+      "analyticsTab": "每日用量",
       "colTime": "時間",
       "colModel": "模型",
       "colKind": "類型",
@@ -3715,7 +3715,12 @@
       "teamMembers": "團隊成員數",
       "dailyMetrics": "每日指標條數",
       "empty": "暫無用量資料",
-      "billingCycleRange": "目前計費週期：{{range}}"
+      "billingCycleRange": "目前計費週期：{{range}}",
+      "dailyUsageTitle": "每日收費模型用量",
+      "dailyUsageHint": "僅統計收費模型（如 Claude），含贈送額度中的同類型消耗；不含 default / Composer。",
+      "dailyUsageTotal": "合計",
+      "dailyUsagePeak": "峰值日",
+      "dailyUsageEmpty": "暫無收費模型每日用量資料"
     }
   },
   "breakout": {

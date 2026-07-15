@@ -3702,7 +3702,7 @@
       "cacheWriteTokens": "Ghi cache",
       "cacheReadTokens": "Đọc cache",
       "eventsTab": "Sự kiện sử dụng",
-      "analyticsTab": "Phân tích người dùng",
+      "analyticsTab": "Daily Usage",
       "colTime": "Thời gian",
       "colModel": "Mô hình",
       "colKind": "Loại",
@@ -3715,7 +3715,12 @@
       "teamMembers": "Thành viên nhóm",
       "dailyMetrics": "Chỉ số hàng ngày",
       "empty": "Không có dữ liệu sử dụng",
-      "billingCycleRange": "Chu kỳ thanh toán hiện tại: {{range}}"
+      "billingCycleRange": "Chu kỳ thanh toán hiện tại: {{range}}",
+      "dailyUsageTitle": "Daily Paid Model Usage",
+      "dailyUsageHint": "Counts chargeable models (e.g. Claude), including gift-credit spend. Excludes default / Composer.",
+      "dailyUsageTotal": "Total",
+      "dailyUsagePeak": "Peak day",
+      "dailyUsageEmpty": "No paid-model daily usage yet"
     }
   },
   "breakout": {

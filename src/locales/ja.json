@@ -3702,7 +3702,7 @@
       "cacheWriteTokens": "キャッシュ書込",
       "cacheReadTokens": "キャッシュ読取",
       "eventsTab": "使用イベント明細",
-      "analyticsTab": "ユーザー分析",
+      "analyticsTab": "Daily Usage",
       "colTime": "時間",
       "colModel": "モデル",
       "colKind": "種類",
@@ -3715,7 +3715,12 @@
       "teamMembers": "チームメンバー数",
       "dailyMetrics": "日次指標数",
       "empty": "使用量データがありません",
-      "billingCycleRange": "現在の課金周期：{{range}}"
+      "billingCycleRange": "現在の課金周期：{{range}}",
+      "dailyUsageTitle": "Daily Paid Model Usage",
+      "dailyUsageHint": "Counts chargeable models (e.g. Claude), including gift-credit spend. Excludes default / Composer.",
+      "dailyUsageTotal": "Total",
+      "dailyUsagePeak": "Peak day",
+      "dailyUsageEmpty": "No paid-model daily usage yet"
     }
   },
   "breakout": {

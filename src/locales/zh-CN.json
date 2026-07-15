@@ -4000,7 +4000,7 @@
       "cacheWriteTokens": "缓存写入",
       "cacheReadTokens": "缓存读取",
       "eventsTab": "使用事件明细",
-      "analyticsTab": "用户分析数据",
+      "analyticsTab": "每日用量",
       "colTime": "时间",
       "colModel": "模型",
       "colKind": "类型",
@@ -4013,7 +4013,12 @@
       "teamMembers": "团队成员数",
       "dailyMetrics": "每日指标条数",
       "empty": "暂无用量数据",
-      "billingCycleRange": "当前计费周期：{{range}}"
+      "billingCycleRange": "当前计费周期：{{range}}",
+      "dailyUsageTitle": "每日收费模型用量",
+      "dailyUsageHint": "仅统计收费模型（如 Claude），含赠送额度中的同类型消耗；不含 default / Composer。",
+      "dailyUsageTotal": "合计",
+      "dailyUsagePeak": "峰值日",
+      "dailyUsageEmpty": "暂无收费模型每日用量数据"
     }
   },
   "gemini": {

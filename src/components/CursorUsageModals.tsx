@@ -3,23 +3,24 @@ import { ClipboardList, RefreshCw, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useEscClose } from '../hooks/useEscClose';
 import { SimpleDateField } from './SimpleDateField';
+import { CursorDailyUsageChart } from './CursorDailyUsageChart';
 import * as cursorService from '../services/cursorService';
 import { formatCursorUsageDollars, getCursorBillingCycleRangeMs, type CursorAccount } from '../types/cursor';
 import {
   buildFreeCreditUsageSummary,
+  buildPaidModelDailyUsageSeries,
   getCursorUsageDateRange,
   getCursorUsageFetchRange,
   getCursorUsageEventKindLabel,
   parseCursorAggregatedUsage,
   parseCursorUsageEvents,
-  parseCursorUserAnalytics,
   resolveCursorUsageEventsMaxPage,
   sortCursorUsageEventsDescending,
   type CursorAggregatedUsageData,
+  type CursorDailyPaidUsagePoint,
   type CursorFilteredUsageEventsData,
   type CursorFreeCreditUsageSummary,
   type CursorUsagePeriod,
-  type CursorUserAnalyticsData,
 } from '../types/cursorUsage';
 
 function formatTokenCount(value: string | number | null | undefined): string {
@@ -52,7 +53,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [eventsData, setEventsData] = useState<CursorFilteredUsageEventsData | null>(null);
-  const [analyticsData, setAnalyticsData] = useState<CursorUserAnalyticsData | null>(null);
+  const [dailyUsagePoints, setDailyUsagePoints] = useState<CursorDailyPaidUsagePoint[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [reloadSeq, setReloadSeq] = useState(0);
   const pageSize = 20;
@@ -86,12 +87,17 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
           usageEventsDisplay: sortCursorUsageEventsDescending(parsed.usageEventsDisplay),
         });
       } else {
-        const raw = await cursorService.fetchCursorUserAnalytics(
+        setDailyUsagePoints([]);
+        const raw = await cursorService.fetchAllCursorUsageEvents(
           accountId,
           fetchRange.startMs,
           fetchRange.endMs,
         );
-        setAnalyticsData(parseCursorUserAnalytics(raw));
+        const parsed = parseCursorUsageEvents(raw);
+        const events = parsed?.usageEventsDisplay ?? [];
+        setDailyUsagePoints(
+          buildPaidModelDailyUsageSeries(events, fetchRange.startMs, fetchRange.endMs),
+        );
       }
     } catch (err) {
       setError(String(err));
@@ -121,7 +127,7 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
       setActiveTab('events');
       setCurrentPage(1);
       setEventsData(null);
-      setAnalyticsData(null);
+      setDailyUsagePoints([]);
       setError(null);
     }
   }, [isOpen]);
@@ -171,9 +177,12 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
             <button
               type="button"
               className={`cursor-usage-tab ${activeTab === 'analytics' ? 'active' : ''}`}
-              onClick={() => setActiveTab('analytics')}
+              onClick={() => {
+                setActiveTab('analytics');
+                handleRefreshLatest();
+              }}
             >
-              {t('cursor.usage.analyticsTab', '用户分析数据')}
+              {t('cursor.usage.analyticsTab', '每日用量')}
             </button>
           </div>
 
@@ -251,21 +260,8 @@ export function CursorUsageDetailsModal(props: CursorUsageDetailsModalProps) {
                 </div>
               </div>
             </>
-          ) : activeTab === 'analytics' && analyticsData ? (
-            <div className="cursor-usage-analytics-summary">
-              <div className="cursor-usage-analytics-row">
-                <span>{t('cursor.usage.periodRange', '时间范围')}</span>
-                <strong>{analyticsData.period.startDate} — {analyticsData.period.endDate}</strong>
-              </div>
-              <div className="cursor-usage-analytics-row">
-                <span>{t('cursor.usage.teamMembers', '团队成员数')}</span>
-                <strong>{analyticsData.totalMembersInTeam || 1}</strong>
-              </div>
-              <div className="cursor-usage-analytics-row">
-                <span>{t('cursor.usage.dailyMetrics', '每日指标条数')}</span>
-                <strong>{analyticsData.dailyMetrics.length}</strong>
-              </div>
-            </div>
+          ) : activeTab === 'analytics' ? (
+            <CursorDailyUsageChart points={dailyUsagePoints} />
           ) : (
             <p className="modal-muted">{t('cursor.usage.empty', '暂无用量数据')}</p>
           )}

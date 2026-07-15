@@ -3848,7 +3848,7 @@
       "cacheWriteTokens": "Tulis cache",
       "cacheReadTokens": "Baca cache",
       "eventsTab": "Peristiwa penggunaan",
-      "analyticsTab": "Analitik pengguna",
+      "analyticsTab": "Daily Usage",
       "colTime": "Waktu",
       "colModel": "Model AI",
       "colKind": "Jenis",
@@ -3861,7 +3861,12 @@
       "teamMembers": "Anggota tim",
       "dailyMetrics": "Metrik harian",
       "empty": "Tidak ada data penggunaan",
-      "billingCycleRange": "Siklus penagihan saat ini: {{range}}"
+      "billingCycleRange": "Siklus penagihan saat ini: {{range}}",
+      "dailyUsageTitle": "Daily Paid Model Usage",
+      "dailyUsageHint": "Counts chargeable models (e.g. Claude), including gift-credit spend. Excludes default / Composer.",
+      "dailyUsageTotal": "Total",
+      "dailyUsagePeak": "Peak day",
+      "dailyUsageEmpty": "No paid-model daily usage yet"
     }
   },
   "gemini": {

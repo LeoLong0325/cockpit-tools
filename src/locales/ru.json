@@ -3702,7 +3702,7 @@
       "cacheWriteTokens": "Запись кэша",
       "cacheReadTokens": "Чтение кэша",
       "eventsTab": "События использования",
-      "analyticsTab": "Аналитика пользователя",
+      "analyticsTab": "Daily Usage",
       "colTime": "Время",
       "colModel": "Модель",
       "colKind": "Тип",
@@ -3715,7 +3715,12 @@
       "teamMembers": "Участники команды",
       "dailyMetrics": "Ежедневные метрики",
       "empty": "Нет данных об использовании",
-      "billingCycleRange": "Текущий расчётный период: {{range}}"
+      "billingCycleRange": "Текущий расчётный период: {{range}}",
+      "dailyUsageTitle": "Daily Paid Model Usage",
+      "dailyUsageHint": "Counts chargeable models (e.g. Claude), including gift-credit spend. Excludes default / Composer.",
+      "dailyUsageTotal": "Total",
+      "dailyUsagePeak": "Peak day",
+      "dailyUsageEmpty": "No paid-model daily usage yet"
     }
   },
   "breakout": {

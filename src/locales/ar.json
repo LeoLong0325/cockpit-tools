@@ -3748,7 +3748,7 @@
       "cacheWriteTokens": "كتابة الذاكرة",
       "cacheReadTokens": "قراءة الذاكرة",
       "eventsTab": "أحداث الاستخدام",
-      "analyticsTab": "تحليلات المستخدم",
+      "analyticsTab": "Daily Usage",
       "colTime": "الوقت",
       "colModel": "النموذج",
       "colKind": "النوع",
@@ -3761,7 +3761,12 @@
       "teamMembers": "أعضاء الفريق",
       "dailyMetrics": "المقاييس اليومية",
       "empty": "لا توجد بيانات استخدام",
-      "billingCycleRange": "دورة الفوترة الحالية: {{range}}"
+      "billingCycleRange": "دورة الفوترة الحالية: {{range}}",
+      "dailyUsageTitle": "Daily Paid Model Usage",
+      "dailyUsageHint": "Counts chargeable models (e.g. Claude), including gift-credit spend. Excludes default / Composer.",
+      "dailyUsageTotal": "Total",
+      "dailyUsagePeak": "Peak day",
+      "dailyUsageEmpty": "No paid-model daily usage yet"
     }
   },
   "breakout": {
