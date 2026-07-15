@@ -1009,11 +1009,18 @@ export function resolveCursorCreditGrantsQuotaDisplay(
 
     const total = grants.totalCents;
     const used = deriveCursorGrantUsedCents(grants) ?? 0;
+    const remaining = grants.remainingCents ?? 0;
     const effectiveTotal = total ?? used;
+    // Hide empty / sub-dollar noise (e.g. historical leftovers that round to $0).
+    if (remaining <= 0 && used < 50 && (total == null || total < 50)) {
+      return null;
+    }
     const percentage =
       total != null && total > 0
         ? Math.min(100, Math.max(0, (used / total) * 100))
-        : 0;
+        : remaining > 0
+          ? 0
+          : 100;
 
     return {
       usedCents: used,
@@ -1024,12 +1031,14 @@ export function resolveCursorCreditGrantsQuotaDisplay(
   }
 
   // 2. API empty / all-zero → FREE_CREDIT events (only exist when gifted credits apply).
-  if (freeCreditUsed != null) {
+  // Require at least $0.50 so "$0.00 billed / estimated totalCents" noise does not render
+  // as a full gold bar labeled "$0".
+  if (freeCreditUsed != null && freeCreditUsed >= 50) {
     return {
       usedCents: freeCreditUsed,
       totalCents: freeCreditUsed,
       valueText: formatCursorCreditGrantsValue(freeCreditUsed, null),
-      percentage: 100,
+      percentage: 0,
     };
   }
 

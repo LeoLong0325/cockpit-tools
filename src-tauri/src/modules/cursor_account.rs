@@ -2463,6 +2463,19 @@ fn is_gift_credit_usage_model(model: &str) -> bool {
 }
 
 fn free_credit_event_cents(event: &serde_json::Value) -> i64 {
+    // Prefer billed usageBasedCosts when present (including "$0.00").
+    // Cursor often tags FREE_CREDIT events with estimated tokenUsage.totalCents even when
+    // the billed cost is $0 — those must not inflate gift-credit usage.
+    let usage_based = event
+        .get("usageBasedCosts")
+        .or_else(|| event.get("usage_based_costs"))
+        .and_then(|value| value.as_str())
+        .map(str::trim)
+        .filter(|text| !text.is_empty());
+    if let Some(text) = usage_based {
+        return parse_dollar_string_to_cents(text);
+    }
+
     if let Some(token) = event
         .get("tokenUsage")
         .or_else(|| event.get("token_usage"))
@@ -2471,16 +2484,6 @@ fn free_credit_event_cents(event: &serde_json::Value) -> i64 {
             if cents > 0 {
                 return cents;
             }
-        }
-    }
-    if let Some(text) = event
-        .get("usageBasedCosts")
-        .or_else(|| event.get("usage_based_costs"))
-        .and_then(|value| value.as_str())
-    {
-        let parsed = parse_dollar_string_to_cents(text);
-        if parsed > 0 {
-            return parsed;
         }
     }
     0
@@ -3633,11 +3636,33 @@ mod credit_grants_tests {
     }
 
     #[test]
-    fn free_credit_event_cents_reads_float_token_usage() {
+    fn free_credit_event_cents_prefers_billed_usage_based_costs() {
+        let zero_billed = json!({
+            "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
+            "model": "cursor-grok-4.5-high-fast",
+            "usageBasedCosts": "$0.00",
+            "tokenUsage": {
+                "totalCents": 23.486400604248047
+            }
+        });
+        assert_eq!(free_credit_event_cents(&zero_billed), 0);
+
+        let billed = json!({
+            "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
+            "model": "claude-opus-4-8-thinking-high",
+            "usageBasedCosts": "$1.25",
+            "tokenUsage": {
+                "totalCents": 12.23840045928955
+            }
+        });
+        assert_eq!(free_credit_event_cents(&billed), 125);
+    }
+
+    #[test]
+    fn free_credit_event_cents_falls_back_to_token_usage_when_cost_missing() {
         let event = json!({
             "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
             "model": "claude-opus-4-8-thinking-high",
-            "usageBasedCosts": "$0.00",
             "tokenUsage": {
                 "totalCents": 12.23840045928955
             }
