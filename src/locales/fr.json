@@ -3702,7 +3702,7 @@
       "cacheWriteTokens": "Écriture cache",
       "cacheReadTokens": "Lecture cache",
       "eventsTab": "Événements d'utilisation",
-      "analyticsTab": "Daily Usage",
+      "analyticsTab": "Usage quotidien",
       "colTime": "Heure",
       "colModel": "Modèle",
       "colKind": "Type",
@@ -3716,11 +3716,11 @@
       "dailyMetrics": "Métriques quotidiennes",
       "empty": "Aucune donnée d'utilisation",
       "billingCycleRange": "Cycle de facturation actuel : {{range}}",
-      "dailyUsageTitle": "Daily Paid Model Usage",
-      "dailyUsageHint": "Counts chargeable models (e.g. Claude), including gift-credit spend. Excludes default / Composer.",
-      "dailyUsageTotal": "Total",
-      "dailyUsagePeak": "Peak day",
-      "dailyUsageEmpty": "No paid-model daily usage yet"
+      "dailyUsageTitle": "Usage quotidien des modèles payants",
+      "dailyUsageHint": "Compte uniquement les modèles payants (ex. Claude), y compris les crédits offerts. Exclut default / Composer.",
+      "dailyUsageTotal": "Total dépensé",
+      "dailyUsagePeak": "Jour de pointe",
+      "dailyUsageEmpty": "Aucune donnée quotidienne pour les modèles payants"
     }
   },
   "breakout": {

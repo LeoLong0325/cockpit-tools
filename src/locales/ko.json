@@ -3702,7 +3702,7 @@
       "cacheWriteTokens": "캐시 쓰기",
       "cacheReadTokens": "캐시 읽기",
       "eventsTab": "사용 이벤트",
-      "analyticsTab": "Daily Usage",
+      "analyticsTab": "일일 사용량",
       "colTime": "시간",
       "colModel": "모델",
       "colKind": "유형",
@@ -3716,11 +3716,11 @@
       "dailyMetrics": "일별 지표 수",
       "empty": "사용량 데이터 없음",
       "billingCycleRange": "현재 결제 주기: {{range}}",
-      "dailyUsageTitle": "Daily Paid Model Usage",
-      "dailyUsageHint": "Counts chargeable models (e.g. Claude), including gift-credit spend. Excludes default / Composer.",
-      "dailyUsageTotal": "Total",
-      "dailyUsagePeak": "Peak day",
-      "dailyUsageEmpty": "No paid-model daily usage yet"
+      "dailyUsageTitle": "유료 모델 일일 사용량",
+      "dailyUsageHint": "유료 모델(예: Claude)만 집계하며, 선물 크레딧 사용분도 포함합니다. default / Composer는 제외합니다.",
+      "dailyUsageTotal": "합계",
+      "dailyUsagePeak": "피크일",
+      "dailyUsageEmpty": "유료 모델 일일 사용 데이터가 없습니다"
     }
   },
   "breakout": {

@@ -3702,7 +3702,7 @@
       "cacheWriteTokens": "Zápis cache",
       "cacheReadTokens": "Čtení cache",
       "eventsTab": "Události využití",
-      "analyticsTab": "Daily Usage",
+      "analyticsTab": "Denní využití",
       "colTime": "Čas",
       "colModel": "Model AI",
       "colKind": "Typ",
@@ -3716,11 +3716,11 @@
       "dailyMetrics": "Denní metriky",
       "empty": "Žádná data o využití",
       "billingCycleRange": "Aktuální fakturační období: {{range}}",
-      "dailyUsageTitle": "Daily Paid Model Usage",
-      "dailyUsageHint": "Counts chargeable models (e.g. Claude), including gift-credit spend. Excludes default / Composer.",
-      "dailyUsageTotal": "Total",
-      "dailyUsagePeak": "Peak day",
-      "dailyUsageEmpty": "No paid-model daily usage yet"
+      "dailyUsageTitle": "Denní využití placených modelů",
+      "dailyUsageHint": "Počítá pouze placené modely (např. Claude), včetně spotřeby z dárkových kreditů. Vylučuje default / Composer.",
+      "dailyUsageTotal": "Celkem",
+      "dailyUsagePeak": "Nejvyšší den",
+      "dailyUsageEmpty": "Zatím žádná denní data o placených modelech"
     }
   },
   "breakout": {
