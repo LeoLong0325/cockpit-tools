@@ -233,14 +233,11 @@ function parseUsageCostCents(value: string | null | undefined): number {
 }
 
 export function parseFreeCreditEventCents(event: CursorUsageEventDisplay): number {
-  // Prefer billed usageBasedCosts when present (including "$0.00").
-  // FREE_CREDIT events may still carry estimated tokenUsage.totalCents.
-  const costText = event.usageBasedCosts?.trim();
-  if (costText) {
-    const billed = parseUsageCostCents(costText);
-    return billed > 0 ? billed : 0;
+  // FREE_CREDIT fair-value: prefer tokenUsage.totalCents (billed line is often "$0.00").
+  let cents = event.tokenUsage?.totalCents ?? 0;
+  if (cents <= 0) {
+    cents = parseUsageCostCents(event.usageBasedCosts);
   }
-  const cents = event.tokenUsage?.totalCents ?? 0;
   return cents > 0 ? Math.round(cents) : 0;
 }
 

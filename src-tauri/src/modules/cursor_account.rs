@@ -2463,19 +2463,8 @@ fn is_gift_credit_usage_model(model: &str) -> bool {
 }
 
 fn free_credit_event_cents(event: &serde_json::Value) -> i64 {
-    // Prefer billed usageBasedCosts when present (including "$0.00").
-    // Cursor often tags FREE_CREDIT events with estimated tokenUsage.totalCents even when
-    // the billed cost is $0 — those must not inflate gift-credit usage.
-    let usage_based = event
-        .get("usageBasedCosts")
-        .or_else(|| event.get("usage_based_costs"))
-        .and_then(|value| value.as_str())
-        .map(str::trim)
-        .filter(|text| !text.is_empty());
-    if let Some(text) = usage_based {
-        return parse_dollar_string_to_cents(text);
-    }
-
+    // FREE_CREDIT fair-value: prefer tokenUsage.totalCents (Cursor often bills "$0.00"
+    // while still reporting promotional usage value in totalCents).
     if let Some(token) = event
         .get("tokenUsage")
         .or_else(|| event.get("token_usage"))
@@ -2484,6 +2473,16 @@ fn free_credit_event_cents(event: &serde_json::Value) -> i64 {
             if cents > 0 {
                 return cents;
             }
+        }
+    }
+    if let Some(text) = event
+        .get("usageBasedCosts")
+        .or_else(|| event.get("usage_based_costs"))
+        .and_then(|value| value.as_str())
+    {
+        let parsed = parse_dollar_string_to_cents(text);
+        if parsed > 0 {
+            return parsed;
         }
     }
     0
@@ -2842,6 +2841,24 @@ fn credit_grants_has_valid_display_metrics(root: &serde_json::Value) -> bool {
         return true;
     }
     false
+}
+
+/// Only skip FREE_CREDIT event aggregation when there is still an active remaining balance.
+/// Exhausted/historical peaks must not block billing-cycle FREE_CREDIT usage (card + modal).
+fn credit_grants_has_active_remaining(root: &serde_json::Value) -> bool {
+    if root.get("historical").and_then(|value| value.as_bool()) == Some(true) {
+        return false;
+    }
+    let balance = credit_grants_balance_node(root);
+    if balance
+        .get("historical")
+        .and_then(|value| value.as_bool())
+        == Some(true)
+    {
+        return false;
+    }
+    let (_total, _used, remaining) = extract_credit_grants_metrics(root);
+    remaining.unwrap_or(0) > 0
 }
 
 fn build_credit_grants_peak(total: i64, used: Option<i64>, remaining: Option<i64>) -> serde_json::Value {
@@ -3210,13 +3227,13 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
     let credit_grants_api_valid = account
         .cursor_credit_grants_raw
         .as_ref()
-        .map(credit_grants_has_valid_display_metrics)
+        .map(credit_grants_has_active_remaining)
         .unwrap_or(false);
 
     if credit_grants_api_valid {
         account.cursor_free_credit_usage_raw = None;
         logger::log_info(&format!(
-            "[Cursor Refresh] 赠送额度 API 有效，跳过 FREE_CREDIT 事件统计: id={}",
+            "[Cursor Refresh] 赠送额度仍有剩余，跳过 FREE_CREDIT 事件统计: id={}",
             account.id
         ));
     } else {
@@ -3230,14 +3247,14 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
             Ok(Some(snapshot)) => {
                 account.cursor_free_credit_usage_raw = Some(snapshot);
                 logger::log_info(&format!(
-                    "[Cursor Refresh] 赠送额度 API 无有效字段，已用 FREE_CREDIT 事件汇总: id={}",
+                    "[Cursor Refresh] 赠送额度无剩余/仅历史 peak，已用 FREE_CREDIT 事件汇总: id={}",
                     account.id
                 ));
             }
             Ok(None) => {
                 account.cursor_free_credit_usage_raw = None;
                 logger::log_info(&format!(
-                    "[Cursor Refresh] 赠送额度 API 无有效字段且无 FREE_CREDIT 事件: id={}",
+                    "[Cursor Refresh] 赠送额度无剩余且无 FREE_CREDIT 事件: id={}",
                     account.id
                 ));
             }
@@ -3584,9 +3601,10 @@ pub fn run_quota_alert_if_needed(
 #[cfg(test)]
 mod credit_grants_tests {
     use super::{
-        build_credit_grants_peak, credit_grants_has_valid_display_metrics,
-        extract_credit_grants_metrics, free_credit_event_cents, is_gift_credit_usage_model,
-        merge_credit_grants_preserving_history, sum_free_credit_cents_from_events_page,
+        build_credit_grants_peak, credit_grants_has_active_remaining,
+        credit_grants_has_valid_display_metrics, extract_credit_grants_metrics,
+        free_credit_event_cents, is_gift_credit_usage_model, merge_credit_grants_preserving_history,
+        sum_free_credit_cents_from_events_page,
     };
     use serde_json::json;
 
@@ -3636,38 +3654,43 @@ mod credit_grants_tests {
     }
 
     #[test]
-    fn free_credit_event_cents_prefers_billed_usage_based_costs() {
-        let zero_billed = json!({
-            "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
-            "model": "cursor-grok-4.5-high-fast",
-            "usageBasedCosts": "$0.00",
-            "tokenUsage": {
-                "totalCents": 23.486400604248047
-            }
+    fn historical_peak_does_not_count_as_active_remaining() {
+        let historical = json!({
+            "historical": true,
+            "balance": {
+                "totalCents": 2500,
+                "usedCents": 2500,
+                "remainingCents": 0,
+                "hasCreditGrants": true,
+                "historical": true
+            },
+            "peak": { "totalCents": 2500, "usedCents": 2500 }
         });
-        assert_eq!(free_credit_event_cents(&zero_billed), 0);
-
-        let billed = json!({
-            "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
-            "model": "claude-opus-4-8-thinking-high",
-            "usageBasedCosts": "$1.25",
-            "tokenUsage": {
-                "totalCents": 12.23840045928955
-            }
-        });
-        assert_eq!(free_credit_event_cents(&billed), 125);
+        assert!(credit_grants_has_valid_display_metrics(&historical));
+        assert!(!credit_grants_has_active_remaining(&historical));
     }
 
     #[test]
-    fn free_credit_event_cents_falls_back_to_token_usage_when_cost_missing() {
+    fn free_credit_event_cents_reads_float_token_usage() {
         let event = json!({
             "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
             "model": "claude-opus-4-8-thinking-high",
+            "usageBasedCosts": "$0.00",
             "tokenUsage": {
                 "totalCents": 12.23840045928955
             }
         });
         assert_eq!(free_credit_event_cents(&event), 12);
+    }
+
+    #[test]
+    fn free_credit_event_cents_falls_back_to_usage_based_costs() {
+        let event = json!({
+            "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
+            "model": "claude-opus-4-8-thinking-high",
+            "usageBasedCosts": "$1.25"
+        });
+        assert_eq!(free_credit_event_cents(&event), 125);
     }
 
     #[test]

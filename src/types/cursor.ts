@@ -1001,26 +1001,54 @@ export function resolveCursorCreditGrantsQuotaDisplay(
   account: CursorAccount,
 ): CursorCreditGrantsQuotaDisplay | null {
   const freeCreditUsed = getCursorFreeCreditUsedCents(account);
+  const grants = hasLiveCreditGrantsApiMetrics(account)
+    ? getCursorCreditGrants(account)
+    : null;
+  const remaining = grants?.remainingCents ?? 0;
+  const hasActiveBalance = grants != null && remaining > 0;
 
-  // 1. Live credit-grants API has usable fields → show API data only.
-  if (hasLiveCreditGrantsApiMetrics(account)) {
-    const grants = getCursorCreditGrants(account);
-    if (!grants) return null;
-
+  // 1. Active gift-credit balance (remaining > 0) → show live API used/total.
+  if (hasActiveBalance && grants) {
     const total = grants.totalCents;
     const used = deriveCursorGrantUsedCents(grants) ?? 0;
-    const remaining = grants.remainingCents ?? 0;
-    const effectiveTotal = total ?? used;
-    // Hide empty / sub-dollar noise (e.g. historical leftovers that round to $0).
+    const effectiveTotal = total ?? Math.max(used + remaining, remaining);
+    const percentage =
+      effectiveTotal > 0
+        ? Math.min(100, Math.max(0, (used / effectiveTotal) * 100))
+        : 0;
+
+    return {
+      usedCents: used,
+      totalCents: effectiveTotal,
+      valueText: formatCursorCreditGrantsValue(used, total ?? effectiveTotal),
+      percentage,
+    };
+  }
+
+  // 2. Otherwise prefer billing-cycle FREE_CREDIT fair-value usage
+  //    (same source as usage-modal「赠送额度使用总额」).
+  //    This must win over exhausted/historical API peaks (e.g. stale $25/$25).
+  if (freeCreditUsed != null && freeCreditUsed >= 50) {
+    return {
+      usedCents: freeCreditUsed,
+      totalCents: freeCreditUsed,
+      valueText: formatCursorCreditGrantsValue(freeCreditUsed, null),
+      percentage: 100,
+    };
+  }
+
+  // 3. Exhausted/historical API only when no meaningful cycle FREE_CREDIT usage.
+  if (grants) {
+    const total = grants.totalCents;
+    const used = deriveCursorGrantUsedCents(grants) ?? 0;
     if (remaining <= 0 && used < 50 && (total == null || total < 50)) {
       return null;
     }
+    const effectiveTotal = total ?? used;
     const percentage =
       total != null && total > 0
         ? Math.min(100, Math.max(0, (used / total) * 100))
-        : remaining > 0
-          ? 0
-          : 100;
+        : 100;
 
     return {
       usedCents: used,
@@ -1030,19 +1058,6 @@ export function resolveCursorCreditGrantsQuotaDisplay(
     };
   }
 
-  // 2. API empty / all-zero → FREE_CREDIT events (only exist when gifted credits apply).
-  // Require at least $0.50 so "$0.00 billed / estimated totalCents" noise does not render
-  // as a full gold bar labeled "$0".
-  if (freeCreditUsed != null && freeCreditUsed >= 50) {
-    return {
-      usedCents: freeCreditUsed,
-      totalCents: freeCreditUsed,
-      valueText: formatCursorCreditGrantsValue(freeCreditUsed, null),
-      percentage: 0,
-    };
-  }
-
-  // 3. Neither source has data.
   return null;
 }
 
