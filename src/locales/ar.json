@@ -637,6 +637,7 @@
       "every30min": "كل 30 دقيقة",
       "every1hour": "كل ساعة واحدة",
       "minutes": "دقيقة",
+      "seconds": "ثانية",
       "refreshIntervalLimited": "ميزة الاستيقاظ عند إعادة تعيين الحصة مفعلة، لذا فإن الحد الأدنى لفاصل التحديث هو دقيقتان.",
       "closeBehavior": "سلوك الإغلاق",
       "closeBehaviorDesc": "اختر الإجراء عند إغلاق النافذة",
@@ -797,6 +798,7 @@
       "defaultTerminalDesc": "المحطة المستخدمة عند فتح Gemini CLI",
       "terminalSystem": "افتراضي النظام",
       "currentAccountRefreshRequiresAutoRefresh": "فعّل أولاً \"التحديث التلقائي للحصة\" حتى تتمكن من إعداد تحديث الحساب الحالي.",
+      "cursorAutoRefreshDesc": "تحديث جميع حسابات Cursor في الخلفية. الحد الأدنى للفاصل هو 10 ثوانٍ.",
       "codebuddyCnAppPath": "مسار تطبيق CodeBuddy CN",
       "codebuddyCnAppPathDesc": "يُستخدم المسار الافتراضي إذا تُرك فارغًا",
       "codebuddyCnAppPathPlaceholder": "المسار الافتراضي",
@@ -3394,6 +3396,7 @@
     "customInput": "مخصص",
     "apply": "تطبيق",
     "inputMinutes": "أدخل الدقائق",
+    "inputSeconds": "أدخل الثواني",
     "inputPercent": "أدخل النسبة المئوية",
     "inputCredits": "أدخل الرصيد",
     "windsurf": {

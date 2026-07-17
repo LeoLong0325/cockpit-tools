@@ -594,6 +594,7 @@
       "every30min": "30分ごと",
       "every1hour": "1時間ごと",
       "minutes": "分",
+      "seconds": "秒",
       "refreshIntervalLimited": "クォータリセット時の起動が有効になっているため、リフレッシュ間隔の最小値は2分です。",
       "closeBehavior": "閉じる時の動作",
       "closeBehaviorDesc": "ウィンドウを閉じる時の動作を選択",
@@ -751,6 +752,7 @@
       "codexAutoSwitchAccountScope": "Codex 自動切替アカウント範囲",
       "codexAutoSwitchAccountScopeDesc": "現在の Codex 自動切替ステータス：{{status}}。この範囲内のアカウントのみ対象になります。",
       "currentAccountRefreshRequiresAutoRefresh": "現在のアカウントの更新を設定するには、先に「クォータ自動更新」を有効にしてください。",
+      "cursorAutoRefreshDesc": "すべての Cursor アカウントをバックグラウンドで更新します。最短間隔は 10 秒です。",
       "codebuddyCnAppPath": "CodeBuddy CN 起動パス",
       "codebuddyCnAppPathDesc": "空欄の場合はデフォルトパスを使用",
       "codebuddyCnAppPathPlaceholder": "デフォルトパス",
@@ -3348,6 +3350,7 @@
     "customInput": "カスタム",
     "apply": "適用",
     "inputMinutes": "分数を入力",
+    "inputSeconds": "秒数を入力",
     "inputPercent": "パーセントを入力",
     "inputCredits": "Credits を入力",
     "windsurf": {

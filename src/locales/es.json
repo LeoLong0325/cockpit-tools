@@ -591,6 +591,7 @@
       "every30min": "Cada 30 minutos",
       "every1hour": "Cada hora",
       "minutes": "mín.",
+      "seconds": "s",
       "refreshIntervalLimited": "El despertar al restablecer la cuota está habilitado, por lo que el intervalo mínimo de actualización es de 2 minutos.",
       "closeBehavior": "Comportamiento al cerrar",
       "closeBehaviorDesc": "Elegir acción al cerrar la ventana",
@@ -751,6 +752,7 @@
       "defaultTerminalDesc": "La terminal utilizada al abrir Gemini CLI",
       "terminalSystem": "Predeterminado del sistema",
       "currentAccountRefreshRequiresAutoRefresh": "Activa primero «Actualización automática de cuota» para configurar la actualización de la cuenta actual.",
+      "cursorAutoRefreshDesc": "Actualiza todas las cuentas de Cursor en segundo plano. El intervalo mínimo es de 10 segundos.",
       "codebuddyCnAppPath": "Ruta de la aplicación CodeBuddy CN",
       "codebuddyCnAppPathDesc": "Dejar en blanco para usar la ruta predeterminada",
       "codebuddyCnAppPathPlaceholder": "Ruta predeterminada",
@@ -3348,6 +3350,7 @@
     "customInput": "Personalizado",
     "apply": "Aplicar",
     "inputMinutes": "Introduzca minutos",
+    "inputSeconds": "Introduzca segundos",
     "inputPercent": "Introduzca porcentaje",
     "inputCredits": "Introduzca créditos",
     "windsurf": {

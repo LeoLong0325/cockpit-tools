@@ -591,6 +591,7 @@
       "every30min": "Ogni 30 minuti",
       "every1hour": "Ogni ora",
       "minutes": "min​",
+      "seconds": "s",
       "refreshIntervalLimited": "Il risveglio al ripristino della quota è abilitato, quindi l'intervallo minimo di aggiornamento è di 2 minuti.",
       "closeBehavior": "Comportamento alla chiusura",
       "closeBehaviorDesc": "Scegli azione alla chiusura della finestra",
@@ -751,6 +752,7 @@
       "defaultTerminalDesc": "Il terminale utilizzato all'apertura di Gemini CLI",
       "terminalSystem": "Predefinito di sistema",
       "currentAccountRefreshRequiresAutoRefresh": "Attiva prima \"Aggiornamento automatico della quota\" per configurare l'aggiornamento dell'account corrente.",
+      "cursorAutoRefreshDesc": "Aggiorna tutti gli account Cursor in background. Intervallo minimo: 10 secondi.",
       "codebuddyCnAppPath": "Percorso app CodeBuddy CN",
       "codebuddyCnAppPathDesc": "Lasciare vuoto per usare il percorso predefinito",
       "codebuddyCnAppPathPlaceholder": "Percorso predefinito",
@@ -3348,6 +3350,7 @@
     "customInput": "Personalizzato",
     "apply": "Applica",
     "inputMinutes": "Inserire i minuti",
+    "inputSeconds": "Inserire i secondi",
     "inputPercent": "Inserire la percentuale",
     "inputCredits": "Inserire i crediti",
     "windsurf": {

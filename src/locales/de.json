@@ -594,6 +594,7 @@
       "every30min": "Alle 30 Minuten",
       "every1hour": "Jede Stunde",
       "minutes": "Min.",
+      "seconds": "Sek.",
       "refreshIntervalLimited": "Das Aufwachen beim Zurücksetzen des Kontingents ist aktiviert, daher beträgt das minimale Aktualisierungsintervall 2 Minuten.",
       "closeBehavior": "Verhalten beim Schließen",
       "closeBehaviorDesc": "Aktion beim Schließen des Fensters wählen",
@@ -751,6 +752,7 @@
       "codexAutoSwitchAccountScope": "Codex-Bereich für automatisches Kontowechseln",
       "codexAutoSwitchAccountScopeDesc": "Aktueller Codex-Auto-Wechsel-Status: {{status}}. Es werden nur Konten in diesem Bereich berücksichtigt.",
       "currentAccountRefreshRequiresAutoRefresh": "Aktivieren Sie zuerst „Automatische Kontingent-Aktualisierung“, um die Aktualisierung des aktuellen Kontos zu konfigurieren.",
+      "cursorAutoRefreshDesc": "Aktualisiert alle Cursor-Konten im Hintergrund. Mindestintervall: 10 Sekunden.",
       "codebuddyCnAppPath": "CodeBuddy CN App-Pfad",
       "codebuddyCnAppPathDesc": "Wenn leer, wird der Standardpfad verwendet",
       "codebuddyCnAppPathPlaceholder": "Standardpfad",
@@ -3348,6 +3350,7 @@
     "customInput": "Benutzerdefiniert",
     "apply": "Anwenden",
     "inputMinutes": "Minuten eingeben",
+    "inputSeconds": "Sekunden eingeben",
     "inputPercent": "Prozentsatz eingeben",
     "inputCredits": "Credits eingeben",
     "windsurf": {

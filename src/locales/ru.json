@@ -594,6 +594,7 @@
       "every30min": "Каждые 30 минут",
       "every1hour": "Каждый час",
       "minutes": "мин",
+      "seconds": "сек",
       "refreshIntervalLimited": "Пробуждение при сбросе квоты включено, поэтому минимальный интервал обновления составляет 2 минуты.",
       "closeBehavior": "Поведение при закрытии",
       "closeBehaviorDesc": "Действие при закрытии окна",
@@ -751,6 +752,7 @@
       "codexAutoSwitchAccountScope": "Область автопереключения аккаунтов Codex",
       "codexAutoSwitchAccountScopeDesc": "Текущий статус автопереключения Codex: {{status}}. Учитываются только аккаунты в этой области.",
       "currentAccountRefreshRequiresAutoRefresh": "Сначала включите «Автообновление квоты», чтобы настроить обновление текущего аккаунта.",
+      "cursorAutoRefreshDesc": "Обновляет все аккаунты Cursor в фоне. Минимальный интервал — 10 секунд.",
       "codebuddyCnAppPath": "Путь приложения CodeBuddy CN",
       "codebuddyCnAppPathDesc": "Оставьте пустым для использования пути по умолчанию",
       "codebuddyCnAppPathPlaceholder": "Путь по умолчанию",
@@ -3348,6 +3350,7 @@
     "customInput": "Другое",
     "apply": "Применить",
     "inputMinutes": "Введите минуты",
+    "inputSeconds": "Введите секунды",
     "inputPercent": "Введите процент",
     "inputCredits": "Введите кредиты",
     "windsurf": {

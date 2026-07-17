@@ -591,6 +591,7 @@
       "every30min": "每 30 分鐘",
       "every1hour": "每 1 小時",
       "minutes": "分",
+      "seconds": "秒",
       "refreshIntervalLimited": "配額重置喚醒已啟用，刷新間隔最小值為 2 分鐘",
       "closeBehavior": "視窗關閉行為",
       "closeBehaviorDesc": "選擇關閉視窗時的預設行為",
@@ -751,6 +752,7 @@
       "defaultTerminalDesc": "啟動 Gemini CLI 時使用的終端機",
       "terminalSystem": "跟隨系統",
       "currentAccountRefreshRequiresAutoRefresh": "請先啟用「配額自動刷新」，才能設定目前帳號刷新。",
+      "cursorAutoRefreshDesc": "背景全量刷新所有 Cursor 帳號，最快可設 10 秒。",
       "codebuddyCnAppPath": "CodeBuddy CN 應用程式路徑",
       "codebuddyCnAppPathDesc": "留白則使用預設路徑",
       "codebuddyCnAppPathPlaceholder": "預設路徑",
@@ -3348,6 +3350,7 @@
     "customInput": "自訂",
     "apply": "確定",
     "inputMinutes": "輸入分鐘數",
+    "inputSeconds": "輸入秒數",
     "inputPercent": "輸入百分比",
     "inputCredits": "輸入 Credits",
     "windsurf": {

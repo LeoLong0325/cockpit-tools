@@ -594,6 +594,7 @@
       "every30min": "Co 30 minut",
       "every1hour": "Co godzinę",
       "minutes": "min​",
+      "seconds": "s",
       "refreshIntervalLimited": "Budzenie przy resetowaniu limitu jest włączone, dlatego minimalny interwał odświeżania wynosi 2 minuty.",
       "closeBehavior": "Zachowanie przy zamykaniu",
       "closeBehaviorDesc": "Wybierz akcję przy zamykaniu okna",
@@ -751,6 +752,7 @@
       "codexAutoSwitchAccountScope": "Zakres automatycznego przełączania kont Codex",
       "codexAutoSwitchAccountScopeDesc": "Aktualny stan automatycznego przełączania Codex: {{status}}. Uwzględniane będą tylko konta z tego zakresu.",
       "currentAccountRefreshRequiresAutoRefresh": "Aby skonfigurować odświeżanie bieżącego konta, najpierw włącz „Automatyczne odświeżanie limitu”.",
+      "cursorAutoRefreshDesc": "Odświeża wszystkie konta Cursor w tle. Minimalny interwał to 10 sekund.",
       "codebuddyCnAppPath": "Ścieżka aplikacji CodeBuddy CN",
       "codebuddyCnAppPathDesc": "Pozostaw puste, aby użyć domyślnej ścieżki",
       "codebuddyCnAppPathPlaceholder": "Domyślna ścieżka",
@@ -3348,6 +3350,7 @@
     "customInput": "Niestandardowy",
     "apply": "Zastosuj",
     "inputMinutes": "Wpisz minuty",
+    "inputSeconds": "Wpisz sekundy",
     "inputPercent": "Wpisz procent",
     "inputCredits": "Wpisz kredyty",
     "windsurf": {

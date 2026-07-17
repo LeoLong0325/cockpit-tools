@@ -594,6 +594,7 @@
       "every30min": "30분마다",
       "every1hour": "1시간마다",
       "minutes": "분",
+      "seconds": "초",
       "refreshIntervalLimited": "할당량 재설정 시 깨우기가 활성화되어 있으므로 새로고침 간격의 최소값은 2분입니다.",
       "closeBehavior": "닫기 동작",
       "closeBehaviorDesc": "창을 닫을 때의 동작 선택",
@@ -751,6 +752,7 @@
       "codexAutoSwitchAccountScope": "Codex 자동 전환 계정 범위",
       "codexAutoSwitchAccountScopeDesc": "현재 Codex 자동 전환 상태: {{status}}. 이 범위의 계정만 고려됩니다.",
       "currentAccountRefreshRequiresAutoRefresh": "현재 계정 새로 고침을 설정하려면 먼저 \"할당량 자동 새로 고침\"을 활성화하세요.",
+      "cursorAutoRefreshDesc": "모든 Cursor 계정을 백그라운드에서 새로 고칩니다. 최소 간격은 10초입니다.",
       "codebuddyCnAppPath": "CodeBuddy CN 앱 경로",
       "codebuddyCnAppPathDesc": "비워두면 기본 경로를 사용합니다",
       "codebuddyCnAppPathPlaceholder": "기본 경로",
@@ -3348,6 +3350,7 @@
     "customInput": "사용자 지정",
     "apply": "적용",
     "inputMinutes": "분 입력",
+    "inputSeconds": "초 입력",
     "inputPercent": "백분율 입력",
     "inputCredits": "크레딧 입력",
     "windsurf": {

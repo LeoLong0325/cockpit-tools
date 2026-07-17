@@ -591,6 +591,7 @@
       "every30min": "Každých 30 minut",
       "every1hour": "Každou hodinu",
       "minutes": "min​",
+      "seconds": "s",
       "refreshIntervalLimited": "Probuzení při resetu kvóty je povoleno, proto je minimální interval obnovení 2 minuty.",
       "closeBehavior": "Chování při zavírání",
       "closeBehaviorDesc": "Vyberte akci při zavření okna",
@@ -751,6 +752,7 @@
       "defaultTerminalDesc": "Terminál použitý při otevírání Gemini CLI",
       "terminalSystem": "Systémový výchozí",
       "currentAccountRefreshRequiresAutoRefresh": "Pro nastavení obnovení aktuálního účtu nejprve zapněte „Automatické obnovení kvóty“.",
+      "cursorAutoRefreshDesc": "Na pozadí obnovuje všechny účty Cursor. Minimální interval je 10 sekund.",
       "codebuddyCnAppPath": "Cesta k aplikaci CodeBuddy CN",
       "codebuddyCnAppPathDesc": "Pokud je prázdné, použije se výchozí cesta",
       "codebuddyCnAppPathPlaceholder": "Výchozí cesta",
@@ -3348,6 +3350,7 @@
     "customInput": "Vlastní",
     "apply": "Použít",
     "inputMinutes": "Zadejte minuty",
+    "inputSeconds": "Zadejte sekundy",
     "inputPercent": "Zadejte procento",
     "inputCredits": "Zadejte kredity",
     "windsurf": {

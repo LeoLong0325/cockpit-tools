@@ -594,6 +594,7 @@
       "every30min": "A cada 30 minutos",
       "every1hour": "A cada hora",
       "minutes": "min​",
+      "seconds": "s",
       "refreshIntervalLimited": "O despertar ao redefinir a cota está ativado, portanto, o intervalo mínimo de atualização é de 2 minutos.",
       "closeBehavior": "Comportamento ao fechar",
       "closeBehaviorDesc": "Escolha a ação ao fechar a janela",
@@ -751,6 +752,7 @@
       "codexAutoSwitchAccountScope": "Escopo de troca automática de contas do Codex",
       "codexAutoSwitchAccountScopeDesc": "Status atual da troca automática do Codex: {{status}}. Apenas contas dentro deste escopo serão consideradas.",
       "currentAccountRefreshRequiresAutoRefresh": "Ative primeiro a \"Atualização automática de cota\" para configurar a atualização da conta atual.",
+      "cursorAutoRefreshDesc": "Atualiza todas as contas Cursor em segundo plano. O intervalo mínimo é de 10 segundos.",
       "codebuddyCnAppPath": "Caminho do aplicativo CodeBuddy CN",
       "codebuddyCnAppPathDesc": "Deixe em branco para usar o caminho padrão",
       "codebuddyCnAppPathPlaceholder": "Caminho padrão",
@@ -3348,6 +3350,7 @@
     "customInput": "Personalizado",
     "apply": "Aplicar",
     "inputMinutes": "Digite os minutos",
+    "inputSeconds": "Digite os segundos",
     "inputPercent": "Digite a porcentagem",
     "inputCredits": "Digite os créditos",
     "windsurf": {

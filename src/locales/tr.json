@@ -594,6 +594,7 @@
       "every30min": "30 dakikada bir",
       "every1hour": "Her saat",
       "minutes": "dk",
+      "seconds": "sn",
       "refreshIntervalLimited": "Kota sıfırlama uyandırma özelliği etkin olduğundan, minimum yenileme aralığı 2 dakikadır.",
       "closeBehavior": "Kapanış Davranışı",
       "closeBehaviorDesc": "Pencere kapatıldığında yapılacak işlem",
@@ -751,6 +752,7 @@
       "codexAutoSwitchAccountScope": "Codex otomatik hesap geçiş kapsamı",
       "codexAutoSwitchAccountScopeDesc": "Mevcut Codex otomatik geçiş durumu: {{status}}. Yalnızca bu kapsam içindeki hesaplar dikkate alınır.",
       "currentAccountRefreshRequiresAutoRefresh": "Mevcut hesap yenilemeyi yapılandırmak için önce \"Kota Otomatik Yenileme\" özelliğini etkinleştirin.",
+      "cursorAutoRefreshDesc": "Tüm Cursor hesaplarını arka planda yeniler. Minimum aralık 10 saniyedir.",
       "codebuddyCnAppPath": "CodeBuddy CN Uygulama Yolu",
       "codebuddyCnAppPathDesc": "Boş bırakırsanız varsayılan yol kullanılır",
       "codebuddyCnAppPathPlaceholder": "Varsayılan yol",
@@ -3348,6 +3350,7 @@
     "customInput": "Özel",
     "apply": "Uygula",
     "inputMinutes": "Dakika girin",
+    "inputSeconds": "Saniye girin",
     "inputPercent": "Yüzde girin",
     "inputCredits": "Kredi girin",
     "windsurf": {

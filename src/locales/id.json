@@ -641,6 +641,7 @@
       "every30min": "Setiap 30 menit",
       "every1hour": "Setiap jam",
       "minutes": "mnt",
+      "seconds": "dtk",
       "refreshIntervalLimited": "Bangun reset kuota diaktifkan, interval penyegaran minimum adalah 2 menit",
       "currentAccountRefreshTitle": "Penyegaran Akun Saat Ini",
       "currentAccountRefreshItemDesc": "Segarkan hanya akun saat ini. Bawaan adalah 1 menit.",
@@ -797,6 +798,7 @@
       "defaultTerminalDesc": "Terminal yang digunakan saat membuka Gemini CLI.",
       "terminalSystem": "Ikuti sistem",
       "currentAccountRefreshRequiresAutoRefresh": "Aktifkan terlebih dahulu \"Penyegaran Kuota Otomatis\" untuk mengatur penyegaran akun saat ini.",
+      "cursorAutoRefreshDesc": "Menyegarkan semua akun Cursor di latar belakang. Interval minimum 10 detik.",
       "codebuddyCnAppPath": "Path Aplikasi CodeBuddy CN",
       "codebuddyCnAppPathDesc": "Kosongkan untuk menggunakan path default",
       "codebuddyCnAppPathPlaceholder": "Path default",
@@ -3494,6 +3496,7 @@
     "customInput": "Kustom",
     "apply": "Apply​",
     "inputMinutes": "Enter minutes​",
+    "inputSeconds": "Masukkan detik",
     "inputPercent": "Enter percentage​",
     "inputCredits": "Masukkan kredit",
     "windsurf": {

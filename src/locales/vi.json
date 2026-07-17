@@ -594,6 +594,7 @@
       "every30min": "Mỗi 30 phút",
       "every1hour": "Mỗi 1 giờ",
       "minutes": "phút",
+      "seconds": "giây",
       "refreshIntervalLimited": "Chức năng đánh thức khi đặt lại hạn mức đang được bật, vì vậy khoảng thời gian làm mới tối thiểu là 2 phút.",
       "closeBehavior": "Hành động khi đóng",
       "closeBehaviorDesc": "Chọn hành động khi đóng cửa sổ",
@@ -751,6 +752,7 @@
       "codexAutoSwitchAccountScope": "Phạm vi chuyển tự động tài khoản Codex",
       "codexAutoSwitchAccountScopeDesc": "Trạng thái chuyển tự động Codex hiện tại: {{status}}. Chỉ tài khoản trong phạm vi này mới được xét.",
       "currentAccountRefreshRequiresAutoRefresh": "Hãy bật \"Tự động làm mới hạn ngạch\" trước để cấu hình làm mới tài khoản hiện tại.",
+      "cursorAutoRefreshDesc": "Làm mới tất cả tài khoản Cursor ở nền. Khoảng thời gian tối thiểu là 10 giây.",
       "codebuddyCnAppPath": "Đường dẫn ứng dụng CodeBuddy CN",
       "codebuddyCnAppPathDesc": "Để trống để sử dụng đường dẫn mặc định",
       "codebuddyCnAppPathPlaceholder": "Đường dẫn mặc định",
@@ -3348,6 +3350,7 @@
     "customInput": "Tùy chỉnh",
     "apply": "Áp dụng",
     "inputMinutes": "Nhập số phút",
+    "inputSeconds": "Nhập số giây",
     "inputPercent": "Nhập phần trăm",
     "inputCredits": "Nhập credits",
     "windsurf": {
