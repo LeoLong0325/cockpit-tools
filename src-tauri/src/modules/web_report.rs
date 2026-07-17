@@ -111,7 +111,12 @@ fn build_service_refresh_policies(cfg: &super::config::UserConfig) -> Vec<Servic
         },
         ServiceRefreshPolicy {
             key: "cursor",
-            interval_minutes: cfg.cursor_auto_refresh_minutes,
+            interval_minutes: if cfg.cursor_auto_refresh_minutes <= 0 {
+                cfg.cursor_auto_refresh_minutes
+            } else {
+                // Cursor 已改为秒存储；对外仍报告近似分钟
+                ((cfg.cursor_auto_refresh_minutes as f64) / 60.0).ceil() as i32
+            },
         },
         ServiceRefreshPolicy {
             key: "gemini",

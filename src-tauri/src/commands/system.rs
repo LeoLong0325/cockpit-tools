@@ -1942,6 +1942,7 @@ pub fn save_network_config(
         windsurf_auto_refresh_minutes: current.windsurf_auto_refresh_minutes,
         kiro_auto_refresh_minutes: current.kiro_auto_refresh_minutes,
         cursor_auto_refresh_minutes: current.cursor_auto_refresh_minutes,
+        cursor_auto_refresh_seconds_migrated: current.cursor_auto_refresh_seconds_migrated,
         gemini_auto_refresh_minutes: current.gemini_auto_refresh_minutes,
         gemini_sync_wsl: current.gemini_sync_wsl,
         codebuddy_auto_refresh_minutes: current.codebuddy_auto_refresh_minutes,
@@ -2590,8 +2591,18 @@ pub fn save_general_config(
             .unwrap_or(current.windsurf_auto_refresh_minutes),
         kiro_auto_refresh_minutes: kiro_auto_refresh_minutes
             .unwrap_or(current.kiro_auto_refresh_minutes),
-        cursor_auto_refresh_minutes: cursor_auto_refresh_minutes
-            .unwrap_or(current.cursor_auto_refresh_minutes),
+        cursor_auto_refresh_minutes: {
+            let value = cursor_auto_refresh_minutes
+                .unwrap_or(current.cursor_auto_refresh_minutes);
+            if value <= 0 {
+                -1
+            } else if value < 10 {
+                10
+            } else {
+                value
+            }
+        },
+        cursor_auto_refresh_seconds_migrated: true,
         gemini_auto_refresh_minutes: gemini_auto_refresh_minutes
             .unwrap_or(current.gemini_auto_refresh_minutes),
         claude_auto_refresh_minutes: claude_auto_refresh_minutes

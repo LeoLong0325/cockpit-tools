@@ -47,7 +47,13 @@ import {
   resolveAccountsOverviewScopeFromQuickSettingsType,
   setAccountsOverviewFilterPersistenceEnabled,
 } from '../utils/accountsOverviewFilterPersistence';
-import { CURSOR_QUOTA_REFRESH_PRESET_VALUES } from '../types/cursorUsage';
+import {
+  CURSOR_AUTO_REFRESH_MAX_SECONDS,
+  CURSOR_AUTO_REFRESH_MIN_SECONDS,
+  CURSOR_QUOTA_REFRESH_PRESET_VALUES,
+  formatCursorAutoRefreshDuration,
+  sanitizeCursorAutoRefreshSeconds,
+} from '../types/cursorUsage';
 import './QuickSettingsPopover.css';
 
 /** GeneralConfig from backend */
@@ -1454,17 +1460,32 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
 
   const handleRefreshSelectChange = (val: string) => {
     if (val === 'custom') {
-      setCustomRefresh(String(refreshValue > 0 ? refreshValue : 1));
+      setCustomRefresh(String(refreshValue > 0 ? refreshValue : type === 'cursor' ? 10 : 1));
       setRefreshEditing(true);
     } else {
       setCustomRefresh('');
       setRefreshEditing(false);
-      saveConfig({ [getRefreshKey()]: parseInt(val, 10) });
+      const parsed = parseInt(val, 10);
+      saveConfig({
+        [getRefreshKey()]:
+          type === 'cursor' ? sanitizeCursorAutoRefreshSeconds(parsed) : parsed,
+      });
     }
   };
 
   const handleCustomRefreshApply = () => {
     const parsed = parseInt(customRefresh, 10);
+    if (type === 'cursor') {
+      if (!isNaN(parsed)) {
+        saveConfig({ [getRefreshKey()]: sanitizeCursorAutoRefreshSeconds(parsed) });
+        setCustomRefresh('');
+        setRefreshEditing(false);
+        return;
+      }
+      setCustomRefresh('');
+      setRefreshEditing(false);
+      return;
+    }
     if (!isNaN(parsed) && parsed >= 1) {
       saveConfig({ [getRefreshKey()]: parsed });
       setCustomRefresh('');
@@ -1977,11 +1998,15 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
                   <div className="qs-inline-input">
                     <input
                       type="number"
-                      min={1}
-                      max={999}
+                      min={type === 'cursor' ? CURSOR_AUTO_REFRESH_MIN_SECONDS : 1}
+                      max={type === 'cursor' ? CURSOR_AUTO_REFRESH_MAX_SECONDS : 999}
                       className="qs-select qs-select--input-mode qs-select--with-unit"
                       value={customRefresh}
-                      placeholder={t('quickSettings.inputMinutes', '输入分钟数')}
+                      placeholder={
+                        type === 'cursor'
+                          ? t('quickSettings.inputSeconds', '输入秒数')
+                          : t('quickSettings.inputMinutes', '输入分钟数')
+                      }
                       onChange={(e) => setCustomRefresh(e.target.value.replace(/[^\d]/g, ''))}
                       onBlur={handleCustomRefreshApply}
                       onKeyDown={(e) => {
@@ -1991,7 +2016,11 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
                         }
                       }}
                     />
-                    <span className="qs-input-unit">{t('settings.general.minutes')}</span>
+                    <span className="qs-input-unit">
+                      {type === 'cursor'
+                        ? t('settings.general.seconds', '秒')
+                        : t('settings.general.minutes')}
+                    </span>
                   </div>
                 ) : (
                   <select
@@ -2001,7 +2030,12 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
                   >
                     {!isPreset && (
                       <option value={String(refreshValue)}>
-                        {refreshValue} {t('settings.general.minutes')}
+                        {type === 'cursor'
+                          ? formatCursorAutoRefreshDuration(Number(refreshValue), {
+                              seconds: t('settings.general.seconds', '秒'),
+                              minutes: t('settings.general.minutes'),
+                            })
+                          : `${refreshValue} ${t('settings.general.minutes')}`}
                       </option>
                     )}
                     <option value="-1">{t('settings.general.autoRefreshDisabled')}</option>
@@ -2009,7 +2043,12 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
                       .filter((preset) => preset !== '-1')
                       .map((preset) => (
                         <option key={preset} value={preset}>
-                          {preset} {t('settings.general.minutes')}
+                          {type === 'cursor'
+                            ? formatCursorAutoRefreshDuration(Number(preset), {
+                                seconds: t('settings.general.seconds', '秒'),
+                                minutes: t('settings.general.minutes'),
+                              })
+                            : `${preset} ${t('settings.general.minutes')}`}
                         </option>
                       ))}
                     <option value="custom">{t('quickSettings.customInput', '自定义')}</option>

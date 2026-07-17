@@ -49,7 +49,52 @@ export type CursorUsagePeriod =
   | 'custom';
 
 /** Cursor 配额自动刷新预设（含 1 分钟） */
-export const CURSOR_QUOTA_REFRESH_PRESET_VALUES = ['-1', '1', '2', '5', '10', '15'] as const;
+export const CURSOR_QUOTA_REFRESH_PRESET_VALUES = [
+  '-1',
+  '10',
+  '30',
+  '60',
+  '120',
+  '300',
+  '600',
+  '900',
+] as const;
+
+/** Cursor 全量刷新最小间隔（秒） */
+export const CURSOR_AUTO_REFRESH_MIN_SECONDS = 10;
+/** Cursor 全量刷新最大间隔（秒），等价旧版 999 分钟 */
+export const CURSOR_AUTO_REFRESH_MAX_SECONDS = 999 * 60;
+
+export function formatCursorAutoRefreshDuration(
+  seconds: number,
+  labels: { seconds: string; minutes: string },
+): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return `0 ${labels.seconds}`;
+  }
+  if (seconds < 60 || seconds % 60 !== 0) {
+    return `${seconds} ${labels.seconds}`;
+  }
+  return `${seconds / 60} ${labels.minutes}`;
+}
+
+export function sanitizeCursorAutoRefreshSeconds(value: unknown): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return 600;
+  }
+  const normalized = Math.floor(parsed);
+  if (normalized === -1) {
+    return -1;
+  }
+  if (normalized < CURSOR_AUTO_REFRESH_MIN_SECONDS) {
+    return CURSOR_AUTO_REFRESH_MIN_SECONDS;
+  }
+  if (normalized > CURSOR_AUTO_REFRESH_MAX_SECONDS) {
+    return CURSOR_AUTO_REFRESH_MAX_SECONDS;
+  }
+  return normalized;
+}
 
 export const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT = 'USAGE_EVENT_KIND_FREE_CREDIT';
 

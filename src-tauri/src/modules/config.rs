@@ -97,9 +97,13 @@ pub struct UserConfig {
     /// Kiro 自动刷新间隔（分钟），-1 表示禁用
     #[serde(default = "default_kiro_auto_refresh")]
     pub kiro_auto_refresh_minutes: i32,
-    /// Cursor 自动刷新间隔（分钟），-1 表示禁用
+    /// Cursor 全量自动刷新间隔（秒，历史字段名保留），-1 表示禁用。
+    /// 旧配置为分钟；见 `cursor_auto_refresh_seconds_migrated`。
     #[serde(default = "default_cursor_auto_refresh")]
     pub cursor_auto_refresh_minutes: i32,
+    /// Cursor 刷新间隔是否已从「分钟」迁移为「秒」
+    #[serde(default = "default_cursor_auto_refresh_seconds_migrated")]
+    pub cursor_auto_refresh_seconds_migrated: bool,
     /// Gemini 自动刷新间隔（分钟），-1 表示禁用
     #[serde(default = "default_gemini_auto_refresh")]
     pub gemini_auto_refresh_minutes: i32,
@@ -555,8 +559,15 @@ fn default_kiro_auto_refresh() -> i32 {
     10
 } // 默认 10 分钟
 fn default_cursor_auto_refresh() -> i32 {
+    // 未迁移的旧配置默认按「10 分钟」理解；迁移后会变成 600 秒。
     10
-} // 默认 10 分钟
+}
+fn default_cursor_auto_refresh_seconds_migrated() -> bool {
+    false
+}
+fn default_cursor_auto_refresh_seconds() -> i32 {
+    600
+}
 fn default_gemini_auto_refresh() -> i32 {
     10
 }
@@ -906,7 +917,8 @@ impl Default for UserConfig {
             ghcp_auto_refresh_minutes: default_ghcp_auto_refresh(),
             windsurf_auto_refresh_minutes: default_windsurf_auto_refresh(),
             kiro_auto_refresh_minutes: default_kiro_auto_refresh(),
-            cursor_auto_refresh_minutes: default_cursor_auto_refresh(),
+            cursor_auto_refresh_minutes: default_cursor_auto_refresh_seconds(),
+            cursor_auto_refresh_seconds_migrated: true,
             gemini_auto_refresh_minutes: default_gemini_auto_refresh(),
             claude_auto_refresh_minutes: default_claude_auto_refresh(),
             gemini_sync_wsl: default_gemini_sync_wsl(),
@@ -1876,6 +1888,25 @@ pub fn load_user_config() -> Result<UserConfig, String> {
             Some(trimmed)
         }
     });
+
+    // Cursor 全量刷新：历史单位为分钟，迁移为秒以支持 10s 级刷新
+    if !config.cursor_auto_refresh_seconds_migrated {
+        let old = config.cursor_auto_refresh_minutes;
+        if old > 0 {
+            config.cursor_auto_refresh_minutes = old.saturating_mul(60);
+        }
+        config.cursor_auto_refresh_seconds_migrated = true;
+        crate::modules::logger::log_info(&format!(
+            "[Config] Cursor 自动刷新间隔已迁移为秒: {} -> {}",
+            old, config.cursor_auto_refresh_minutes
+        ));
+        if let Err(err) = save_user_config(&config) {
+            crate::modules::logger::log_warn(&format!(
+                "[Config] Cursor 刷新间隔迁移后写回失败: {}",
+                err
+            ));
+        }
+    }
 
     Ok(config)
 }

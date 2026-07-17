@@ -82,6 +82,10 @@ function minutesToMs(minutes: number): number {
   return minutes * 60 * 1000;
 }
 
+function secondsToMs(seconds: number): number {
+  return seconds * 1000;
+}
+
 function buildEnabledPlatformsSummary(
   descriptors: PlatformRefreshDescriptor[],
 ): string {
@@ -381,11 +385,20 @@ export function useAutoRefresh() {
               continue;
             }
             if (descriptor.intervalMinutes > 0) {
-              console.log(`[AutoRefresh] ${descriptor.label} 已启用: 每 ${descriptor.intervalMinutes} 分钟`);
+              // Cursor 配置已迁移为秒；其余平台仍为分钟
+              const intervalMs =
+                descriptor.key === 'cursor'
+                  ? secondsToMs(descriptor.intervalMinutes)
+                  : minutesToMs(descriptor.intervalMinutes);
+              const intervalLabel =
+                descriptor.key === 'cursor'
+                  ? `每 ${descriptor.intervalMinutes} 秒`
+                  : `每 ${descriptor.intervalMinutes} 分钟`;
+              console.log(`[AutoRefresh] ${descriptor.label} 已启用: ${intervalLabel}`);
               tasks.push({
                 key: `full:${descriptor.key}`,
                 label: `${descriptor.label} 全量刷新`,
-                intervalMs: minutesToMs(descriptor.intervalMinutes),
+                intervalMs,
                 concurrencyGroup: descriptor.key,
                 run: () =>
                   executeWithGuard(

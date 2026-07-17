@@ -16,7 +16,7 @@ const ACCOUNTS_DIR: &str = "cursor_accounts";
 const CURSOR_QUOTA_ALERT_COOLDOWN_SECONDS: i64 = 10 * 60;
 const CURSOR_ACCESS_TOKEN_REFRESH_THRESHOLD_SECONDS: i64 = 5 * 60;
 /// 批量刷新并发上限：并行提速，同时限制峰值内存与 API 压力
-const CURSOR_REFRESH_MAX_CONCURRENT: usize = 3;
+const CURSOR_REFRESH_MAX_CONCURRENT: usize = 8;
 /// FREE_CREDIT 事件汇总分页大小（较小页降低单账号峰值内存）
 const FREE_CREDIT_USAGE_EVENTS_PAGE_SIZE: i32 = 100;
 
@@ -3099,7 +3099,17 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     }
 
-    match fetch_user_meta_with_client(&client, &account.access_token).await {
+    let access_token = account.access_token.clone();
+    let (meta_result, stripe_result, usage_result, credit_grants_result, referral_result) =
+        tokio::join!(
+            fetch_user_meta_with_client(&client, &access_token),
+            fetch_stripe_profile_with_client(&client, &access_token),
+            fetch_usage_summary_with_client(&client, &access_token),
+            fetch_credit_grants_with_client(&client, &access_token),
+            fetch_referral_status_with_client(&client, &access_token),
+        );
+
+    match meta_result {
         Ok(meta) => {
             if let Some(email) = normalize_email_identity(meta.email.as_deref()) {
                 account.email = email.clone();
@@ -3130,7 +3140,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     }
 
-    match fetch_stripe_profile_with_client(&client, &account.access_token).await {
+    match stripe_result {
         Ok(Some(profile)) => {
             if let Some(membership_type) = resolve_membership_from_stripe_profile(&profile) {
                 account.membership_type = Some(membership_type.clone());
@@ -3178,7 +3188,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
     }
 
     let mut usage_refreshed = false;
-    match fetch_usage_summary_with_client(&client, &account.access_token).await {
+    match usage_result {
         Ok(usage) => {
             if let Some(mt) = usage.get("membershipType").and_then(|v| v.as_str()) {
                 if !mt.is_empty() {
@@ -3204,7 +3214,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     }
 
-    match fetch_credit_grants_with_client(&client, &account.access_token).await {
+    match credit_grants_result {
         Ok(credit_grants) => {
             let merged = merge_credit_grants_preserving_history(
                 existing.cursor_credit_grants_raw.as_ref(),
@@ -3267,7 +3277,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     }
 
-    match fetch_referral_status_with_client(&client, &account.access_token).await {
+    match referral_result {
         Ok(referral) => {
             account.cursor_referral_raw = Some(referral);
             logger::log_info(&format!(

@@ -1602,7 +1602,14 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     }
 
-    match fetch_user_meta_with_client(&client, &account.access_token).await {
+    let access_token = account.access_token.clone();
+    let (meta_result, stripe_result, usage_result) = tokio::join!(
+        fetch_user_meta_with_client(&client, &access_token),
+        fetch_stripe_profile_with_client(&client, &access_token),
+        fetch_usage_summary_with_client(&client, &access_token),
+    );
+
+    match meta_result {
         Ok(meta) => {
             if let Some(email) = normalize_email_identity(meta.email.as_deref()) {
                 account.email = email.clone();
@@ -1633,7 +1640,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     }
 
-    match fetch_stripe_profile_with_client(&client, &account.access_token).await {
+    match stripe_result {
         Ok(Some(profile)) => {
             if let Some(membership_type) = resolve_membership_from_stripe_profile(&profile) {
                 account.membership_type = Some(membership_type.clone());
@@ -1681,7 +1688,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
     }
 
     let mut usage_refreshed = false;
-    match fetch_usage_summary_with_client(&client, &account.access_token).await {
+    match usage_result {
         Ok(usage) => {
             if let Some(mt) = usage.get("membershipType").and_then(|v| v.as_str()) {
                 if !mt.is_empty() {
@@ -1730,17 +1737,56 @@ pub async fn refresh_account_async(account_id: &str) -> Result<CursorAccount, St
 }
 
 pub async fn refresh_all_tokens() -> Result<Vec<(String, Result<CursorAccount, String>)>, String> {
+    use futures::future::join_all;
+    use std::sync::Arc;
+    use tokio::sync::Semaphore;
+
+    const MAX_CONCURRENT: usize = 8;
     let accounts = list_accounts();
     let active_accounts: Vec<CursorAccount> = accounts
         .into_iter()
         .filter(|account| !is_banned_account(account))
         .collect();
 
-    let mut results = Vec::with_capacity(active_accounts.len());
-    for account in active_accounts {
-        let id = account.id.clone();
-        let result = refresh_account_async(&id).await;
-        results.push((id, result));
+    logger::log_info(&format!(
+        "[Cursor Refresh] 开始批量刷新: total={}, max_concurrent={}",
+        active_accounts.len(),
+        MAX_CONCURRENT
+    ));
+
+    let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT));
+    let tasks: Vec<_> = active_accounts
+        .into_iter()
+        .map(|account| {
+            let id = account.id;
+            let semaphore = semaphore.clone();
+            async move {
+                let _permit = semaphore
+                    .acquire_owned()
+                    .await
+                    .map_err(|e| format!("获取 Cursor 刷新并发许可失败: {}", e))?;
+                let result = refresh_account_async(&id).await;
+                Ok::<(String, Result<CursorAccount, String>), String>((id, result))
+            }
+        })
+        .collect();
+
+    let mut results = Vec::with_capacity(tasks.len());
+    for task in join_all(tasks).await {
+        match task {
+            Ok(item) => {
+                if let Err(err) = &item.1 {
+                    logger::log_warn(&format!(
+                        "[Cursor Refresh] 账号刷新失败: id={}, error={}",
+                        item.0, err
+                    ));
+                }
+                results.push(item);
+            }
+            Err(err) => {
+                logger::log_warn(&format!("[Cursor Refresh] 执行任务失败: {}", err));
+            }
+        }
     }
     Ok(results)
 }

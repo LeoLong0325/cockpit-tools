@@ -51,6 +51,13 @@ import {
 } from '../utils/currentAccountRefresh';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
 import { getCursorAccountDisplayEmail } from '../types/cursor';
+import {
+  CURSOR_AUTO_REFRESH_MAX_SECONDS,
+  CURSOR_AUTO_REFRESH_MIN_SECONDS,
+  CURSOR_QUOTA_REFRESH_PRESET_VALUES,
+  formatCursorAutoRefreshDuration,
+  sanitizeCursorAutoRefreshSeconds,
+} from '../types/cursorUsage';
 import { ALL_PLATFORM_IDS, isAutoRefreshPlatformEnabled, isEnabledPlatform, PlatformId } from '../types/platform';
 import { SettingsAccountTransferSection } from '../components/SettingsAccountTransferSection';
 import { SettingsWebdavSyncSection } from '../components/SettingsWebdavSyncSection';
@@ -214,7 +221,7 @@ type ClaudeDesktopLaunchCandidate = {
   supports_multi_instance: boolean;
 };
 const REFRESH_PRESET_VALUES = ['-1', '2', '5', '10', '15'];
-const CURSOR_REFRESH_PRESET_VALUES = ['-1', '1', '2', '5', '10', '15'];
+const CURSOR_REFRESH_PRESET_VALUES: string[] = [...CURSOR_QUOTA_REFRESH_PRESET_VALUES];
 const CURRENT_ACCOUNT_REFRESH_PRESET_VALUES = ['1', '2', '5', '10', '15'];
 const THRESHOLD_PRESET_VALUES = ['0', '20', '40', '60'];
 const CREDITS_THRESHOLD_PRESET_VALUES = ['0', '5', '10', '20'];
@@ -384,7 +391,7 @@ export function SettingsPage() {
   const [ghcpAutoRefresh, setGhcpAutoRefresh] = useState('10');
   const [windsurfAutoRefresh, setWindsurfAutoRefresh] = useState('10');
   const [kiroAutoRefresh, setKiroAutoRefresh] = useState('10');
-  const [cursorAutoRefresh, setCursorAutoRefresh] = useState('10');
+  const [cursorAutoRefresh, setCursorAutoRefresh] = useState('600');
   const [geminiAutoRefresh, setGeminiAutoRefresh] = useState('10');
   const [geminiSyncWsl, setGeminiSyncWsl] = useState(true);
   const [closeBehavior, setCloseBehavior] = useState<'ask' | 'minimize' | 'quit'>('ask');
@@ -819,7 +826,9 @@ export function SettingsPage() {
     const qoderAutoRefreshNum = parseInt(qoderAutoRefresh, 10) || -1;
     const traeAutoRefreshNum = parseInt(traeAutoRefresh, 10) || -1;
     const zedAutoRefreshNum = parseInt(zedAutoRefresh, 10) || -1;
-    const cursorAutoRefreshNum = parseInt(cursorAutoRefresh, 10) || -1;
+    const cursorAutoRefreshNum = sanitizeCursorAutoRefreshSeconds(
+      parseInt(cursorAutoRefresh, 10) || -1,
+    );
     const geminiAutoRefreshNum = parseInt(geminiAutoRefresh, 10) || -1;
     const parsedUiScale = Number.parseFloat(uiScale);
     const normalizedUiScale = Number.isFinite(parsedUiScale)
@@ -1291,7 +1300,7 @@ export function SettingsPage() {
       setGhcpAutoRefresh(String(config.ghcp_auto_refresh_minutes ?? 10));
       setWindsurfAutoRefresh(String(config.windsurf_auto_refresh_minutes ?? 10));
       setKiroAutoRefresh(String(config.kiro_auto_refresh_minutes ?? 10));
-      setCursorAutoRefresh(String(config.cursor_auto_refresh_minutes ?? 10));
+      setCursorAutoRefresh(String(config.cursor_auto_refresh_minutes ?? 600));
       setGeminiAutoRefresh(String(config.gemini_auto_refresh_minutes ?? 10));
       setGeminiSyncWsl(Boolean(config.gemini_sync_wsl ?? true));
       setCloseBehavior(config.close_behavior || 'ask');
@@ -5463,7 +5472,12 @@ export function SettingsPage() {
               <div className="settings-row">
                 <div className="row-label">
                   <div className="row-title">{t('quickSettings.cursorRefreshInterval', '配额自动刷新')}</div>
-                  <div className="row-desc">{t('settings.general.windsurfAutoRefreshDesc', '后台自动更新频率')}</div>
+                  <div className="row-desc">
+                    {t(
+                      'settings.general.cursorAutoRefreshDesc',
+                      '后台全量刷新所有 Cursor 账号，最快可设 10 秒。',
+                    )}
+                  </div>
                 </div>
                 <div className="row-control">
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -5471,27 +5485,43 @@ export function SettingsPage() {
                       <div className="settings-inline-input" style={{ minWidth: '120px', width: 'auto' }}>
                         <input
                           type="number"
-                          min={1}
-                          max={999}
+                          min={CURSOR_AUTO_REFRESH_MIN_SECONDS}
+                          max={CURSOR_AUTO_REFRESH_MAX_SECONDS}
                           className="settings-select settings-select--input-mode settings-select--with-unit"
                           value={cursorAutoRefresh}
-                          placeholder={t('quickSettings.inputMinutes', '输入分钟数')}
+                          placeholder={t('quickSettings.inputSeconds', '输入秒数')}
                           onChange={(e) => setCursorAutoRefresh(sanitizeNumberInput(e.target.value))}
                           onBlur={() => {
-                            const normalized = normalizeNumberInput(cursorAutoRefresh, 1, 999);
+                            const normalized = String(
+                              sanitizeCursorAutoRefreshSeconds(
+                                normalizeNumberInput(
+                                  cursorAutoRefresh,
+                                  CURSOR_AUTO_REFRESH_MIN_SECONDS,
+                                  CURSOR_AUTO_REFRESH_MAX_SECONDS,
+                                ),
+                              ),
+                            );
                             setCursorAutoRefresh(normalized);
                             setCursorAutoRefreshCustomMode(false);
                           }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              const normalized = normalizeNumberInput(cursorAutoRefresh, 1, 999);
+                              const normalized = String(
+                                sanitizeCursorAutoRefreshSeconds(
+                                  normalizeNumberInput(
+                                    cursorAutoRefresh,
+                                    CURSOR_AUTO_REFRESH_MIN_SECONDS,
+                                    CURSOR_AUTO_REFRESH_MAX_SECONDS,
+                                  ),
+                                ),
+                              );
                               setCursorAutoRefresh(normalized);
                               setCursorAutoRefreshCustomMode(false);
                             }
                           }}
                         />
-                        <span className="settings-input-unit">{t('settings.general.minutes')}</span>
+                        <span className="settings-input-unit">{t('settings.general.seconds', '秒')}</span>
                       </div>
                     ) : (
                       <select
@@ -5502,7 +5532,7 @@ export function SettingsPage() {
                           const val = e.target.value;
                           if (val === 'custom') {
                             setCursorAutoRefreshCustomMode(true);
-                            setCursorAutoRefresh(cursorAutoRefresh !== '-1' ? cursorAutoRefresh : '1');
+                            setCursorAutoRefresh(cursorAutoRefresh !== '-1' ? cursorAutoRefresh : '10');
                             return;
                           }
                           setCursorAutoRefreshCustomMode(false);
@@ -5511,15 +5541,20 @@ export function SettingsPage() {
                       >
                         {!cursorAutoRefreshIsPreset && (
                           <option value={cursorAutoRefresh}>
-                            {cursorAutoRefresh} {t('settings.general.minutes')}
+                            {formatCursorAutoRefreshDuration(Number(cursorAutoRefresh), {
+                              seconds: t('settings.general.seconds', '秒'),
+                              minutes: t('settings.general.minutes'),
+                            })}
                           </option>
                         )}
                         <option value="-1">{t('settings.general.autoRefreshDisabled')}</option>
-                        <option value="1">1 {t('settings.general.minutes')}</option>
-                        <option value="2">2 {t('settings.general.minutes')}</option>
-                        <option value="5">5 {t('settings.general.minutes')}</option>
-                        <option value="10">10 {t('settings.general.minutes')}</option>
-                        <option value="15">15 {t('settings.general.minutes')}</option>
+                        <option value="10">10 {t('settings.general.seconds', '秒')}</option>
+                        <option value="30">30 {t('settings.general.seconds', '秒')}</option>
+                        <option value="60">1 {t('settings.general.minutes')}</option>
+                        <option value="120">2 {t('settings.general.minutes')}</option>
+                        <option value="300">5 {t('settings.general.minutes')}</option>
+                        <option value="600">10 {t('settings.general.minutes')}</option>
+                        <option value="900">15 {t('settings.general.minutes')}</option>
                         <option value="custom">{t('settings.general.autoRefreshCustom')}</option>
                       </select>
                     )}
