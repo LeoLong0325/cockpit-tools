@@ -70,6 +70,7 @@ pub mod quota;
 pub mod quota_cache;
 pub mod remote_config;
 pub mod sync_settings;
+pub mod secure_account_storage;
 pub mod trae_account;
 pub mod trae_instance;
 pub mod trae_oauth;

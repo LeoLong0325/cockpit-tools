@@ -1027,7 +1027,6 @@ export function resolveCursorCreditGrantsQuotaDisplay(
 
   // 2. Otherwise prefer billing-cycle FREE_CREDIT fair-value usage
   //    (same source as usage-modal「赠送额度使用总额」).
-  //    This must win over exhausted/historical API peaks (e.g. stale $25/$25).
   if (freeCreditUsed != null && freeCreditUsed >= 50) {
     return {
       usedCents: freeCreditUsed,
@@ -1037,27 +1036,9 @@ export function resolveCursorCreditGrantsQuotaDisplay(
     };
   }
 
-  // 3. Exhausted/historical API only when no meaningful cycle FREE_CREDIT usage.
-  if (grants) {
-    const total = grants.totalCents;
-    const used = deriveCursorGrantUsedCents(grants) ?? 0;
-    if (remaining <= 0 && used < 50 && (total == null || total < 50)) {
-      return null;
-    }
-    const effectiveTotal = total ?? used;
-    const percentage =
-      total != null && total > 0
-        ? Math.min(100, Math.max(0, (used / total) * 100))
-        : 100;
-
-    return {
-      usedCents: used,
-      totalCents: effectiveTotal,
-      valueText: formatCursorCreditGrantsValue(used, total),
-      percentage,
-    };
-  }
-
+  // 3. No active remaining and no meaningful cycle FREE_CREDIT usage → hide.
+  //    Falling back to exhausted/historical API peaks (e.g. stale $25/$25) is
+  //    wrong when the current billing cycle never consumed gift credits.
   return null;
 }
 

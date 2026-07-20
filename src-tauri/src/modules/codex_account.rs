@@ -2141,6 +2141,30 @@ fn load_account_with_summary(
 
     let content = fs::read_to_string(&path)
         .map_err(|error| format!("读取账号详情失败 ({}): {}", path.display(), error))?;
+
+    // Prefer AES-GCM envelope (#1104); fall back to plaintext / compat.
+    if let Ok((mut account, needs_rewrite)) =
+        crate::modules::secure_account_storage::deserialize_account_file::<CodexAccount>(
+            &path, &content,
+        )
+    {
+        let raw_value = serde_json::to_value(&account).ok();
+        let migrated_bound_oauth = raw_value
+            .as_ref()
+            .map(|value| migrate_bound_oauth_use_local_gateway_if_missing(&mut account, value))
+            .unwrap_or(false);
+        let migrated_wire_api = migrate_apikey_fun_wire_api(&mut account);
+        if needs_rewrite || migrated_wire_api || migrated_bound_oauth {
+            if let Err(error) = save_account(&account) {
+                logger::log_warn(&format!(
+                    "[Codex Account][Migration] 账号详情迁移写回失败: account_id={}, error={}",
+                    account.id, error
+                ));
+            }
+        }
+        return Ok(Some(account));
+    }
+
     if let Ok(mut account) = serde_json::from_str::<CodexAccount>(&content) {
         let raw_value = serde_json::from_str::<serde_json::Value>(&content).ok();
         let migrated_bound_oauth = raw_value
@@ -2178,8 +2202,7 @@ fn load_account_with_summary(
 /// 保存单个账号详情
 pub fn save_account(account: &CodexAccount) -> Result<(), String> {
     let path = get_accounts_dir().join(format!("{}.json", &account.id));
-    let content =
-        serde_json::to_string_pretty(account).map_err(|e| format!("序列化失败: {}", e))?;
+    let content = crate::modules::secure_account_storage::serialize_account_file("codex", account)?;
     write_string_atomic(&path, &content).map_err(|e| format!("写入账号详情失败: {}", e))?;
     Ok(())
 }
