@@ -701,8 +701,20 @@ export function getCursorReferralStatus(
   };
 }
 
+/** 手动标记的邀请/奖励账号标签；有此标签时也视为具备邀请资格。 */
+export const CURSOR_REFERRAL_REWARD_TAG = '奖励';
+
+export function hasCursorReferralRewardTag(account: CursorAccount): boolean {
+  return (account.tags || []).some(
+    (tag) => (tag || '').trim() === CURSOR_REFERRAL_REWARD_TAG,
+  );
+}
+
 export function hasCursorReferralEligibility(account: CursorAccount): boolean {
-  return getCursorReferralStatus(account)?.eligible === true;
+  return (
+    getCursorReferralStatus(account)?.eligible === true ||
+    hasCursorReferralRewardTag(account)
+  );
 }
 
 function parseCentsValue(value: unknown): number | null {

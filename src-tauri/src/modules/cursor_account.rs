@@ -262,6 +262,21 @@ fn upsert_account_record(account: CursorAccount) -> Result<CursorAccount, String
     Ok(account)
 }
 
+/// 刷新写回时合并刷新期间可能被改动的本地字段（如标签），避免长耗时刷新覆盖用户编辑。
+fn upsert_refreshed_account_record(mut account: CursorAccount) -> Result<CursorAccount, String> {
+    let _lock = CURSOR_ACCOUNT_INDEX_LOCK
+        .lock()
+        .map_err(|_| "获取 Cursor 账号锁失败".to_string())?;
+    if let Some(latest) = load_account(&account.id) {
+        account.tags = latest.tags;
+    }
+    let mut index = load_account_index();
+    save_account_file(&account)?;
+    refresh_summary(&mut index, &account);
+    save_account_index(&index)?;
+    Ok(account)
+}
+
 fn persist_quota_query_error(account_id: &str, message: &str) {
     let Some(mut account) = load_account(account_id) else {
         return;
@@ -3030,8 +3045,7 @@ pub async fn fetch_referral_status_async(account_id: &str) -> Result<CursorAccou
     let referral = fetch_referral_status_with_client(&client, &account.access_token).await?;
     account.cursor_referral_raw = Some(referral);
     account.last_used = now_ts();
-    let updated = account.clone();
-    upsert_account_record(account)?;
+    let updated = upsert_refreshed_account_record(account)?;
     Ok(updated)
 }
 
@@ -3298,7 +3312,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         account.usage_updated_at = Some(refreshed_at);
     }
     account.last_used = refreshed_at;
-    let updated = upsert_account_record(account)?;
+    let updated = upsert_refreshed_account_record(account)?;
     logger::log_info(&format!(
         "[Cursor Refresh] 刷新完成: id={}, email={}",
         updated.id, updated.email
