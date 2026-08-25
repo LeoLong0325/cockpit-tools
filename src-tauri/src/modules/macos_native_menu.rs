@@ -140,6 +140,8 @@ mod imp {
         total_used_percent: Option<i32>,
         auto_used_percent: Option<i32>,
         api_used_percent: Option<i32>,
+        grok_bot_used_percent: Option<i32>,
+        grok_bot_reset_ts: Option<i64>,
         reset_ts: Option<i64>,
         on_demand_text: Option<String>,
         on_demand_percent: Option<i32>,
@@ -2009,11 +2011,23 @@ mod imp {
     }
 
     fn read_cursor_tray_usage(account: &crate::models::cursor::CursorAccount) -> CursorTrayUsage {
+        let grok_display = modules::cursor_account::cursor_grok_bot_display(account);
+        let grok_bot_used_percent = grok_display.map(|(percent, _)| percent);
+        let grok_bot_reset_ts = grok_display.and_then(|(_, reset_ts)| reset_ts);
+
         let Some(raw) = account.cursor_usage_raw.as_ref() else {
-            return CursorTrayUsage::default();
+            return CursorTrayUsage {
+                grok_bot_used_percent,
+                grok_bot_reset_ts,
+                ..CursorTrayUsage::default()
+            };
         };
         let Some(raw_obj) = raw.as_object() else {
-            return CursorTrayUsage::default();
+            return CursorTrayUsage {
+                grok_bot_used_percent,
+                grok_bot_reset_ts,
+                ..CursorTrayUsage::default()
+            };
         };
 
         let plan = raw_obj
@@ -2145,6 +2159,8 @@ mod imp {
             total_used_percent: total_direct.or(total_ratio).map(clamp_cursor_percent),
             auto_used_percent: auto_direct.map(clamp_cursor_percent),
             api_used_percent: api_direct.map(clamp_cursor_percent),
+            grok_bot_used_percent,
+            grok_bot_reset_ts,
             reset_ts,
             on_demand_text,
             on_demand_percent,
@@ -3601,6 +3617,15 @@ mod imp {
                         format!("{percentage}%"),
                         percentage,
                         None,
+                        cursor_usage_tone(percentage),
+                    ));
+                }
+                if let Some(percentage) = usage.grok_bot_used_percent {
+                    rows.push(make_progress_row(
+                        translate_or(lang, "cursor.quota.grokBot", "Grok-Bot", &[]),
+                        format!("{percentage}%"),
+                        percentage,
+                        format_reset_subtext(lang, usage.grok_bot_reset_ts),
                         cursor_usage_tone(percentage),
                     ));
                 }

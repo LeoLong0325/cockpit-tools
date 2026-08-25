@@ -3913,6 +3913,7 @@
     "filterTaggedTitle": "筛选已添加标签的账号",
     "quota": {
       "onDemand": "按需使用",
+      "grokBot": "Grok-Bot",
       "credits": "赠送额度",
       "creditsExpireAt": "到期: {{time}}"
     },

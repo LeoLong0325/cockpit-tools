@@ -16,6 +16,7 @@ export interface CursorAccount {
   cursor_usage_raw?: unknown;
   cursor_credit_grants_raw?: unknown;
   cursor_free_credit_usage_raw?: unknown;
+  cursor_sand_usage_raw?: unknown;
   cursor_referral_raw?: unknown;
 
   status?: string | null;
@@ -514,6 +515,36 @@ export function isCursorAccountBanned(account: CursorAccount): boolean {
 
 export function hasCursorQuotaData(account: CursorAccount): boolean {
   return account.cursor_usage_raw != null;
+}
+
+export type CursorGrokBotUsage = {
+  usagePercent: number;
+  resetAt: number | null;
+};
+
+export function getCursorGrokBotUsage(account: CursorAccount): CursorGrokBotUsage | null {
+  const raw = account.cursor_sand_usage_raw;
+  if (!raw || typeof raw !== 'object') return null;
+  const root = raw as Record<string, unknown>;
+  const access =
+    root.access && typeof root.access === 'object'
+      ? (root.access as Record<string, unknown>)
+      : null;
+  const accessState = access ? pickString(access, 'state') : null;
+  if (accessState && !accessState.toUpperCase().includes('GRANTED')) {
+    return null;
+  }
+  const usagePercent = pickNumber(root, 'usagePercent', 'usage_percent');
+  if (usagePercent == null || !Number.isFinite(usagePercent)) return null;
+  const resetMs = parseCursorUsageTimestampMs(
+    root.nextResetTimestampUtc ??
+      root.next_reset_timestamp_utc ??
+      root.sandTrialExpiresAt,
+  );
+  return {
+    usagePercent,
+    resetAt: resetMs != null ? Math.floor(resetMs / 1000) : null,
+  };
 }
 
 export type CursorCreditGrants = {

@@ -1261,6 +1261,16 @@ fn build_cursor_display_info(lang: &str) -> AccountDisplayInfo {
         ));
     }
 
+    if let Some(grok_used) = usage.grok_bot_used_percent {
+        let grok_reset = format_reset_time_from_ts(lang, usage.grok_bot_reset_ts);
+        quota_lines.push(format_quota_line(
+            lang,
+            "Grok-Bot",
+            &format_percent_text(grok_used),
+            Some(&grok_reset),
+        ));
+    }
+
     if let Some(on_demand_text) = usage.on_demand_text {
         quota_lines.push(format!("On-Demand: {}", on_demand_text));
     }
@@ -2276,6 +2286,8 @@ struct CursorTrayUsage {
     total_used_percent: Option<i32>,
     auto_used_percent: Option<i32>,
     api_used_percent: Option<i32>,
+    grok_bot_used_percent: Option<i32>,
+    grok_bot_reset_ts: Option<i64>,
     reset_ts: Option<i64>,
     on_demand_text: Option<String>,
 }
@@ -2348,12 +2360,26 @@ fn format_cursor_dollars(cents: f64) -> String {
 
 #[cfg(not(target_os = "macos"))]
 fn read_cursor_tray_usage(account: &crate::models::cursor::CursorAccount) -> CursorTrayUsage {
+    let grok_display = crate::modules::cursor_account::cursor_grok_bot_display(account);
+    let grok_bot_used_percent = grok_display.map(|(percent, _)| percent);
+    let grok_bot_reset_ts = grok_display.and_then(|(_, reset_ts)| reset_ts);
+
     let Some(raw) = account.cursor_usage_raw.as_ref() else {
-        return CursorTrayUsage::default();
+        return CursorTrayUsage {
+            grok_bot_used_percent,
+            grok_bot_reset_ts,
+            ..CursorTrayUsage::default()
+        };
     };
     let raw_obj = match raw.as_object() {
         Some(obj) => obj,
-        None => return CursorTrayUsage::default(),
+        None => {
+            return CursorTrayUsage {
+                grok_bot_used_percent,
+                grok_bot_reset_ts,
+                ..CursorTrayUsage::default()
+            };
+        }
     };
 
     let plan = raw_obj
@@ -2482,6 +2508,8 @@ fn read_cursor_tray_usage(account: &crate::models::cursor::CursorAccount) -> Cur
         total_used_percent: total_direct.or(total_ratio).map(clamp_cursor_percent),
         auto_used_percent: auto_direct.map(clamp_cursor_percent),
         api_used_percent: api_direct.map(clamp_cursor_percent),
+        grok_bot_used_percent,
+        grok_bot_reset_ts,
         reset_ts,
         on_demand_text,
     }

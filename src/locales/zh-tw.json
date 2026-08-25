@@ -3613,7 +3613,8 @@
     "quota": {
       "onDemand": "按需使用",
       "credits": "贈送額度",
-      "creditsExpireAt": "到期: {{time}}"
+      "creditsExpireAt": "到期: {{time}}",
+      "grokBot": "Grok-Bot"
     },
     "title": "Cursor 帳號管理",
     "instances": {

@@ -3914,7 +3914,8 @@
     "quota": {
       "onDemand": "On-Demand",
       "credits": "Credits",
-      "creditsExpireAt": "Expires: {{time}}"
+      "creditsExpireAt": "Expires: {{time}}",
+      "grokBot": "Grok-Bot"
     },
     "dashboard": {
       "viewHome": "View Dashboard",

@@ -51,6 +51,7 @@ import {
   getCursorReferralStatus,
   hasCursorReferralEligibility,
   formatCursorUsageDollars,
+  getCursorGrokBotUsage,
   resolveCursorCreditGrantsQuotaDisplay,
   hasCursorQuotaData,
   isCursorAccountBanned,
@@ -441,6 +442,21 @@ export function CursorAccountsPage() {
     [t],
   );
 
+  const resolveGrokBotQuota = useCallback(
+    (account: CursorAccount) => {
+      const grok = getCursorGrokBotUsage(account);
+      if (!grok) return null;
+      const pct = normalizeCursorPercent(grok.usagePercent);
+      return {
+        percentage: pct.bar,
+        quotaClass: getCursorQuotaClass(pct.display),
+        valueText: `${pct.display}%`,
+        resetAt: grok.resetAt,
+      };
+    },
+    [],
+  );
+
   const resolveCreditGrantsQuota = useCallback(
     (account: CursorAccount) => {
       const display = resolveCursorCreditGrantsQuotaDisplay(account);
@@ -708,6 +724,8 @@ export function CursorAccountsPage() {
       const auto = resolveAutoQuota(account);
       const api = resolveApiQuota(account);
       const onDemand = resolveOnDemandQuota(account);
+      const grokBot = resolveGrokBotQuota(account);
+      const grokResetText = grokBot?.resetAt ? formatResetTime(grokBot.resetAt) : '';
       const creditGrants = resolveCreditGrantsQuota(account);
       const resetTs = resolveResetTime(account);
       const resetText = formatResetTime(resetTs);
@@ -816,6 +834,25 @@ export function CursorAccountsPage() {
                   </div>
                 </div>
 
+                {grokBot && (
+                  <div className="quota-item windsurf-credit-item">
+                    <div className="quota-header">
+                      <span className="quota-label">
+                        {t('cursor.quota.grokBot', 'Grok-Bot')}
+                        {grokResetText ? (
+                          <span className="windsurf-credit-used" style={{ marginLeft: 8, fontWeight: 400 }}>
+                            {t('common.shared.quota.resetAt', { time: grokResetText, defaultValue: 'Reset: {{time}}' })}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className={`quota-pct ${grokBot.quotaClass}`}>{grokBot.valueText}</span>
+                    </div>
+                    <div className="quota-bar-track">
+                      <div className={`quota-bar ${grokBot.quotaClass}`} style={{ width: `${Math.min(grokBot.percentage, 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+
                 <div className="quota-item windsurf-credit-item">
                   <div className="quota-header">
                     <span className="quota-label">{t('cursor.quota.onDemand', 'On-Demand')}</span>
@@ -912,6 +949,8 @@ export function CursorAccountsPage() {
       const auto = resolveAutoQuota(account);
       const api = resolveApiQuota(account);
       const onDemand = resolveOnDemandQuota(account);
+      const grokBot = resolveGrokBotQuota(account);
+      const grokResetText = grokBot?.resetAt ? formatResetTime(grokBot.resetAt) : '';
       const creditGrants = resolveCreditGrantsQuota(account);
       const resetTs = resolveResetTime(account);
       const resetText = formatResetTime(resetTs);
@@ -1008,6 +1047,24 @@ export function CursorAccountsPage() {
                     <div className={`quota-progress-bar ${api.quotaClass}`} style={{ width: `${Math.min(api.percentage, 100)}%` }} />
                   </div>
                 </div>
+                {grokBot && (
+                  <div className="quota-item windsurf-table-credit-item" style={{ marginTop: 4 }}>
+                    <div className="quota-header">
+                      <span className="quota-name">
+                        {t('cursor.quota.grokBot', 'Grok-Bot')}
+                        {grokResetText ? (
+                          <span className="windsurf-credit-used" style={{ marginLeft: 8, fontWeight: 400 }}>
+                            {t('common.shared.quota.resetAt', { time: grokResetText, defaultValue: 'Reset: {{time}}' })}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className={`quota-value ${grokBot.quotaClass}`}>{grokBot.valueText}</span>
+                    </div>
+                    <div className="quota-progress-track">
+                      <div className={`quota-progress-bar ${grokBot.quotaClass}`} style={{ width: `${Math.min(grokBot.percentage, 100)}%` }} />
+                    </div>
+                  </div>
+                )}
                 <div className="quota-item windsurf-table-credit-item" style={{ marginTop: 4 }}>
                   <div className="quota-header">
                     <span className="quota-name">{t('cursor.quota.onDemand', 'On-Demand')}</span>

@@ -70,6 +70,7 @@ import {
 import {
   formatCursorUsageDollars,
   getCursorAccountDisplayEmail,
+  getCursorGrokBotUsage,
   getCursorOnDemandSummary,
   getCursorPlanDisplayName,
   getCursorPlanBadgeClass,
@@ -1537,6 +1538,24 @@ export function buildCursorAccountPresentation(
       quotaClass: getCursorUsageQuotaClass(apiPercent),
       valueText: `${apiPercent}%`,
     });
+  }
+
+  const grokBot = getCursorGrokBotUsage(account);
+  if (grokBot) {
+    const grokPercent = normalizeCursorUsagePercent(grokBot.usagePercent);
+    if (grokPercent != null) {
+      quotaItems.push({
+        key: "grok_bot",
+        label: t("cursor.quota.grokBot", "Grok-Bot"),
+        percentage: grokPercent,
+        quotaClass: getCursorUsageQuotaClass(grokPercent),
+        valueText: `${grokPercent}%`,
+        resetAt: grokBot.resetAt ?? undefined,
+        resetText: grokBot.resetAt
+          ? formatCodexResetTime(grokBot.resetAt, t)
+          : "",
+      });
+    }
   }
 
   const onDemand = getCursorOnDemandSummary(usage);

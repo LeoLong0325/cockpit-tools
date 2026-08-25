@@ -882,6 +882,7 @@ pub fn upsert_account(payload: CursorImportPayload) -> Result<CursorAccount, Str
         cursor_credit_grants_raw: payload.cursor_credit_grants_raw.clone(),
         cursor_referral_raw: None,
         cursor_free_credit_usage_raw: payload.cursor_free_credit_usage_raw.clone(),
+        cursor_sand_usage_raw: None,
         status: payload.status.clone(),
         status_reason: payload.status_reason.clone(),
         quota_query_last_error: None,
@@ -1842,6 +1843,10 @@ const CURSOR_CLIENT_VISIBLE_CREDIT_GRANTS_URL: &str =
     "https://cursor.com/api/dashboard/get-client-visible-credit-grants";
 const CURSOR_P2P_REFERRAL_STATUS_URL: &str =
     "https://cursor.com/api/dashboard/get-p2p-referral-status";
+const CURSOR_SAND_USAGE_STATUS_URL: &str =
+    "https://cursor.com/api/dashboard/get-sand-usage-status";
+const CURSOR_SAND_ACCESS_STATUS_URL: &str =
+    "https://cursor.com/api/dashboard/get-sand-access-status";
 const CURSOR_GET_USER_META_URL: &str = "https://api2.cursor.sh/aiserver.v1.AuthService/GetUserMeta";
 const CURSOR_FULL_STRIPE_PROFILE_URL: &str = "https://api2.cursor.sh/auth/full_stripe_profile";
 const CURSOR_STRIPE_PROFILE_URL: &str = "https://api2.cursor.sh/auth/stripe_profile";
@@ -3081,6 +3086,80 @@ async fn fetch_credit_grants_with_client(
     }))
 }
 
+async fn fetch_sand_usage_status_with_client(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> Result<serde_json::Value, String> {
+    post_dashboard_json_with_client(
+        client,
+        access_token,
+        CURSOR_SAND_USAGE_STATUS_URL,
+        "https://cursor.com/dashboard/spending",
+    )
+    .await
+}
+
+async fn fetch_sand_access_status_with_client(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> Result<serde_json::Value, String> {
+    post_dashboard_json_with_client(
+        client,
+        access_token,
+        CURSOR_SAND_ACCESS_STATUS_URL,
+        "https://cursor.com/dashboard/spending",
+    )
+    .await
+}
+
+fn extract_sand_usage_percent(root: &serde_json::Value) -> Option<f64> {
+    pick_number(Some(root), &["usagePercent", "usage_percent"]).filter(|value| value.is_finite())
+}
+
+fn sand_access_is_granted(access: &serde_json::Value) -> Option<bool> {
+    let state = access
+        .get("state")
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
+        .trim();
+    if state.is_empty() {
+        return None;
+    }
+    Some(state.to_ascii_uppercase().contains("GRANTED"))
+}
+
+fn attach_sand_access(
+    mut usage: serde_json::Value,
+    access: Option<serde_json::Value>,
+) -> serde_json::Value {
+    if let Some(access) = access {
+        if let serde_json::Value::Object(ref mut map) = usage {
+            map.insert("access".to_string(), access);
+        }
+    }
+    usage
+}
+
+fn parse_sand_reset_ts(root: &serde_json::Value) -> Option<i64> {
+    root.get("nextResetTimestampUtc")
+        .or_else(|| root.get("next_reset_timestamp_utc"))
+        .or_else(|| root.get("sandTrialExpiresAt"))
+        .and_then(|value| value.as_str())
+        .and_then(|text| chrono::DateTime::parse_from_rfc3339(text).ok())
+        .map(|value| value.timestamp())
+}
+
+pub(crate) fn cursor_grok_bot_display(account: &CursorAccount) -> Option<(i32, Option<i64>)> {
+    let raw = account.cursor_sand_usage_raw.as_ref()?;
+    if let Some(access) = raw.get("access") {
+        if sand_access_is_granted(access) == Some(false) {
+            return None;
+        }
+    }
+    let percent = extract_sand_usage_percent(raw).map(clamp_percent)?;
+    Some((percent, parse_sand_reset_ts(raw)))
+}
+
 // ---------------------------------------------------------------------------
 // Refresh (updates our own account storage + fetches usage from official APIs)
 // ---------------------------------------------------------------------------
@@ -3114,14 +3193,23 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
     }
 
     let access_token = account.access_token.clone();
-    let (meta_result, stripe_result, usage_result, credit_grants_result, referral_result) =
-        tokio::join!(
-            fetch_user_meta_with_client(&client, &access_token),
-            fetch_stripe_profile_with_client(&client, &access_token),
-            fetch_usage_summary_with_client(&client, &access_token),
-            fetch_credit_grants_with_client(&client, &access_token),
-            fetch_referral_status_with_client(&client, &access_token),
-        );
+    let (
+        meta_result,
+        stripe_result,
+        usage_result,
+        credit_grants_result,
+        referral_result,
+        sand_usage_result,
+        sand_access_result,
+    ) = tokio::join!(
+        fetch_user_meta_with_client(&client, &access_token),
+        fetch_stripe_profile_with_client(&client, &access_token),
+        fetch_usage_summary_with_client(&client, &access_token),
+        fetch_credit_grants_with_client(&client, &access_token),
+        fetch_referral_status_with_client(&client, &access_token),
+        fetch_sand_usage_status_with_client(&client, &access_token),
+        fetch_sand_access_status_with_client(&client, &access_token),
+    );
 
     match meta_result {
         Ok(meta) => {
@@ -3307,6 +3395,63 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     }
 
+    let sand_access = match sand_access_result {
+        Ok(access) => Some(access),
+        Err(err) if err.contains("404") || err.contains("403") => {
+            logger::log_info(&format!(
+                "[Cursor Refresh] 账号无 Grok-Bot 权限接口: id={}, error={}",
+                account.id, err
+            ));
+            None
+        }
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[Cursor Refresh] Grok-Bot 权限拉取失败: id={}, error={}",
+                account.id, err
+            ));
+            None
+        }
+    };
+
+    match sand_usage_result {
+        Ok(sand_usage) => {
+            let granted = sand_access.as_ref().and_then(sand_access_is_granted);
+            if granted == Some(false) {
+                account.cursor_sand_usage_raw = None;
+                logger::log_info(&format!(
+                    "[Cursor Refresh] 账号无 Grok-Bot 权限，已隐藏: id={}",
+                    account.id
+                ));
+            } else if extract_sand_usage_percent(&sand_usage).is_some() {
+                account.cursor_sand_usage_raw =
+                    Some(attach_sand_access(sand_usage, sand_access));
+                logger::log_info(&format!(
+                    "[Cursor Refresh] Grok-Bot 用量拉取成功: id={}",
+                    account.id
+                ));
+            } else {
+                account.cursor_sand_usage_raw = None;
+                logger::log_info(&format!(
+                    "[Cursor Refresh] Grok-Bot 用量无 usagePercent，已清空: id={}",
+                    account.id
+                ));
+            }
+        }
+        Err(err) if err.contains("404") || err.contains("403") => {
+            account.cursor_sand_usage_raw = None;
+            logger::log_info(&format!(
+                "[Cursor Refresh] 账号无 Grok-Bot 用量: id={}, error={}",
+                account.id, err
+            ));
+        }
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[Cursor Refresh] Grok-Bot 用量拉取失败: id={}, error={}",
+                account.id, err
+            ));
+        }
+    }
+
     let refreshed_at = now_ts();
     if usage_refreshed {
         account.usage_updated_at = Some(refreshed_at);
@@ -3475,6 +3620,9 @@ pub(crate) fn extract_quota_metrics(account: &CursorAccount) -> Vec<(String, i32
     if let Some(used) = usage.api_used {
         metrics.push(("API Usage".to_string(), 100 - used.clamp(0, 100)));
     }
+    if let Some((used, _)) = cursor_grok_bot_display(account) {
+        metrics.push(("Grok-Bot".to_string(), 100 - used.clamp(0, 100)));
+    }
 
     metrics
 }
@@ -3627,7 +3775,8 @@ mod credit_grants_tests {
     use super::{
         build_credit_grants_peak, credit_grants_has_active_remaining,
         credit_grants_has_valid_display_metrics, extract_credit_grants_metrics,
-        free_credit_event_cents, is_gift_credit_usage_model, merge_credit_grants_preserving_history,
+        extract_sand_usage_percent, free_credit_event_cents, is_gift_credit_usage_model,
+        merge_credit_grants_preserving_history, sand_access_is_granted,
         sum_free_credit_cents_from_events_page,
     };
     use serde_json::json;
@@ -3749,6 +3898,33 @@ mod credit_grants_tests {
         let (sum, count) = sum_free_credit_cents_from_events_page(&page);
         assert_eq!(sum, 2288);
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn sand_usage_percent_reads_float() {
+        let root = json!({
+            "usagePercent": 45.636,
+            "hasAvailableUsage": true,
+            "grokPlanLabel": "Grok Bot Plan"
+        });
+        assert_eq!(extract_sand_usage_percent(&root), Some(45.636));
+        assert_eq!(extract_sand_usage_percent(&json!({})), None);
+    }
+
+    #[test]
+    fn sand_access_granted_detects_state() {
+        assert_eq!(
+            sand_access_is_granted(&json!({ "state": "SAND_ACCESS_STATE_GRANTED" })),
+            Some(true)
+        );
+        assert_eq!(
+            sand_access_is_granted(&json!({
+                "state": "SAND_ACCESS_STATE_BLOCKED",
+                "blockReason": "SAND_ACCESS_BLOCK_REASON_NONE"
+            })),
+            Some(false)
+        );
+        assert_eq!(sand_access_is_granted(&json!({})), None);
     }
 }
 
