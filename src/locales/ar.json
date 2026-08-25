@@ -3658,6 +3658,7 @@
     "filterTaggedTitle": "عرض الحسابات ذات الوسوم",
     "quota": {
       "onDemand": "حسب الطلب",
+      "grokBot": "Grok-Bot",
       "credits": "الأرصدة",
       "creditsExpireAt": "تنتهي: {{time}}"
     },

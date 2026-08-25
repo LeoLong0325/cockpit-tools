@@ -3612,6 +3612,7 @@
     "filterTaggedTitle": "태그가 있는 계정 표시",
     "quota": {
       "onDemand": "온디맨드",
+      "grokBot": "Grok-Bot",
       "credits": "크레딧",
       "creditsExpireAt": "만료: {{time}}"
     },

@@ -3612,6 +3612,7 @@
     "filterTaggedTitle": "Показать аккаунты с тегами",
     "quota": {
       "onDemand": "По запросу",
+      "grokBot": "Grok-Bot",
       "credits": "Кредиты",
       "creditsExpireAt": "Истекает: {{time}}"
     },

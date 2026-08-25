@@ -3758,6 +3758,7 @@
     "filterTaggedTitle": "Tampilkan akun ber-tag",
     "quota": {
       "onDemand": "Sesuai permintaan",
+      "grokBot": "Grok-Bot",
       "credits": "Kredit",
       "creditsExpireAt": "Kedaluwarsa: {{time}}"
     },

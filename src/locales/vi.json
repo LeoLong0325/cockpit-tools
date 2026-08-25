@@ -3612,6 +3612,7 @@
     "filterTaggedTitle": "Hiển thị tài khoản có thẻ",
     "quota": {
       "onDemand": "Theo yêu cầu",
+      "grokBot": "Grok-Bot",
       "credits": "Tín dụng",
       "creditsExpireAt": "Hết hạn: {{time}}"
     },

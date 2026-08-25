@@ -3612,6 +3612,7 @@
     "filterTaggedTitle": "Mostra account con tag",
     "quota": {
       "onDemand": "Su richiesta",
+      "grokBot": "Grok-Bot",
       "credits": "Crediti",
       "creditsExpireAt": "Scade: {{time}}"
     },

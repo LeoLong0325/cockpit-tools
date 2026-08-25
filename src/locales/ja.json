@@ -3612,6 +3612,7 @@
     "filterTaggedTitle": "タグ付きアカウントを表示",
     "quota": {
       "onDemand": "オンデマンド",
+      "grokBot": "Grok-Bot",
       "credits": "クレジット",
       "creditsExpireAt": "有効期限: {{time}}"
     },

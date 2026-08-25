@@ -3612,6 +3612,7 @@
     "filterTaggedTitle": "Afficher les comptes avec tags",
     "quota": {
       "onDemand": "À la demande",
+      "grokBot": "Grok-Bot",
       "credits": "Crédits",
       "creditsExpireAt": "Expire le : {{time}}"
     },

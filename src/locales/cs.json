@@ -3612,6 +3612,7 @@
     "filterTaggedTitle": "Zobrazit účty se štítky",
     "quota": {
       "onDemand": "Na vyžádání",
+      "grokBot": "Grok-Bot",
       "credits": "Kredity",
       "creditsExpireAt": "Vyprší: {{time}}"
     },

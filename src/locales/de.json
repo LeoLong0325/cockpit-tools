@@ -3612,6 +3612,7 @@
     "filterTaggedTitle": "Konten mit Tags anzeigen",
     "quota": {
       "onDemand": "On-Demand​",
+      "grokBot": "Grok-Bot",
       "credits": "Guthaben",
       "creditsExpireAt": "Läuft ab: {{time}}"
     },

@@ -3612,6 +3612,7 @@
     "filterTaggedTitle": "Etiketli hesapları göster",
     "quota": {
       "onDemand": "İsteğe bağlı",
+      "grokBot": "Grok-Bot",
       "credits": "Krediler",
       "creditsExpireAt": "Bitiş: {{time}}"
     },
