@@ -730,8 +730,6 @@ export function CursorAccountsPage() {
       const resetTs = resolveResetTime(account);
       const resetText = formatResetTime(resetTs);
       const accountTags = (account.tags || []).map((tag) => tag.trim()).filter(Boolean);
-      const visibleTags = accountTags.slice(0, 2);
-      const moreTagCount = Math.max(0, accountTags.length - visibleTags.length);
       const isSelected = selected.has(account.id);
       const isCurrent = currentAccountId === account.id;
       const quotaError = account.quota_query_last_error?.trim();
@@ -784,10 +782,9 @@ export function CursorAccountsPage() {
 
           {accountTags.length > 0 && (
             <div className="card-tags">
-              {visibleTags.map((tag, idx) => (
+              {accountTags.map((tag, idx) => (
                 <span key={`${account.id}-${tag}-${idx}`} className="tag-pill">{tag}</span>
               ))}
-              {moreTagCount > 0 && <span className="tag-pill more">+{moreTagCount}</span>}
             </div>
           )}
 
@@ -955,8 +952,6 @@ export function CursorAccountsPage() {
       const resetTs = resolveResetTime(account);
       const resetText = formatResetTime(resetTs);
       const accountTags = (account.tags || []).map((tag) => tag.trim()).filter(Boolean);
-      const visibleTags = accountTags.slice(0, 3);
-      const moreTagCount = Math.max(0, accountTags.length - visibleTags.length);
       const isCurrent = currentAccountId === account.id;
       const isBanned = isCursorAccountBanned(account);
       const quotaError = account.quota_query_last_error?.trim();
@@ -994,8 +989,7 @@ export function CursorAccountsPage() {
               </div>
               {accountTags.length > 0 && (
                 <div className="account-tags-inline">
-                  {visibleTags.map((tag, idx) => (<span key={`${account.id}-inline-${tag}-${idx}`} className="tag-pill">{tag}</span>))}
-                  {moreTagCount > 0 && <span className="tag-pill more">+{moreTagCount}</span>}
+                  {accountTags.map((tag, idx) => (<span key={`${account.id}-inline-${tag}-${idx}`} className="tag-pill">{tag}</span>))}
                 </div>
               )}
             </div>
