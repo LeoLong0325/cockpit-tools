@@ -3032,6 +3032,7 @@ async fn fetch_referral_status_with_client(
     .await
     {
         Ok(response) => Ok(normalize_referral_status(response)),
+        Err(err) if is_cursor_session_error(&err) => Err(err),
         Err(err) if err.contains("403") || err.contains("404") => {
             Ok(serde_json::json!({ "eligible": false }))
         }
@@ -3112,6 +3113,10 @@ async fn fetch_sand_access_status_with_client(
     .await
 }
 
+fn is_cursor_session_error(err: &str) -> bool {
+    err.contains("会话已过期") || err.contains("未认证") || err.contains("HTTP 401")
+}
+
 fn extract_sand_usage_percent(root: &serde_json::Value) -> Option<f64> {
     pick_number(Some(root), &["usagePercent", "usage_percent"]).filter(|value| value.is_finite())
 }
@@ -3158,6 +3163,79 @@ pub(crate) fn cursor_grok_bot_display(account: &CursorAccount) -> Option<(i32, O
     }
     let percent = extract_sand_usage_percent(raw).map(clamp_percent)?;
     Some((percent, parse_sand_reset_ts(raw)))
+}
+
+fn apply_cursor_sand_refresh(
+    account: &mut CursorAccount,
+    sand_usage_result: Result<serde_json::Value, String>,
+    sand_access: Option<serde_json::Value>,
+    usage_refreshed: bool,
+) {
+    match sand_usage_result {
+        Ok(sand_usage) => {
+            let granted = sand_access.as_ref().and_then(sand_access_is_granted);
+            if granted == Some(false) {
+                if usage_refreshed {
+                    account.cursor_sand_usage_raw = None;
+                    logger::log_info(&format!(
+                        "[Cursor Refresh] 账号无 Grok-Bot 权限，已隐藏: id={}",
+                        account.id
+                    ));
+                } else {
+                    logger::log_info(&format!(
+                        "[Cursor Refresh] 配额刷新失败，保留上次 Grok-Bot 用量: id={}",
+                        account.id
+                    ));
+                }
+                return;
+            }
+            if extract_sand_usage_percent(&sand_usage).is_some() {
+                account.cursor_sand_usage_raw =
+                    Some(attach_sand_access(sand_usage, sand_access));
+                logger::log_info(&format!(
+                    "[Cursor Refresh] Grok-Bot 用量拉取成功: id={}",
+                    account.id
+                ));
+            } else if usage_refreshed {
+                account.cursor_sand_usage_raw = None;
+                logger::log_info(&format!(
+                    "[Cursor Refresh] Grok-Bot 用量无 usagePercent，已清空: id={}",
+                    account.id
+                ));
+            } else {
+                logger::log_info(&format!(
+                    "[Cursor Refresh] 配额刷新失败且 Grok-Bot 无 usagePercent，保留上次用量: id={}",
+                    account.id
+                ));
+            }
+        }
+        Err(err) if is_cursor_session_error(&err) => {
+            logger::log_warn(&format!(
+                "[Cursor Refresh] Grok-Bot 用量因会话失效未更新，保留上次状态: id={}, error={}",
+                account.id, err
+            ));
+        }
+        Err(err) if err.contains("404") || err.contains("403") => {
+            if usage_refreshed {
+                account.cursor_sand_usage_raw = None;
+                logger::log_info(&format!(
+                    "[Cursor Refresh] 账号无 Grok-Bot 用量: id={}, error={}",
+                    account.id, err
+                ));
+            } else {
+                logger::log_warn(&format!(
+                    "[Cursor Refresh] Grok-Bot 用量拉取失败，保留上次状态: id={}, error={}",
+                    account.id, err
+                ));
+            }
+        }
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[Cursor Refresh] Grok-Bot 用量拉取失败: id={}, error={}",
+                account.id, err
+            ));
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -3397,6 +3475,13 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
 
     let sand_access = match sand_access_result {
         Ok(access) => Some(access),
+        Err(err) if is_cursor_session_error(&err) => {
+            logger::log_warn(&format!(
+                "[Cursor Refresh] Grok-Bot 权限因会话失效未更新: id={}, error={}",
+                account.id, err
+            ));
+            None
+        }
         Err(err) if err.contains("404") || err.contains("403") => {
             logger::log_info(&format!(
                 "[Cursor Refresh] 账号无 Grok-Bot 权限接口: id={}, error={}",
@@ -3413,44 +3498,12 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     };
 
-    match sand_usage_result {
-        Ok(sand_usage) => {
-            let granted = sand_access.as_ref().and_then(sand_access_is_granted);
-            if granted == Some(false) {
-                account.cursor_sand_usage_raw = None;
-                logger::log_info(&format!(
-                    "[Cursor Refresh] 账号无 Grok-Bot 权限，已隐藏: id={}",
-                    account.id
-                ));
-            } else if extract_sand_usage_percent(&sand_usage).is_some() {
-                account.cursor_sand_usage_raw =
-                    Some(attach_sand_access(sand_usage, sand_access));
-                logger::log_info(&format!(
-                    "[Cursor Refresh] Grok-Bot 用量拉取成功: id={}",
-                    account.id
-                ));
-            } else {
-                account.cursor_sand_usage_raw = None;
-                logger::log_info(&format!(
-                    "[Cursor Refresh] Grok-Bot 用量无 usagePercent，已清空: id={}",
-                    account.id
-                ));
-            }
-        }
-        Err(err) if err.contains("404") || err.contains("403") => {
-            account.cursor_sand_usage_raw = None;
-            logger::log_info(&format!(
-                "[Cursor Refresh] 账号无 Grok-Bot 用量: id={}, error={}",
-                account.id, err
-            ));
-        }
-        Err(err) => {
-            logger::log_warn(&format!(
-                "[Cursor Refresh] Grok-Bot 用量拉取失败: id={}, error={}",
-                account.id, err
-            ));
-        }
-    }
+    apply_cursor_sand_refresh(
+        &mut account,
+        sand_usage_result,
+        sand_access,
+        usage_refreshed,
+    );
 
     let refreshed_at = now_ts();
     if usage_refreshed {
@@ -3925,6 +3978,77 @@ mod credit_grants_tests {
             Some(false)
         );
         assert_eq!(sand_access_is_granted(&json!({})), None);
+    }
+}
+
+#[cfg(test)]
+mod sand_refresh_tests {
+    use super::{apply_cursor_sand_refresh, is_cursor_session_error};
+    use crate::models::cursor::CursorAccount;
+    use serde_json::json;
+
+    fn account_with_sand(sand: serde_json::Value) -> CursorAccount {
+        serde_json::from_value(json!({
+            "id": "acc",
+            "email": "a@b.c",
+            "access_token": "token",
+            "created_at": 1,
+            "last_used": 1,
+            "cursor_sand_usage_raw": sand,
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn session_error_helper_matches_expired_403() {
+        assert!(is_cursor_session_error(
+            "Cursor 会话已过期或未认证，请重新导入账号 (HTTP 403)"
+        ));
+        assert!(!is_cursor_session_error(
+            "Cursor dashboard API 返回异常状态码: 404"
+        ));
+    }
+
+    #[test]
+    fn session_403_keeps_previous_sand_usage() {
+        let previous = json!({
+            "usagePercent": 100.0,
+            "nextResetTimestampUtc": "2026-08-29T06:05:00.000Z",
+            "access": { "state": "SAND_ACCESS_STATE_GRANTED" }
+        });
+        let mut account = account_with_sand(previous.clone());
+        apply_cursor_sand_refresh(
+            &mut account,
+            Err("Cursor 会话已过期或未认证，请重新导入账号 (HTTP 403)".into()),
+            None,
+            false,
+        );
+        assert_eq!(account.cursor_sand_usage_raw, Some(previous));
+    }
+
+    #[test]
+    fn blocked_access_with_valid_usage_refresh_clears_sand() {
+        let mut account = account_with_sand(json!({ "usagePercent": 12.0 }));
+        apply_cursor_sand_refresh(
+            &mut account,
+            Ok(json!({ "usagePercent": 12.0 })),
+            Some(json!({ "state": "SAND_ACCESS_STATE_BLOCKED" })),
+            true,
+        );
+        assert!(account.cursor_sand_usage_raw.is_none());
+    }
+
+    #[test]
+    fn blocked_access_without_usage_refresh_keeps_sand() {
+        let previous = json!({ "usagePercent": 88.0 });
+        let mut account = account_with_sand(previous.clone());
+        apply_cursor_sand_refresh(
+            &mut account,
+            Ok(json!({ "usagePercent": 12.0 })),
+            Some(json!({ "state": "SAND_ACCESS_STATE_BLOCKED" })),
+            false,
+        );
+        assert_eq!(account.cursor_sand_usage_raw, Some(previous));
     }
 }
 
