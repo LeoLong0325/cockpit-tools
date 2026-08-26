@@ -34,6 +34,8 @@ pub struct CursorAccount {
     pub cursor_free_credit_usage_raw: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor_sand_usage_raw: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor_last_usage_event_at: Option<i64>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,

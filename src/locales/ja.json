@@ -177,7 +177,8 @@
         "resetDone": "リセット済み",
         "hourly": "5 時間クォータ",
         "weekly": "週次クォータ",
-        "resetAt": "リセット: {{time}}"
+        "resetAt": "リセット: {{time}}",
+        "lastUsedAt": "最終使用: {{time}}"
       },
       "subtitle": "GitHub Copilot アカウントを管理します",
       "time": {

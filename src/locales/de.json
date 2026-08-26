@@ -177,7 +177,8 @@
         "resetDone": "Zurückgesetzt",
         "hourly": "5-Stunden-Kontingent",
         "weekly": "Wöchentliches Kontingent",
-        "resetAt": "Zurücksetzung: {{time}}"
+        "resetAt": "Zurücksetzung: {{time}}",
+        "lastUsedAt": "Zuletzt verwendet: {{time}}"
       },
       "subtitle": "Verwalte deine GitHub Copilot-Konten",
       "time": {

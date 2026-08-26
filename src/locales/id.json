@@ -184,7 +184,8 @@
         "resetDone": "Direset",
         "hourly": "Saran Inline",
         "weekly": "Pesan obrolan",
-        "resetAt": "Atur ulang: {{time}}"
+        "resetAt": "Atur ulang: {{time}}",
+        "lastUsedAt": "Terakhir digunakan: {{time}}"
       },
       "subtitle": "Pantau status kuota seluruh akun secara real-time.",
       "time": {

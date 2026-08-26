@@ -177,7 +177,8 @@
         "resetDone": "Đã đặt lại",
         "hourly": "Hạn mức 5 giờ",
         "weekly": "Hạn mức tuần",
-        "resetAt": "Đặt lại: {{time}}"
+        "resetAt": "Đặt lại: {{time}}",
+        "lastUsedAt": "Dùng gần nhất: {{time}}"
       },
       "subtitle": "Quản lý các tài khoản GitHub Copilot",
       "time": {

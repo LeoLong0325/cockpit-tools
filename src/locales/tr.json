@@ -177,7 +177,8 @@
         "resetDone": "Sıfırlandı",
         "hourly": "5 saatlik kota",
         "weekly": "Haftalık kota",
-        "resetAt": "Sıfırlama: {{time}}"
+        "resetAt": "Sıfırlama: {{time}}",
+        "lastUsedAt": "Son kullanım: {{time}}"
       },
       "subtitle": "GitHub Copilot hesaplarınızı yönetin",
       "time": {

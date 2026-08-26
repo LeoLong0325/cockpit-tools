@@ -184,7 +184,8 @@
         "resetDone": "已重置",
         "hourly": "Inline Suggestions",
         "weekly": "Chat messages",
-        "resetAt": "重置：{{time}}"
+        "resetAt": "重置：{{time}}",
+        "lastUsedAt": "最近使用：{{time}}"
       },
       "subtitle": "实时监控所有账号的配额状态。",
       "time": {

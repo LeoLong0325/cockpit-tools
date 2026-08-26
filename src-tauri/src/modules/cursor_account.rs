@@ -883,6 +883,7 @@ pub fn upsert_account(payload: CursorImportPayload) -> Result<CursorAccount, Str
         cursor_referral_raw: None,
         cursor_free_credit_usage_raw: payload.cursor_free_credit_usage_raw.clone(),
         cursor_sand_usage_raw: None,
+        cursor_last_usage_event_at: None,
         status: payload.status.clone(),
         status_reason: payload.status_reason.clone(),
         quota_query_last_error: None,
@@ -2436,6 +2437,42 @@ fn parse_usage_timestamp_ms(value: &serde_json::Value) -> Option<i64> {
     None
 }
 
+fn extract_latest_usage_event_ts_ms(root: &serde_json::Value) -> Option<i64> {
+    let events = root
+        .get("usageEventsDisplay")
+        .or_else(|| root.get("usage_events_display"))
+        .and_then(|value| value.as_array())?;
+    events
+        .iter()
+        .filter_map(|event| event.get("timestamp").and_then(parse_usage_timestamp_ms))
+        .max()
+}
+
+async fn fetch_latest_usage_event_ts_with_client(
+    client: &reqwest::Client,
+    account: &CursorAccount,
+) -> Result<Option<i64>, String> {
+    let empty_usage = serde_json::json!({});
+    let usage_ref = account.cursor_usage_raw.as_ref().unwrap_or(&empty_usage);
+    let (start_date, end_date) = resolve_billing_cycle_range_ms(usage_ref);
+    let body = serde_json::json!({
+        "teamId": 0,
+        "startDate": start_date,
+        "endDate": end_date,
+        "page": 1,
+        "pageSize": 20
+    });
+    let response = post_dashboard_json_body_with_client(
+        client,
+        account,
+        CURSOR_FILTERED_USAGE_EVENTS_URL,
+        "https://cursor.com/dashboard",
+        body,
+    )
+    .await?;
+    Ok(extract_latest_usage_event_ts_ms(&response))
+}
+
 fn resolve_billing_cycle_range_ms(usage_raw: &serde_json::Value) -> (String, String) {
     let now_ms = chrono::Utc::now().timestamp_millis();
     let cycle_end_ms = usage_raw
@@ -3271,6 +3308,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
     }
 
     let access_token = account.access_token.clone();
+    let request_account = account.clone();
     let (
         meta_result,
         stripe_result,
@@ -3279,6 +3317,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         referral_result,
         sand_usage_result,
         sand_access_result,
+        latest_usage_event_result,
     ) = tokio::join!(
         fetch_user_meta_with_client(&client, &access_token),
         fetch_stripe_profile_with_client(&client, &access_token),
@@ -3287,6 +3326,7 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         fetch_referral_status_with_client(&client, &access_token),
         fetch_sand_usage_status_with_client(&client, &access_token),
         fetch_sand_access_status_with_client(&client, &access_token),
+        fetch_latest_usage_event_ts_with_client(&client, &request_account),
     );
 
     match meta_result {
@@ -3504,6 +3544,34 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         sand_access,
         usage_refreshed,
     );
+
+    match latest_usage_event_result {
+        Ok(Some(ts_ms)) if ts_ms > 0 => {
+            account.cursor_last_usage_event_at = Some(ts_ms / 1000);
+            logger::log_info(&format!(
+                "[Cursor Refresh] 最近使用时间已更新: id={}, ts={}",
+                account.id, ts_ms
+            ));
+        }
+        Ok(Some(_)) | Ok(None) => {
+            logger::log_info(&format!(
+                "[Cursor Refresh] 未获取到 usage 记录时间，保留上次值: id={}",
+                account.id
+            ));
+        }
+        Err(err) if is_cursor_session_error(&err) => {
+            logger::log_warn(&format!(
+                "[Cursor Refresh] 最近使用时间因会话失效未更新，保留上次状态: id={}, error={}",
+                account.id, err
+            ));
+        }
+        Err(err) => {
+            logger::log_warn(&format!(
+                "[Cursor Refresh] 最近使用时间拉取失败，保留上次状态: id={}, error={}",
+                account.id, err
+            ));
+        }
+    }
 
     let refreshed_at = now_ts();
     if usage_refreshed {
@@ -3830,7 +3898,7 @@ mod credit_grants_tests {
         credit_grants_has_valid_display_metrics, extract_credit_grants_metrics,
         extract_sand_usage_percent, free_credit_event_cents, is_gift_credit_usage_model,
         merge_credit_grants_preserving_history, sand_access_is_granted,
-        sum_free_credit_cents_from_events_page,
+        sum_free_credit_cents_from_events_page, extract_latest_usage_event_ts_ms,
     };
     use serde_json::json;
 
@@ -3951,6 +4019,19 @@ mod credit_grants_tests {
         let (sum, count) = sum_free_credit_cents_from_events_page(&page);
         assert_eq!(sum, 2288);
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn latest_usage_event_ts_picks_newest_ms() {
+        let root = json!({
+            "usageEventsDisplay": [
+                { "timestamp": "1787737635000", "model": "composer-2" },
+                { "timestamp": "1787742435000", "model": "default" },
+                { "timestamp": "1787700000000", "model": "claude-4" }
+            ]
+        });
+        assert_eq!(extract_latest_usage_event_ts_ms(&root), Some(1787742435000));
+        assert_eq!(extract_latest_usage_event_ts_ms(&json!({})), None);
     }
 
     #[test]

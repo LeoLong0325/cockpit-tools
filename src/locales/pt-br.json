@@ -177,7 +177,8 @@
         "resetDone": "Redefinido",
         "hourly": "Sugestões inline",
         "weekly": "Mensagens de chat",
-        "resetAt": "Reinicia: {{time}}"
+        "resetAt": "Reinicia: {{time}}",
+        "lastUsedAt": "Último uso: {{time}}"
       },
       "subtitle": "Monitore em tempo real o status de cota de todas as contas.",
       "time": {

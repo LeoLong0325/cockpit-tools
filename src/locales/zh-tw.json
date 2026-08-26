@@ -177,7 +177,8 @@
         "resetDone": "已重置",
         "hourly": "5 小時配額",
         "weekly": "週配額",
-        "resetAt": "重置: {{time}}"
+        "resetAt": "重置: {{time}}",
+        "lastUsedAt": "最近使用: {{time}}"
       },
       "subtitle": "管理您的 GitHub Copilot 帳號",
       "time": {

@@ -18,6 +18,7 @@ export interface CursorAccount {
   cursor_free_credit_usage_raw?: unknown;
   cursor_sand_usage_raw?: unknown;
   cursor_referral_raw?: unknown;
+  cursor_last_usage_event_at?: number | null;
 
   status?: string | null;
   status_reason?: string | null;
@@ -511,6 +512,12 @@ export function isCursorAccountBanned(account: CursorAccount): boolean {
   const reason = (account.status_reason || '').toLowerCase();
   return status === 'banned' || status === 'forbidden' ||
     reason.includes('banned') || reason.includes('suspended') || reason.includes('disabled');
+}
+
+export function getCursorLastUsageEventAt(account: CursorAccount): number | null {
+  const raw = account.cursor_last_usage_event_at;
+  if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) return null;
+  return raw > 1_000_000_000_000 ? Math.floor(raw / 1000) : Math.floor(raw);
 }
 
 export function hasCursorQuotaData(account: CursorAccount): boolean {

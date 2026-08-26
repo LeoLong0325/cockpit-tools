@@ -177,7 +177,8 @@
         "resetDone": "Resetováno",
         "hourly": "Kvóta 5 hodin",
         "weekly": "Týdenní kvóta",
-        "resetAt": "Obnovení: {{time}}"
+        "resetAt": "Obnovení: {{time}}",
+        "lastUsedAt": "Poslední použití: {{time}}"
       },
       "subtitle": "Spravujte své účty GitHub Copilot",
       "time": {

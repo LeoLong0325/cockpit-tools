@@ -177,7 +177,8 @@
         "resetDone": "Zresetowano",
         "hourly": "Limit 5 godzin",
         "weekly": "Limit tygodniowy",
-        "resetAt": "Odnowienie: {{time}}"
+        "resetAt": "Odnowienie: {{time}}",
+        "lastUsedAt": "Ostatnie użycie: {{time}}"
       },
       "subtitle": "Zarządzaj kontami GitHub Copilot",
       "time": {

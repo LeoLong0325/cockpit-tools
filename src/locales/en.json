@@ -184,7 +184,8 @@
         "resetDone": "Reset",
         "hourly": "Inline Suggestions",
         "weekly": "Chat messages",
-        "resetAt": "Reset: {{time}}"
+        "resetAt": "Reset: {{time}}",
+        "lastUsedAt": "Last used: {{time}}"
       },
       "subtitle": "Monitor quota status for all accounts in real time.",
       "time": {

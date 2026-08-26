@@ -177,7 +177,8 @@
         "resetDone": "Reiniciado",
         "hourly": "Sugerencias en línea",
         "weekly": "Mensajes de chat",
-        "resetAt": "Restablece: {{time}}"
+        "resetAt": "Restablece: {{time}}",
+        "lastUsedAt": "Último uso: {{time}}"
       },
       "subtitle": "Supervisa en tiempo real el estado de cuota de todas las cuentas.",
       "time": {

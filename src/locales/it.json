@@ -177,7 +177,8 @@
         "resetDone": "Reimpostato",
         "hourly": "Quota di 5 ore",
         "weekly": "Quota settimanale",
-        "resetAt": "Reimpostazione: {{time}}"
+        "resetAt": "Reimpostazione: {{time}}",
+        "lastUsedAt": "Ultimo utilizzo: {{time}}"
       },
       "subtitle": "Gestisci i tuoi account GitHub Copilot",
       "time": {
