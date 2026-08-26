@@ -492,20 +492,43 @@ export function CursorAccountsPage() {
     [locale],
   );
 
-  const formatLastUsedTime = useCallback(
+  const formatLastUsedClock = useCallback(
     (timestamp: number | null | undefined) => {
       if (!timestamp) return '';
       const d = new Date(timestamp * 1000);
       if (Number.isNaN(d.getTime())) return '';
-      return d.toLocaleDateString(locale, { year: 'numeric', month: 'numeric', day: 'numeric' }) +
-        ' ' + d.toLocaleTimeString(locale, {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        });
+      return d.toLocaleTimeString(locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
     },
     [locale],
+  );
+
+  const renderTotalUsageResetRow = useCallback(
+    (resetText: string, lastUsedClock: string, table = false) => {
+      if (!resetText && !lastUsedClock) return null;
+      return (
+        <div className={`windsurf-credit-meta-row${table ? ' table' : ''}`}>
+          <span className="windsurf-credit-used">
+            {resetText
+              ? t('common.shared.quota.resetAt', { time: resetText, defaultValue: 'Reset: {{time}}' })
+              : null}
+            {lastUsedClock ? (
+              <span
+                style={{ marginLeft: resetText ? 8 : 0 }}
+                title={t('common.shared.quota.lastUsedAt', { time: lastUsedClock, defaultValue: 'Last used: {{time}}' })}
+              >
+                {lastUsedClock}
+              </span>
+            ) : null}
+          </span>
+        </div>
+      );
+    },
+    [t],
   );
 
   // ─── Platform-specific: Dynamic tier filter ────────────────────────
@@ -746,7 +769,7 @@ export function CursorAccountsPage() {
       const creditGrants = resolveCreditGrantsQuota(account);
       const resetTs = resolveResetTime(account);
       const resetText = formatResetTime(resetTs);
-      const lastUsedText = formatLastUsedTime(getCursorLastUsageEventAt(account));
+      const lastUsedClock = formatLastUsedClock(getCursorLastUsageEventAt(account));
       const accountTags = (account.tags || []).map((tag) => tag.trim()).filter(Boolean);
       const isSelected = selected.has(account.id);
       const isCurrent = currentAccountId === account.id;
@@ -819,16 +842,7 @@ export function CursorAccountsPage() {
                       <span className="windsurf-credit-used">{total.costText}</span>
                     </div>
                   )}
-                  {resetText && (
-                    <div className="windsurf-credit-meta-row">
-                      <span className="windsurf-credit-used">{t('common.shared.quota.resetAt', { time: resetText, defaultValue: 'Reset: {{time}}' })}</span>
-                    </div>
-                  )}
-                  {lastUsedText && (
-                    <div className="windsurf-credit-meta-row">
-                      <span className="windsurf-credit-used">{t('common.shared.quota.lastUsedAt', { time: lastUsedText, defaultValue: 'Last used: {{time}}' })}</span>
-                    </div>
-                  )}
+                  {renderTotalUsageResetRow(resetText, lastUsedClock)}
                   <div className="quota-bar-track">
                     <div className={`quota-bar ${total.quotaClass}`} style={{ width: `${Math.min(total.percentage, 100)}%` }} />
                   </div>
@@ -974,7 +988,7 @@ export function CursorAccountsPage() {
       const creditGrants = resolveCreditGrantsQuota(account);
       const resetTs = resolveResetTime(account);
       const resetText = formatResetTime(resetTs);
-      const lastUsedText = formatLastUsedTime(getCursorLastUsageEventAt(account));
+      const lastUsedClock = formatLastUsedClock(getCursorLastUsageEventAt(account));
       const accountTags = (account.tags || []).map((tag) => tag.trim()).filter(Boolean);
       const isCurrent = currentAccountId === account.id;
       const isBanned = isCursorAccountBanned(account);
@@ -1031,16 +1045,7 @@ export function CursorAccountsPage() {
                     <span className="windsurf-credit-used">{total.costText}</span>
                   </div>
                 )}
-                {resetText && (
-                  <div className="windsurf-credit-meta-row table">
-                    <span className="windsurf-credit-used">{t('common.shared.quota.resetAt', { time: resetText, defaultValue: 'Reset: {{time}}' })}</span>
-                  </div>
-                )}
-                {lastUsedText && (
-                  <div className="windsurf-credit-meta-row table">
-                    <span className="windsurf-credit-used">{t('common.shared.quota.lastUsedAt', { time: lastUsedText, defaultValue: 'Last used: {{time}}' })}</span>
-                  </div>
-                )}
+                {renderTotalUsageResetRow(resetText, lastUsedClock, true)}
                 <div className="quota-progress-track">
                   <div className={`quota-progress-bar ${total.quotaClass}`} style={{ width: `${Math.min(total.percentage, 100)}%` }} />
                 </div>
