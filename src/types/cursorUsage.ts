@@ -98,12 +98,13 @@ export function sanitizeCursorAutoRefreshSeconds(value: unknown): number {
 
 export const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT = 'USAGE_EVENT_KIND_FREE_CREDIT';
 
-/** Auto-routing / Composer agent models — not gifted-credit API consumption. */
+/** Auto-routing / Composer / Grok models — not gifted-credit API consumption. */
 export function isCursorGiftCreditUsageModel(model: string): boolean {
   const normalized = model.trim().toLowerCase();
   if (!normalized || normalized === '—') return false;
   if (normalized === 'default') return false;
   if (normalized.startsWith('composer')) return false;
+  if (normalized.includes('grok')) return false;
   return true;
 }
 
@@ -312,7 +313,7 @@ function toLocalDayLabel(dayKey: string): string {
 
 /**
  * Daily cost series for chargeable models only (same model filter as gift-credit stats:
- * excludes `default` / `composer*`). Includes gift-credit and other event kinds.
+ * excludes `default` / `composer*` / Grok). Includes gift-credit and other event kinds.
  */
 export function buildPaidModelDailyUsageSeries(
   events: CursorUsageEventDisplay[],

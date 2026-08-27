@@ -3722,7 +3722,7 @@
       "empty": "Aucune donnée d'utilisation",
       "billingCycleRange": "Cycle de facturation actuel : {{range}}",
       "dailyUsageTitle": "Usage quotidien des modèles payants",
-      "dailyUsageHint": "Compte uniquement les modèles payants (ex. Claude), y compris les crédits offerts. Exclut default / Composer.",
+      "dailyUsageHint": "Compte uniquement les modèles payants (ex. Claude), y compris les crédits offerts. Exclut default / Composer / Grok.",
       "dailyUsageTotal": "Total dépensé",
       "dailyUsagePeak": "Jour de pointe",
       "dailyUsageEmpty": "Aucune donnée quotidienne pour les modèles payants"

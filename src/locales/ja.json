@@ -3722,7 +3722,7 @@
       "empty": "使用量データがありません",
       "billingCycleRange": "現在の課金周期：{{range}}",
       "dailyUsageTitle": "有料モデルの日次利用量",
-      "dailyUsageHint": "有料モデル（Claude など）のみ集計し、ギフトクレジット分も含めます。default / Composer は除外します。",
+      "dailyUsageHint": "有料モデル（Claude など）のみ集計し、ギフトクレジット分も含めます。default / Composer / Grok は除外します。",
       "dailyUsageTotal": "合計",
       "dailyUsagePeak": "ピーク日",
       "dailyUsageEmpty": "有料モデルの日次利用データがありません"

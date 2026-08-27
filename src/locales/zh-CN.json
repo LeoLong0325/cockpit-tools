@@ -4020,7 +4020,7 @@
       "empty": "暂无用量数据",
       "billingCycleRange": "当前计费周期：{{range}}",
       "dailyUsageTitle": "每日收费模型用量",
-      "dailyUsageHint": "仅统计收费模型（如 Claude），含赠送额度中的同类型消耗；不含 default / Composer。",
+      "dailyUsageHint": "仅统计收费模型（如 Claude），含赠送额度中的同类型消耗；不含 default / Composer / Grok。",
       "dailyUsageTotal": "合计",
       "dailyUsagePeak": "峰值日",
       "dailyUsageEmpty": "暂无收费模型每日用量数据"

@@ -3868,7 +3868,7 @@
       "empty": "Tidak ada data penggunaan",
       "billingCycleRange": "Siklus penagihan saat ini: {{range}}",
       "dailyUsageTitle": "Penggunaan model berbayar harian",
-      "dailyUsageHint": "Hanya menghitung model berbayar (mis. Claude), termasuk penggunaan kredit hadiah. Mengecualikan default / Composer.",
+      "dailyUsageHint": "Hanya menghitung model berbayar (mis. Claude), termasuk penggunaan kredit hadiah. Mengecualikan default / Composer / Grok.",
       "dailyUsageTotal": "Jumlah",
       "dailyUsagePeak": "Hari puncak",
       "dailyUsageEmpty": "Belum ada data penggunaan harian model berbayar"

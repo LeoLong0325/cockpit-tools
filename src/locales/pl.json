@@ -3722,7 +3722,7 @@
       "empty": "Brak danych o użyciu",
       "billingCycleRange": "Bieżący okres rozliczeniowy: {{range}}",
       "dailyUsageTitle": "Dzienne zużycie modeli płatnych",
-      "dailyUsageHint": "Liczy tylko modele płatne (np. Claude), w tym zużycie z kredytów prezentowych. Wyklucza default / Composer.",
+      "dailyUsageHint": "Liczy tylko modele płatne (np. Claude), w tym zużycie z kredytów prezentowych. Wyklucza default / Composer / Grok.",
       "dailyUsageTotal": "Suma",
       "dailyUsagePeak": "Dzień szczytu",
       "dailyUsageEmpty": "Brak dziennych danych dla modeli płatnych"

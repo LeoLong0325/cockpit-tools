@@ -3722,7 +3722,7 @@
       "empty": "Không có dữ liệu sử dụng",
       "billingCycleRange": "Chu kỳ thanh toán hiện tại: {{range}}",
       "dailyUsageTitle": "Mức dùng mô hình trả phí theo ngày",
-      "dailyUsageHint": "Chỉ thống kê mô hình trả phí (ví dụ Claude), gồm cả tiêu thụ từ tín dụng tặng. Loại trừ default / Composer.",
+      "dailyUsageHint": "Chỉ thống kê mô hình trả phí (ví dụ Claude), gồm cả tiêu thụ từ tín dụng tặng. Loại trừ default / Composer / Grok.",
       "dailyUsageTotal": "Tổng",
       "dailyUsagePeak": "Ngày cao điểm",
       "dailyUsageEmpty": "Chưa có dữ liệu mức dùng hàng ngày của mô hình trả phí"

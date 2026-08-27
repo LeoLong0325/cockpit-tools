@@ -79,7 +79,7 @@ export function CursorDailyUsageChart(props: CursorDailyUsageChartProps) {
           <p className="cursor-usage-daily-chart-hint">
             {t(
               'cursor.usage.dailyUsageHint',
-              '仅统计收费模型（如 Claude），含赠送额度中的同类型消耗；不含 default / Composer。',
+              '仅统计收费模型（如 Claude），含赠送额度中的同类型消耗；不含 default / Composer / Grok。',
             )}
           </p>
         </div>

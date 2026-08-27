@@ -3722,7 +3722,7 @@
       "empty": "Kullanım verisi yok",
       "billingCycleRange": "Geçerli faturalama dönemi: {{range}}",
       "dailyUsageTitle": "Ücretli modellerin günlük kullanımı",
-      "dailyUsageHint": "Yalnızca ücretli modelleri (ör. Claude) sayar; hediye kredisi harcamasını da dahil eder. default / Composer hariçtir.",
+      "dailyUsageHint": "Yalnızca ücretli modelleri (ör. Claude) sayar; hediye kredisi harcamasını da dahil eder. default / Composer / Grok hariçtir.",
       "dailyUsageTotal": "Toplam",
       "dailyUsagePeak": "Zirve günü",
       "dailyUsageEmpty": "Ücretli modeller için günlük kullanım verisi yok"

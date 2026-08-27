@@ -3722,7 +3722,7 @@
       "empty": "사용량 데이터 없음",
       "billingCycleRange": "현재 결제 주기: {{range}}",
       "dailyUsageTitle": "유료 모델 일일 사용량",
-      "dailyUsageHint": "유료 모델(예: Claude)만 집계하며, 선물 크레딧 사용분도 포함합니다. default / Composer는 제외합니다.",
+      "dailyUsageHint": "유료 모델(예: Claude)만 집계하며, 선물 크레딧 사용분도 포함합니다. default / Composer / Grok는 제외합니다.",
       "dailyUsageTotal": "합계",
       "dailyUsagePeak": "피크일",
       "dailyUsageEmpty": "유료 모델 일일 사용 데이터가 없습니다"

@@ -2504,7 +2504,7 @@ fn parse_dollar_string_to_cents(text: &str) -> i64 {
     0
 }
 
-/// Auto-routing (`default`) and Composer agent models are not gifted-credit API usage.
+/// Auto-routing (`default`), Composer, and Grok models are not gifted-credit API usage.
 fn is_gift_credit_usage_model(model: &str) -> bool {
     let normalized = model.trim().to_ascii_lowercase();
     if normalized.is_empty() {
@@ -2514,6 +2514,9 @@ fn is_gift_credit_usage_model(model: &str) -> bool {
         return false;
     }
     if normalized.starts_with("composer") {
+        return false;
+    }
+    if normalized.contains("grok") {
         return false;
     }
     true
@@ -3992,6 +3995,8 @@ mod credit_grants_tests {
         assert!(!is_gift_credit_usage_model("default"));
         assert!(!is_gift_credit_usage_model("composer-2.5-fast"));
         assert!(!is_gift_credit_usage_model("composer-2.5"));
+        assert!(!is_gift_credit_usage_model("cursor-grok-4.6-xhigh-fast"));
+        assert!(!is_gift_credit_usage_model("cursor-grok-4.5-high-fast"));
         assert!(is_gift_credit_usage_model("claude-opus-4-8-thinking-high"));
     }
 
@@ -4008,6 +4013,11 @@ mod credit_grants_tests {
                     "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
                     "model": "composer-2.5-fast",
                     "tokenUsage": { "totalCents": 100 }
+                },
+                {
+                    "kind": "USAGE_EVENT_KIND_FREE_CREDIT",
+                    "model": "cursor-grok-4.6-xhigh-fast",
+                    "tokenUsage": { "totalCents": 1422 }
                 },
                 {
                     "kind": "USAGE_EVENT_KIND_FREE_CREDIT",

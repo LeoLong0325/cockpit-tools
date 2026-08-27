@@ -3722,7 +3722,7 @@
       "empty": "暫無用量資料",
       "billingCycleRange": "目前計費週期：{{range}}",
       "dailyUsageTitle": "每日收費模型用量",
-      "dailyUsageHint": "僅統計收費模型（如 Claude），含贈送額度中的同類型消耗；不含 default / Composer。",
+      "dailyUsageHint": "僅統計收費模型（如 Claude），含贈送額度中的同類型消耗；不含 default / Composer / Grok。",
       "dailyUsageTotal": "合計",
       "dailyUsagePeak": "峰值日",
       "dailyUsageEmpty": "暫無收費模型每日用量資料"

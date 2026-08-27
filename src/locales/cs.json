@@ -3722,7 +3722,7 @@
       "empty": "Žádná data o využití",
       "billingCycleRange": "Aktuální fakturační období: {{range}}",
       "dailyUsageTitle": "Denní využití placených modelů",
-      "dailyUsageHint": "Počítá pouze placené modely (např. Claude), včetně spotřeby z dárkových kreditů. Vylučuje default / Composer.",
+      "dailyUsageHint": "Počítá pouze placené modely (např. Claude), včetně spotřeby z dárkových kreditů. Vylučuje default / Composer / Grok.",
       "dailyUsageTotal": "Celkem",
       "dailyUsagePeak": "Nejvyšší den",
       "dailyUsageEmpty": "Zatím žádná denní data o placených modelech"

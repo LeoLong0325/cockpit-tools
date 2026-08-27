@@ -3768,7 +3768,7 @@
       "empty": "لا توجد بيانات استخدام",
       "billingCycleRange": "دورة الفوترة الحالية: {{range}}",
       "dailyUsageTitle": "استخدام النماذج المدفوعة يوميًا",
-      "dailyUsageHint": "يحسب فقط النماذج المدفوعة (مثل Claude)، بما في ذلك استهلاك رصيد الهدايا. يستثني default / Composer.",
+      "dailyUsageHint": "يحسب فقط النماذج المدفوعة (مثل Claude)، بما في ذلك استهلاك رصيد الهدايا. يستثني default / Composer / Grok.",
       "dailyUsageTotal": "الإجمالي",
       "dailyUsagePeak": "يوم الذروة",
       "dailyUsageEmpty": "لا توجد بيانات استخدام يومي للنماذج المدفوعة"

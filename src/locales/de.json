@@ -3722,7 +3722,7 @@
       "empty": "Keine Nutzungsdaten",
       "billingCycleRange": "Aktueller Abrechnungszeitraum: {{range}}",
       "dailyUsageTitle": "Täglicher Verbrauch kostenpflichtiger Modelle",
-      "dailyUsageHint": "Zählt nur kostenpflichtige Modelle (z. B. Claude), inklusive Geschenkguthaben. Ohne default / Composer.",
+      "dailyUsageHint": "Zählt nur kostenpflichtige Modelle (z. B. Claude), inklusive Geschenkguthaben. Ohne default / Composer / Grok.",
       "dailyUsageTotal": "Summe",
       "dailyUsagePeak": "Spitzentag",
       "dailyUsageEmpty": "Noch keine täglichen Daten für kostenpflichtige Modelle"
