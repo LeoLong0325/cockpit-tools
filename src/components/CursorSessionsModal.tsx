@@ -144,16 +144,16 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
               <table className="cursor-sessions-table">
                 <colgroup>
                   <col className="cursor-sessions-col-device" />
-                  <col className="cursor-sessions-col-remark" />
                   <col className="cursor-sessions-col-created" />
                   <col className="cursor-sessions-col-action" />
+                  <col className="cursor-sessions-col-remark" />
                 </colgroup>
                 <thead>
                   <tr>
                     <th>{t('cursor.sessions.device', '设备')}</th>
-                    <th>{t('cursor.sessions.remark', '备注')}</th>
                     <th>{t('cursor.sessions.created', '创建时间')}</th>
                     <th />
+                    <th>{t('cursor.sessions.remark', '备注')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -164,16 +164,6 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
                           {row.isWeb ? <Globe size={16} /> : <Monitor size={16} />}
                           <span>{row.typeLabel}</span>
                         </div>
-                      </td>
-                      <td>
-                        <SessionRemarkInput
-                          sessionId={row.session.sessionId}
-                          value={row.remark}
-                          disabled={!!revokingSessionId || savingSessionId === row.session.sessionId}
-                          placeholder={t('cursor.sessions.remarkPlaceholder', '添加备注')}
-                          ariaLabel={t('cursor.sessions.remark', '备注')}
-                          onSave={onSaveNote}
-                        />
                       </td>
                       <td className="cursor-sessions-created">{row.createdAt}</td>
                       <td className="cursor-sessions-action">
@@ -187,6 +177,16 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
                             ? t('common.loading', '加载中...')
                             : t('cursor.sessions.revoke', '撤销')}
                         </button>
+                      </td>
+                      <td>
+                        <SessionRemarkInput
+                          sessionId={row.session.sessionId}
+                          value={row.remark}
+                          disabled={!!revokingSessionId || savingSessionId === row.session.sessionId}
+                          placeholder={t('cursor.sessions.remarkPlaceholder', '添加备注')}
+                          ariaLabel={t('cursor.sessions.remark', '备注')}
+                          onSave={onSaveNote}
+                        />
                       </td>
                     </tr>
                   ))}
