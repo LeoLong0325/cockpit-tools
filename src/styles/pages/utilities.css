@@ -887,11 +887,28 @@
 .cursor-sessions-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.cursor-sessions-col-device {
+  width: 120px;
+}
+
+.cursor-sessions-col-remark {
+  width: 168px;
+}
+
+.cursor-sessions-col-created {
+  width: auto;
+}
+
+.cursor-sessions-col-action {
+  width: 84px;
 }
 
 .cursor-sessions-table th,
 .cursor-sessions-table td {
-  padding: 10px 10px;
+  padding: 10px 12px;
   vertical-align: middle;
   text-align: left;
 }
@@ -899,21 +916,20 @@
 .cursor-sessions-table th:first-child,
 .cursor-sessions-table td:first-child {
   padding-left: 14px;
-  width: 1%;
   white-space: nowrap;
 }
 
 .cursor-sessions-table th:nth-child(3),
 .cursor-sessions-table td:nth-child(3) {
-  width: 1%;
   white-space: nowrap;
+  padding-left: 16px;
 }
 
 .cursor-sessions-table th:last-child,
 .cursor-sessions-table td:last-child {
-  width: 1%;
   white-space: nowrap;
-  padding-right: 12px;
+  padding-right: 14px;
+  text-align: right;
 }
 
 .cursor-sessions-table thead th {

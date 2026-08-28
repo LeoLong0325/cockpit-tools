@@ -142,6 +142,12 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
               ) : (
             <div className="cursor-sessions-table-wrap">
               <table className="cursor-sessions-table">
+                <colgroup>
+                  <col className="cursor-sessions-col-device" />
+                  <col className="cursor-sessions-col-remark" />
+                  <col className="cursor-sessions-col-created" />
+                  <col className="cursor-sessions-col-action" />
+                </colgroup>
                 <thead>
                   <tr>
                     <th>{t('cursor.sessions.device', '设备')}</th>
