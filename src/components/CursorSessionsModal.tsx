@@ -141,41 +141,51 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
                 <p className="modal-muted">{t('cursor.sessions.empty', '暂无活跃会话')}</p>
               ) : (
             <div className="cursor-sessions-table-wrap">
-              <div className="cursor-sessions-head">
-                <span>{t('cursor.sessions.device', '设备')}</span>
-                <span>{t('cursor.sessions.remark', '备注')}</span>
-                <span>{t('cursor.sessions.created', '创建时间')}</span>
-                <span />
-              </div>
-              {rows.map((row) => (
-                <div key={row.session.sessionId} className="cursor-sessions-row">
-                  <div className="cursor-sessions-device">
-                    {row.isWeb ? <Globe size={16} /> : <Monitor size={16} />}
-                    <span>{row.typeLabel}</span>
-                  </div>
-                  <div className="cursor-sessions-remark">
-                    <SessionRemarkInput
-                      sessionId={row.session.sessionId}
-                      value={row.remark}
-                      disabled={!!revokingSessionId || savingSessionId === row.session.sessionId}
-                      placeholder={t('cursor.sessions.remarkPlaceholder', '添加备注')}
-                      ariaLabel={t('cursor.sessions.remark', '备注')}
-                      onSave={onSaveNote}
-                    />
-                  </div>
-                  <div className="cursor-sessions-created">{row.createdAt}</div>
-                  <button
-                    type="button"
-                    className="cursor-sessions-revoke"
-                    disabled={!!revokingSessionId}
-                    onClick={() => onRevoke(row.session.sessionId)}
-                  >
-                    {revokingSessionId === row.session.sessionId
-                      ? t('common.loading', '加载中...')
-                      : t('cursor.sessions.revoke', '撤销')}
-                  </button>
-                </div>
-              ))}
+              <table className="cursor-sessions-table">
+                <thead>
+                  <tr>
+                    <th>{t('cursor.sessions.device', '设备')}</th>
+                    <th>{t('cursor.sessions.remark', '备注')}</th>
+                    <th>{t('cursor.sessions.created', '创建时间')}</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.session.sessionId}>
+                      <td>
+                        <div className="cursor-sessions-device">
+                          {row.isWeb ? <Globe size={16} /> : <Monitor size={16} />}
+                          <span>{row.typeLabel}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <SessionRemarkInput
+                          sessionId={row.session.sessionId}
+                          value={row.remark}
+                          disabled={!!revokingSessionId || savingSessionId === row.session.sessionId}
+                          placeholder={t('cursor.sessions.remarkPlaceholder', '添加备注')}
+                          ariaLabel={t('cursor.sessions.remark', '备注')}
+                          onSave={onSaveNote}
+                        />
+                      </td>
+                      <td className="cursor-sessions-created">{row.createdAt}</td>
+                      <td className="cursor-sessions-action">
+                        <button
+                          type="button"
+                          className="cursor-sessions-revoke"
+                          disabled={!!revokingSessionId}
+                          onClick={() => onRevoke(row.session.sessionId)}
+                        >
+                          {revokingSessionId === row.session.sessionId
+                            ? t('common.loading', '加载中...')
+                            : t('cursor.sessions.revoke', '撤销')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
               )}
             </>
