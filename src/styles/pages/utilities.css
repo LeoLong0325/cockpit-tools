@@ -864,6 +864,7 @@
 
 .cursor-referral-link {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  flex: 1 1 240px;
   font-size: 12px;
   word-break: break-all;
 }
@@ -939,10 +940,6 @@
 .cursor-sessions-revoke:disabled {
   opacity: 0.6;
   cursor: default;
-}
-  flex: 1 1 240px;
-  font-size: 12px;
-  word-break: break-all;
 }
 
 .card-footer-actions-only {
