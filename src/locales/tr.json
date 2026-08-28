@@ -148,7 +148,8 @@
         "planEnd": "Döngü bitiş zamanına göre",
         "recommended": "Önerilen",
         "recommendedAscTooltip": "Önerilen (en az uygun önce)",
-        "recommendedDescTooltip": "Önerilen (en uygun önce)"
+        "recommendedDescTooltip": "Önerilen (en uygun önce)",
+        "grokBotReset": "Grok-Bot sıfırlama zamanına göre"
       },
       "sortLabel": "Sırala",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "{{count}} saat önce",
       "relativeDays": "{{count}} gün önce",
       "relativeMonths": "yaklaşık {{count}} ay önce",
-      "relativeYears": "yaklaşık {{count}} yıl önce"
+      "relativeYears": "yaklaşık {{count}} yıl önce",
+      "remark": "Not",
+      "remarkPlaceholder": "Not ekle",
+      "remarkSaveFailed": "Not kaydedilemedi: {{error}}"
     },
     "usage": {
       "viewUsage": "Kullanımı görüntüle",

@@ -148,7 +148,8 @@
         "planEnd": "حسب نهاية الدورة",
         "recommended": "موصى به",
         "recommendedAscTooltip": "موصى به (الأقل جدوى أولا)",
-        "recommendedDescTooltip": "موصى به (الأكثر جدوى أولا)"
+        "recommendedDescTooltip": "موصى به (الأكثر جدوى أولا)",
+        "grokBotReset": "حسب وقت إعادة تعيين Grok-Bot"
       },
       "sortLabel": "ترتيب",
       "token": {
@@ -3739,7 +3740,10 @@
       "relativeHours": "منذ {{count}} ساعة",
       "relativeDays": "منذ {{count}} يوم",
       "relativeMonths": "منذ نحو {{count}} شهر",
-      "relativeYears": "منذ نحو {{count}} سنة"
+      "relativeYears": "منذ نحو {{count}} سنة",
+      "remark": "ملاحظة",
+      "remarkPlaceholder": "أضف ملاحظة",
+      "remarkSaveFailed": "فشل حفظ الملاحظة: {{error}}"
     },
     "usage": {
       "viewUsage": "عرض الاستخدام",

@@ -4,6 +4,7 @@ export interface CursorAccount {
   auth_id?: string | null;
   name?: string | null;
   tags?: string[] | null;
+  session_notes?: Record<string, string> | null;
 
   access_token: string;
   refresh_token?: string | null;

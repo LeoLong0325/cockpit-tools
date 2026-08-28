@@ -903,6 +903,7 @@ pub fn run() {
             commands::cursor::fetch_cursor_auth_sessions,
             commands::cursor::revoke_cursor_auth_session,
             commands::cursor::update_cursor_account_tags,
+            commands::cursor::update_cursor_session_note,
             commands::cursor::get_cursor_accounts_index_path,
             commands::cursor::cursor_oauth_login_start,
             commands::cursor::cursor_oauth_login_complete,

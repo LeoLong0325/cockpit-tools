@@ -269,6 +269,7 @@ fn upsert_refreshed_account_record(mut account: CursorAccount) -> Result<CursorA
         .map_err(|_| "获取 Cursor 账号锁失败".to_string())?;
     if let Some(latest) = load_account(&account.id) {
         account.tags = latest.tags;
+        account.session_notes = latest.session_notes;
     }
     let mut index = load_account_index();
     save_account_file(&account)?;
@@ -484,6 +485,34 @@ fn merge_string_list(
     }
 }
 
+const CURSOR_SESSION_NOTE_MAX_CHARS: usize = 120;
+
+fn merge_string_map(
+    primary: Option<HashMap<String, String>>,
+    secondary: Option<HashMap<String, String>>,
+) -> Option<HashMap<String, String>> {
+    let mut merged = HashMap::new();
+    for source in [primary, secondary] {
+        if let Some(values) = source {
+            for (key, value) in values {
+                let trimmed_key = key.trim();
+                let trimmed_value = value.trim();
+                if trimmed_key.is_empty() || trimmed_value.is_empty() {
+                    continue;
+                }
+                merged.entry(trimmed_key.to_string()).or_insert_with(|| {
+                    trimmed_value.chars().take(CURSOR_SESSION_NOTE_MAX_CHARS).collect()
+                });
+            }
+        }
+    }
+    if merged.is_empty() {
+        None
+    } else {
+        Some(merged)
+    }
+}
+
 fn fill_if_empty_string(target: &mut String, source: &str) {
     if target.trim().is_empty() {
         let incoming = source.trim();
@@ -518,6 +547,10 @@ fn merge_duplicate_account(primary: &mut CursorAccount, duplicate: &CursorAccoun
     fill_if_none(&mut primary.status_reason, &duplicate.status_reason);
 
     primary.tags = merge_string_list(primary.tags.clone(), duplicate.tags.clone());
+    primary.session_notes = merge_string_map(
+        primary.session_notes.clone(),
+        duplicate.session_notes.clone(),
+    );
     primary.created_at = primary.created_at.min(duplicate.created_at);
     primary.last_used = primary.last_used.max(duplicate.last_used);
 }
@@ -864,6 +897,7 @@ pub fn upsert_account(payload: CursorImportPayload) -> Result<CursorAccount, Str
 
     let existing = load_account(&account_id);
     let tags = existing.as_ref().and_then(|acc| acc.tags.clone());
+    let session_notes = existing.as_ref().and_then(|acc| acc.session_notes.clone());
     let created_at = existing.as_ref().map(|acc| acc.created_at).unwrap_or(now);
 
     let mut account = existing.unwrap_or(CursorAccount {
@@ -872,6 +906,7 @@ pub fn upsert_account(payload: CursorImportPayload) -> Result<CursorAccount, Str
         auth_id: incoming_auth_id.clone(),
         name: payload.name.clone(),
         tags,
+        session_notes,
         access_token: payload.access_token.clone(),
         refresh_token: payload.refresh_token.clone(),
         membership_type: payload.membership_type.clone(),
@@ -933,6 +968,35 @@ pub fn update_account_tags(account_id: &str, tags: Vec<String>) -> Result<Cursor
     let mut account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
     account.tags = Some(tags);
     account.last_used = now_ts();
+    let updated = account.clone();
+    upsert_account_record(account)?;
+    Ok(updated)
+}
+
+pub fn update_session_note(
+    account_id: &str,
+    session_id: &str,
+    note: String,
+) -> Result<CursorAccount, String> {
+    let mut account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
+    let session_key = session_id.trim();
+    if session_key.is_empty() {
+        return Err("会话无效".to_string());
+    }
+    let trimmed = note
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let truncated: String = trimmed.chars().take(CURSOR_SESSION_NOTE_MAX_CHARS).collect();
+    let mut notes = account.session_notes.take().unwrap_or_default();
+    if truncated.is_empty() {
+        notes.remove(session_key);
+    } else {
+        notes.insert(session_key.to_string(), truncated);
+    }
+    account.session_notes = if notes.is_empty() { None } else { Some(notes) };
     let updated = account.clone();
     upsert_account_record(account)?;
     Ok(updated)

@@ -148,7 +148,8 @@
         "planEnd": "Nach Zyklusendzeit",
         "recommended": "Empfohlen",
         "recommendedAscTooltip": "Empfohlen (am wenigsten lohnend zuerst)",
-        "recommendedDescTooltip": "Empfohlen (am lohnendsten zuerst)"
+        "recommendedDescTooltip": "Empfohlen (am lohnendsten zuerst)",
+        "grokBotReset": "Nach Grok-Bot-Reset-Zeit"
       },
       "sortLabel": "Sortieren",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "vor {{count}} Stunden",
       "relativeDays": "vor {{count}} Tagen",
       "relativeMonths": "vor etwa {{count}} Monaten",
-      "relativeYears": "vor etwa {{count}} Jahren"
+      "relativeYears": "vor etwa {{count}} Jahren",
+      "remark": "Hinweis",
+      "remarkPlaceholder": "Hinweis hinzufügen",
+      "remarkSaveFailed": "Hinweis speichern fehlgeschlagen: {{error}}"
     },
     "usage": {
       "viewUsage": "Nutzung anzeigen",

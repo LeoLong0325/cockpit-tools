@@ -155,7 +155,8 @@
         "planEnd": "By cycle end time",
         "recommended": "Recommended",
         "recommendedAscTooltip": "Recommended (least worthwhile first)",
-        "recommendedDescTooltip": "Recommended (most worthwhile first)"
+        "recommendedDescTooltip": "Recommended (most worthwhile first)",
+        "grokBotReset": "By Grok-Bot reset time"
       },
       "sortLabel": "Sort",
       "token": {
@@ -3991,7 +3992,10 @@
       "relativeHours": "{{count}} hours ago",
       "relativeDays": "{{count}} days ago",
       "relativeMonths": "About {{count}} months ago",
-      "relativeYears": "About {{count}} years ago"
+      "relativeYears": "About {{count}} years ago",
+      "remark": "Remark",
+      "remarkPlaceholder": "Add a note",
+      "remarkSaveFailed": "Failed to save remark: {{error}}"
     },
     "usage": {
       "viewUsage": "View Usage",

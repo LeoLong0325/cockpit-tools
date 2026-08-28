@@ -148,7 +148,8 @@
         "planEnd": "사이클 종료 시간별",
         "recommended": "추천순",
         "recommendedAscTooltip": "추천순(전환 우선도 낮은 항목 먼저)",
-        "recommendedDescTooltip": "추천순(전환 우선도 높은 항목 먼저)"
+        "recommendedDescTooltip": "추천순(전환 우선도 높은 항목 먼저)",
+        "grokBotReset": "Grok-Bot 재설정 시간순"
       },
       "sortLabel": "정렬",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "{{count}}시간 전",
       "relativeDays": "{{count}}일 전",
       "relativeMonths": "약 {{count}}개월 전",
-      "relativeYears": "약 {{count}}년 전"
+      "relativeYears": "약 {{count}}년 전",
+      "remark": "메모",
+      "remarkPlaceholder": "메모 추가",
+      "remarkSaveFailed": "메모 저장 실패: {{error}}"
     },
     "usage": {
       "viewUsage": "사용량 보기",

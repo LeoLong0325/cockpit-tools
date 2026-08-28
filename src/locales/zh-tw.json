@@ -148,7 +148,8 @@
         "planEnd": "按週期結束時間",
         "recommended": "依推薦",
         "recommendedAscTooltip": "依推薦度升冪（較不值得切換的在前）",
-        "recommendedDescTooltip": "依推薦度降冪（最值得切換的在前）"
+        "recommendedDescTooltip": "依推薦度降冪（最值得切換的在前）",
+        "grokBotReset": "按 Grok-Bot 重設時間"
       },
       "sortLabel": "排序",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "{{count}} 小時前",
       "relativeDays": "{{count}} 天前",
       "relativeMonths": "約 {{count}} 個月前",
-      "relativeYears": "約 {{count}} 年前"
+      "relativeYears": "約 {{count}} 年前",
+      "remark": "備註",
+      "remarkPlaceholder": "新增備註",
+      "remarkSaveFailed": "儲存備註失敗: {{error}}"
     },
     "usage": {
       "viewUsage": "查看用量",

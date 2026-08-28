@@ -148,7 +148,8 @@
         "planEnd": "Według czasu zakończenia cyklu",
         "recommended": "Polecane",
         "recommendedAscTooltip": "Polecane (najmniej opłacalne najpierw)",
-        "recommendedDescTooltip": "Polecane (najbardziej opłacalne najpierw)"
+        "recommendedDescTooltip": "Polecane (najbardziej opłacalne najpierw)",
+        "grokBotReset": "Według czasu resetu Grok-Bot"
       },
       "sortLabel": "Sortuj",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "{{count}} godz. temu",
       "relativeDays": "{{count}} dni temu",
       "relativeMonths": "ok. {{count}} mies. temu",
-      "relativeYears": "ok. {{count}} lat temu"
+      "relativeYears": "ok. {{count}} lat temu",
+      "remark": "Uwaga",
+      "remarkPlaceholder": "Dodaj uwagę",
+      "remarkSaveFailed": "Nie udało się zapisać uwagi: {{error}}"
     },
     "usage": {
       "viewUsage": "Zobacz użycie",

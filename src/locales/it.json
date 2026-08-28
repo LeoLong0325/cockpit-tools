@@ -148,7 +148,8 @@
         "planEnd": "Per ora di fine ciclo",
         "recommended": "Consigliato",
         "recommendedAscTooltip": "Consigliato (meno conveniente prima)",
-        "recommendedDescTooltip": "Consigliato (più conveniente prima)"
+        "recommendedDescTooltip": "Consigliato (più conveniente prima)",
+        "grokBotReset": "Per ora di reset Grok-Bot"
       },
       "sortLabel": "Ordina",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "{{count}} ore fa",
       "relativeDays": "{{count}} giorni fa",
       "relativeMonths": "circa {{count}} mesi fa",
-      "relativeYears": "circa {{count}} anni fa"
+      "relativeYears": "circa {{count}} anni fa",
+      "remark": "Nota",
+      "remarkPlaceholder": "Aggiungi nota",
+      "remarkSaveFailed": "Salvataggio nota non riuscito: {{error}}"
     },
     "usage": {
       "viewUsage": "Visualizza utilizzo",

@@ -1,18 +1,23 @@
 import { Globe, Monitor, X } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEscClose } from '../hooks/useEscClose';
 import type { CursorAuthSession } from '../services/cursorService';
+
+const SESSION_NOTE_MAX_LENGTH = 120;
 
 interface CursorSessionsModalProps {
   isOpen: boolean;
   title: string;
   accountLabel: string;
   sessions: CursorAuthSession[];
+  sessionNotes?: Record<string, string> | null;
   loading: boolean;
   revokingSessionId: string | null;
+  savingSessionId?: string | null;
   errorMessage?: string | null;
   onRevoke: (sessionId: string) => void;
+  onSaveNote: (sessionId: string, note: string) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -27,16 +32,60 @@ function formatCreatedAt(date: Date): string {
   return `${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
+function SessionRemarkInput(props: {
+  sessionId: string;
+  value: string;
+  disabled: boolean;
+  placeholder: string;
+  ariaLabel: string;
+  onSave: (sessionId: string, note: string) => void | Promise<void>;
+}) {
+  const { sessionId, value, disabled, placeholder, ariaLabel, onSave } = props;
+  const [text, setText] = useState(value);
+
+  useEffect(() => {
+    setText(value);
+  }, [value]);
+
+  const commit = () => {
+    const next = text.trim();
+    if (next === value.trim()) return;
+    void onSave(sessionId, next);
+  };
+
+  return (
+    <input
+      type="text"
+      className="cursor-sessions-remark-input"
+      value={text}
+      maxLength={SESSION_NOTE_MAX_LENGTH}
+      disabled={disabled}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      onChange={(event) => setText(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
 export function CursorSessionsModal(props: CursorSessionsModalProps) {
   const {
     isOpen,
     title,
     accountLabel,
     sessions,
+    sessionNotes,
     loading,
     revokingSessionId,
+    savingSessionId,
     errorMessage,
     onRevoke,
+    onSaveNote,
     onClose,
   } = props;
   const { t } = useTranslation();
@@ -61,9 +110,10 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
                   '',
                 ),
           createdAt: created ? formatCreatedAt(created) : '—',
+          remark: sessionNotes?.[session.sessionId] ?? '',
         };
       }),
-    [sessions, t],
+    [sessionNotes, sessions, t],
   );
 
   if (!isOpen) return null;
@@ -84,14 +134,16 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
         <div className="modal-body">
           {loading ? (
             <p className="modal-muted">{t('common.loading', '加载中...')}</p>
-          ) : errorMessage ? (
-            <p className="modal-error-text">{errorMessage}</p>
-          ) : rows.length === 0 ? (
-            <p className="modal-muted">{t('cursor.sessions.empty', '暂无活跃会话')}</p>
           ) : (
+            <>
+              {errorMessage ? <p className="modal-error-text">{errorMessage}</p> : null}
+              {rows.length === 0 ? (
+                <p className="modal-muted">{t('cursor.sessions.empty', '暂无活跃会话')}</p>
+              ) : (
             <div className="cursor-sessions-table-wrap">
               <div className="cursor-sessions-head">
                 <span>{t('cursor.sessions.device', '设备')}</span>
+                <span>{t('cursor.sessions.remark', '备注')}</span>
                 <span>{t('cursor.sessions.created', '创建时间')}</span>
                 <span />
               </div>
@@ -100,6 +152,16 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
                   <div className="cursor-sessions-device">
                     {row.isWeb ? <Globe size={16} /> : <Monitor size={16} />}
                     <span>{row.typeLabel}</span>
+                  </div>
+                  <div className="cursor-sessions-remark">
+                    <SessionRemarkInput
+                      sessionId={row.session.sessionId}
+                      value={row.remark}
+                      disabled={!!revokingSessionId || savingSessionId === row.session.sessionId}
+                      placeholder={t('cursor.sessions.remarkPlaceholder', '添加备注')}
+                      ariaLabel={t('cursor.sessions.remark', '备注')}
+                      onSave={onSaveNote}
+                    />
                   </div>
                   <div className="cursor-sessions-created">{row.createdAt}</div>
                   <button
@@ -115,6 +177,8 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
                 </div>
               ))}
             </div>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -155,7 +155,8 @@
         "planEnd": "Berdasarkan waktu akhir siklus",
         "recommended": "Rekomendasi",
         "recommendedAscTooltip": "Rekomendasi (paling kurang layak dulu)",
-        "recommendedDescTooltip": "Rekomendasi (paling layak dulu)"
+        "recommendedDescTooltip": "Rekomendasi (paling layak dulu)",
+        "grokBotReset": "Berdasarkan waktu reset Grok-Bot"
       },
       "sortLabel": "Urutkan",
       "token": {
@@ -3839,7 +3840,10 @@
       "relativeHours": "{{count}} jam lalu",
       "relativeDays": "{{count}} hari lalu",
       "relativeMonths": "sekitar {{count}} bulan lalu",
-      "relativeYears": "sekitar {{count}} tahun lalu"
+      "relativeYears": "sekitar {{count}} tahun lalu",
+      "remark": "Catatan",
+      "remarkPlaceholder": "Tambah catatan",
+      "remarkSaveFailed": "Gagal menyimpan catatan: {{error}}"
     },
     "usage": {
       "viewUsage": "Lihat penggunaan",

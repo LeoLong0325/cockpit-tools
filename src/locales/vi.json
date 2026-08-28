@@ -148,7 +148,8 @@
         "planEnd": "Theo thời gian kết thúc chu kỳ",
         "recommended": "Đề xuất",
         "recommendedAscTooltip": "Đề xuất (ít đáng chuyển trước)",
-        "recommendedDescTooltip": "Đề xuất (đáng chuyển nhất trước)"
+        "recommendedDescTooltip": "Đề xuất (đáng chuyển nhất trước)",
+        "grokBotReset": "Theo thời gian đặt lại Grok-Bot"
       },
       "sortLabel": "Sắp xếp",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "{{count}} giờ trước",
       "relativeDays": "{{count}} ngày trước",
       "relativeMonths": "khoảng {{count}} tháng trước",
-      "relativeYears": "khoảng {{count}} năm trước"
+      "relativeYears": "khoảng {{count}} năm trước",
+      "remark": "Ghi chú",
+      "remarkPlaceholder": "Thêm ghi chú",
+      "remarkSaveFailed": "Lưu ghi chú thất bại: {{error}}"
     },
     "usage": {
       "viewUsage": "Xem mức sử dụng",

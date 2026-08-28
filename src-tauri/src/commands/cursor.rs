@@ -226,6 +226,15 @@ pub async fn update_cursor_account_tags(
 }
 
 #[tauri::command]
+pub async fn update_cursor_session_note(
+    account_id: String,
+    session_id: String,
+    note: String,
+) -> Result<CursorAccount, String> {
+    cursor_account::update_session_note(&account_id, &session_id, note)
+}
+
+#[tauri::command]
 pub fn get_cursor_accounts_index_path() -> Result<String, String> {
     cursor_account::accounts_index_path_string()
 }

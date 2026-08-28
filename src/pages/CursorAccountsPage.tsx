@@ -137,6 +137,7 @@ export function CursorAccountsPage() {
   const [sessionsError, setSessionsError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<cursorService.CursorAuthSession[]>([]);
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
+  const [savingSessionNoteId, setSavingSessionNoteId] = useState<string | null>(null);
   const [taggedOnly, setTaggedOnly] = useState(false);
   const [filterTypes, setFilterTypes] = useState<string[]>(() =>
     readAccountsOverviewFilterPersistenceEnabled(CURSOR_FILTER_PERSISTENCE_SCOPE)
@@ -319,6 +320,7 @@ export function CursorAccountsPage() {
     setSessionsLoading(true);
     setSessionsError(null);
     setRevokingSessionId(null);
+    setSavingSessionNoteId(null);
     try {
       const next = await cursorService.fetchCursorAuthSessions(accountId);
       setSessions(Array.isArray(next) ? next : []);
@@ -341,7 +343,37 @@ export function CursorAccountsPage() {
     setSessionsLoading(false);
     setSessions([]);
     setRevokingSessionId(null);
+    setSavingSessionNoteId(null);
   }, []);
+
+  const patchSessionNotes = useCallback((accountId: string, sessionNotes: Record<string, string> | null | undefined) => {
+    useCursorAccountStore.setState((state) => ({
+      accounts: state.accounts.map((account) =>
+        account.id === accountId
+          ? { ...account, session_notes: sessionNotes && Object.keys(sessionNotes).length > 0 ? sessionNotes : null }
+          : account,
+      ),
+    }));
+  }, []);
+
+  const handleSaveSessionNote = useCallback(async (sessionId: string, note: string) => {
+    if (!sessionsModalAccountId || !sessionId) return;
+    setSavingSessionNoteId(sessionId);
+    setSessionsError(null);
+    try {
+      const updated = await cursorService.updateCursorSessionNote(sessionsModalAccountId, sessionId, note);
+      patchSessionNotes(sessionsModalAccountId, updated.session_notes);
+    } catch (error) {
+      setSessionsError(
+        t('cursor.sessions.remarkSaveFailed', {
+          error: String(error).replace(/^Error:\s*/, ''),
+          defaultValue: '保存备注失败: {{error}}',
+        }),
+      );
+    } finally {
+      setSavingSessionNoteId(null);
+    }
+  }, [patchSessionNotes, sessionsModalAccountId, t]);
 
   const handleRevokeSession = useCallback(async (sessionId: string) => {
     if (!sessionsModalAccountId || !sessionId) return;
@@ -350,6 +382,12 @@ export function CursorAccountsPage() {
     try {
       const next = await cursorService.revokeCursorAuthSession(sessionsModalAccountId, sessionId);
       setSessions(Array.isArray(next) ? next : []);
+      try {
+        const updated = await cursorService.updateCursorSessionNote(sessionsModalAccountId, sessionId, '');
+        patchSessionNotes(sessionsModalAccountId, updated.session_notes);
+      } catch {
+        /* 撤销已成功，备注清理失败不影响列表 */
+      }
     } catch (error) {
       setSessionsError(
         t('cursor.sessions.revokeFailed', {
@@ -360,7 +398,7 @@ export function CursorAccountsPage() {
     } finally {
       setRevokingSessionId(null);
     }
-  }, [sessionsModalAccountId, t]);
+  }, [patchSessionNotes, sessionsModalAccountId, t]);
 
   const sessionsModalAccount = useMemo(
     () => accounts.find((account) => account.id === sessionsModalAccountId) ?? null,
@@ -668,6 +706,15 @@ export function CursorAccountsPage() {
     if (sortBy === 'plan_end') {
       const aReset = getCursorUsage(a).allowanceResetAt ?? null;
       const bReset = getCursorUsage(b).allowanceResetAt ?? null;
+      if (aReset == null && bReset == null) return 0;
+      if (aReset == null) return 1;
+      if (bReset == null) return -1;
+      const diff = bReset - aReset;
+      return sortDirection === 'desc' ? diff : -diff;
+    }
+    if (sortBy === 'grok_bot_reset') {
+      const aReset = getCursorGrokBotUsage(a)?.resetAt ?? null;
+      const bReset = getCursorGrokBotUsage(b)?.resetAt ?? null;
       if (aReset == null && bReset == null) return 0;
       if (aReset == null) return 1;
       if (bReset == null) return -1;
@@ -1343,6 +1390,7 @@ export function CursorAccountsPage() {
               { value: 'created_at', label: t('common.shared.sort.createdAt', '按创建时间') },
               { value: 'credits', label: t('common.shared.sort.credits', '按剩余 Credits') },
               { value: 'plan_end', label: t('common.shared.sort.planEnd', '按配额周期结束时间') },
+              { value: 'grok_bot_reset', label: t('common.shared.sort.grokBotReset', '按Grok-Bot重置时间') },
             ]}
             ariaLabel={t('common.shared.sortLabel', '排序')}
             icon={<ArrowDownWideNarrow size={14} />}
@@ -1714,10 +1762,13 @@ export function CursorAccountsPage() {
         title={t('cursor.sessions.title', '活跃会话')}
         accountLabel={sessionsModalAccount ? resolveDisplayEmail(sessionsModalAccount) : ''}
         sessions={sessions}
+        sessionNotes={sessionsModalAccount?.session_notes}
         loading={sessionsLoading}
         revokingSessionId={revokingSessionId}
+        savingSessionId={savingSessionNoteId}
         errorMessage={sessionsError}
         onRevoke={handleRevokeSession}
+        onSaveNote={handleSaveSessionNote}
         onClose={closeSessionsModal}
       />
 

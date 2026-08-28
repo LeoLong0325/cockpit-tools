@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CursorAccount {
@@ -10,6 +11,8 @@ pub struct CursorAccount {
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_notes: Option<HashMap<String, String>>,
 
     pub access_token: String,
     #[serde(skip_serializing_if = "Option::is_none")]

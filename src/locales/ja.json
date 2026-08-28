@@ -148,7 +148,8 @@
         "planEnd": "サイクル終了時間まで",
         "recommended": "おすすめ順",
         "recommendedAscTooltip": "おすすめ順（切り替え優先度が低い順）",
-        "recommendedDescTooltip": "おすすめ順（切り替え優先度が高い順）"
+        "recommendedDescTooltip": "おすすめ順（切り替え優先度が高い順）",
+        "grokBotReset": "Grok-Botリセット時間順"
       },
       "sortLabel": "並べ替え",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "{{count}}時間前",
       "relativeDays": "{{count}}日前",
       "relativeMonths": "約{{count}}か月前",
-      "relativeYears": "約{{count}}年前"
+      "relativeYears": "約{{count}}年前",
+      "remark": "メモ",
+      "remarkPlaceholder": "メモを追加",
+      "remarkSaveFailed": "メモの保存に失敗しました: {{error}}"
     },
     "usage": {
       "viewUsage": "使用量を表示",

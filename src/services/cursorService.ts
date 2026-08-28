@@ -188,6 +188,14 @@ export async function updateCursorAccountTags(accountId: string, tags: string[])
   return await invoke('update_cursor_account_tags', { accountId, tags });
 }
 
+export async function updateCursorSessionNote(
+  accountId: string,
+  sessionId: string,
+  note: string,
+): Promise<CursorAccount> {
+  return await invoke('update_cursor_session_note', { accountId, sessionId, note });
+}
+
 export async function getCursorAccountsIndexPath(): Promise<string> {
   return await invoke('get_cursor_accounts_index_path');
 }

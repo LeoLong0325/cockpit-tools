@@ -148,7 +148,8 @@
         "planEnd": "По времени окончания цикла",
         "recommended": "Рекомендуемое",
         "recommendedAscTooltip": "Рекомендуемое (сначала наименее выгодные)",
-        "recommendedDescTooltip": "Рекомендуемое (сначала наиболее выгодные)"
+        "recommendedDescTooltip": "Рекомендуемое (сначала наиболее выгодные)",
+        "grokBotReset": "По времени сброса Grok-Bot"
       },
       "sortLabel": "Сортировка",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "{{count}} ч. назад",
       "relativeDays": "{{count}} дн. назад",
       "relativeMonths": "около {{count}} мес. назад",
-      "relativeYears": "около {{count}} г. назад"
+      "relativeYears": "около {{count}} г. назад",
+      "remark": "Заметка",
+      "remarkPlaceholder": "Добавить заметку",
+      "remarkSaveFailed": "Не удалось сохранить заметку: {{error}}"
     },
     "usage": {
       "viewUsage": "Просмотр использования",

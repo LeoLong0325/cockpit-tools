@@ -148,7 +148,8 @@
         "planEnd": "Podle času konce cyklu",
         "recommended": "Doporučeno",
         "recommendedAscTooltip": "Doporučeno (nejméně výhodné první)",
-        "recommendedDescTooltip": "Doporučeno (nejvýhodnější první)"
+        "recommendedDescTooltip": "Doporučeno (nejvýhodnější první)",
+        "grokBotReset": "Podle času resetu Grok-Bot"
       },
       "sortLabel": "Seřadit",
       "token": {
@@ -3693,7 +3694,10 @@
       "relativeHours": "před {{count}} h",
       "relativeDays": "před {{count}} dny",
       "relativeMonths": "před cca {{count}} měs.",
-      "relativeYears": "před cca {{count}} r."
+      "relativeYears": "před cca {{count}} r.",
+      "remark": "Poznámka",
+      "remarkPlaceholder": "Přidat poznámku",
+      "remarkSaveFailed": "Uložení poznámky selhalo: {{error}}"
     },
     "usage": {
       "viewUsage": "Zobrazit využití",
