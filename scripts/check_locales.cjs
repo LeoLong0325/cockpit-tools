@@ -199,6 +199,7 @@ function isAllowedEnglishReuse(key, value) {
     'CrazyRouter',
     'DeepSeek',
     'Grok-Bot',
+    'Web',
     'Moonshot',
     'SiliconFlow',
     'min',

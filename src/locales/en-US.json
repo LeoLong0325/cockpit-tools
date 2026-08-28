@@ -3973,6 +3973,26 @@
       "filterEligibleWithCount": "Referral eligible ({{count}})",
       "filterEligibleTitle": "Show accounts eligible for referrals"
     },
+    "sessions": {
+      "view": "View devices",
+      "title": "Active Sessions",
+      "device": "Device",
+      "created": "Created",
+      "expires": "Expires",
+      "revoke": "Revoke",
+      "empty": "No active sessions",
+      "loadFailed": "Failed to load sessions: {{error}}",
+      "revokeFailed": "Failed to revoke session: {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "Desktop App",
+      "typeUnknown": "Unknown device",
+      "relativeJustNow": "Just now",
+      "relativeMinutes": "{{count}} minutes ago",
+      "relativeHours": "{{count}} hours ago",
+      "relativeDays": "{{count}} days ago",
+      "relativeMonths": "About {{count}} months ago",
+      "relativeYears": "About {{count}} years ago"
+    },
     "usage": {
       "viewUsage": "View Usage",
       "title": "Account Usage",

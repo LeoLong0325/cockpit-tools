@@ -3721,6 +3721,26 @@
       "filterEligibleWithCount": "مؤهل للدعوة ({{count}})",
       "filterEligibleTitle": "عرض الحسابات المؤهلة للدعوة"
     },
+    "sessions": {
+      "view": "عرض جلسات الأجهزة",
+      "title": "الجلسات النشطة",
+      "device": "الجهاز",
+      "created": "تاريخ الإنشاء",
+      "expires": "تنتهي",
+      "revoke": "إلغاء",
+      "empty": "لا توجد جلسات نشطة",
+      "loadFailed": "تعذر تحميل الجلسات: {{error}}",
+      "revokeFailed": "تعذر إلغاء الجلسة: {{error}}",
+      "typeWeb": "ويب",
+      "typeDesktop": "تطبيق سطح المكتب",
+      "typeUnknown": "جهاز غير معروف",
+      "relativeJustNow": "الآن",
+      "relativeMinutes": "منذ {{count}} دقيقة",
+      "relativeHours": "منذ {{count}} ساعة",
+      "relativeDays": "منذ {{count}} يوم",
+      "relativeMonths": "منذ نحو {{count}} شهر",
+      "relativeYears": "منذ نحو {{count}} سنة"
+    },
     "usage": {
       "viewUsage": "عرض الاستخدام",
       "title": "استخدام الحساب",

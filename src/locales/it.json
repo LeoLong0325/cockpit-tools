@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Idoneo referral ({{count}})",
       "filterEligibleTitle": "Mostra account idonei al referral"
     },
+    "sessions": {
+      "view": "Vedi sessioni dei dispositivi",
+      "title": "Sessioni attive",
+      "device": "Dispositivo",
+      "created": "Creata",
+      "expires": "Scade",
+      "revoke": "Revoca",
+      "empty": "Nessuna sessione attiva",
+      "loadFailed": "Impossibile caricare le sessioni: {{error}}",
+      "revokeFailed": "Impossibile revocare la sessione: {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "App desktop",
+      "typeUnknown": "Dispositivo sconosciuto",
+      "relativeJustNow": "Proprio ora",
+      "relativeMinutes": "{{count}} minuti fa",
+      "relativeHours": "{{count}} ore fa",
+      "relativeDays": "{{count}} giorni fa",
+      "relativeMonths": "circa {{count}} mesi fa",
+      "relativeYears": "circa {{count}} anni fa"
+    },
     "usage": {
       "viewUsage": "Visualizza utilizzo",
       "title": "Utilizzo account",

@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Davet uygun ({{count}})",
       "filterEligibleTitle": "Davet uygun hesapları göster"
     },
+    "sessions": {
+      "view": "Cihaz oturumlarını görüntüle",
+      "title": "Aktif oturumlar",
+      "device": "Cihaz",
+      "created": "Oluşturulma",
+      "expires": "Bitiş",
+      "revoke": "İptal et",
+      "empty": "Aktif oturum yok",
+      "loadFailed": "Oturumlar yüklenemedi: {{error}}",
+      "revokeFailed": "Oturum iptal edilemedi: {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "Masaüstü uygulaması",
+      "typeUnknown": "Bilinmeyen cihaz",
+      "relativeJustNow": "Az önce",
+      "relativeMinutes": "{{count}} dakika önce",
+      "relativeHours": "{{count}} saat önce",
+      "relativeDays": "{{count}} gün önce",
+      "relativeMonths": "yaklaşık {{count}} ay önce",
+      "relativeYears": "yaklaşık {{count}} yıl önce"
+    },
     "usage": {
       "viewUsage": "Kullanımı görüntüle",
       "title": "Hesap kullanımı",

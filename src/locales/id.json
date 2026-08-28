@@ -3821,6 +3821,26 @@
       "filterEligibleWithCount": "Layak referral ({{count}})",
       "filterEligibleTitle": "Tampilkan akun yang layak referral"
     },
+    "sessions": {
+      "view": "Lihat sesi perangkat",
+      "title": "Sesi aktif",
+      "device": "Perangkat",
+      "created": "Dibuat",
+      "expires": "Kedaluwarsa",
+      "revoke": "Cabut",
+      "empty": "Tidak ada sesi aktif",
+      "loadFailed": "Gagal memuat sesi: {{error}}",
+      "revokeFailed": "Gagal mencabut sesi: {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "Aplikasi desktop",
+      "typeUnknown": "Perangkat tidak dikenal",
+      "relativeJustNow": "Baru saja",
+      "relativeMinutes": "{{count}} menit lalu",
+      "relativeHours": "{{count}} jam lalu",
+      "relativeDays": "{{count}} hari lalu",
+      "relativeMonths": "sekitar {{count}} bulan lalu",
+      "relativeYears": "sekitar {{count}} tahun lalu"
+    },
     "usage": {
       "viewUsage": "Lihat penggunaan",
       "title": "Penggunaan akun",

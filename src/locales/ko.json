@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "초대 자격 ({{count}})",
       "filterEligibleTitle": "초대 자격이 있는 계정만 보기"
     },
+    "sessions": {
+      "view": "장치 세션 보기",
+      "title": "활성 세션",
+      "device": "장치",
+      "created": "생성 시간",
+      "expires": "만료",
+      "revoke": "취소",
+      "empty": "활성 세션이 없습니다",
+      "loadFailed": "세션을 불러오지 못했습니다: {{error}}",
+      "revokeFailed": "세션을 취소하지 못했습니다: {{error}}",
+      "typeWeb": "웹",
+      "typeDesktop": "데스크톱 앱",
+      "typeUnknown": "알 수 없는 장치",
+      "relativeJustNow": "방금",
+      "relativeMinutes": "{{count}}분 전",
+      "relativeHours": "{{count}}시간 전",
+      "relativeDays": "{{count}}일 전",
+      "relativeMonths": "약 {{count}}개월 전",
+      "relativeYears": "약 {{count}}년 전"
+    },
     "usage": {
       "viewUsage": "사용량 보기",
       "title": "계정 사용량",

@@ -3973,6 +3973,26 @@
       "filterEligibleWithCount": "邀请资格 ({{count}})",
       "filterEligibleTitle": "筛选有邀请资格的账号"
     },
+    "sessions": {
+      "view": "查看设备会话",
+      "title": "活跃会话",
+      "device": "设备",
+      "created": "创建时间",
+      "expires": "到期",
+      "revoke": "撤销",
+      "empty": "暂无活跃会话",
+      "loadFailed": "加载设备会话失败: {{error}}",
+      "revokeFailed": "撤销会话失败: {{error}}",
+      "typeWeb": "网页",
+      "typeDesktop": "桌面应用",
+      "typeUnknown": "未知设备",
+      "relativeJustNow": "刚刚",
+      "relativeMinutes": "{{count}} 分钟前",
+      "relativeHours": "{{count}} 小时前",
+      "relativeDays": "{{count}} 天前",
+      "relativeMonths": "约 {{count}} 个月前",
+      "relativeYears": "约 {{count}} 年前"
+    },
     "usage": {
       "viewUsage": "查看用量",
       "title": "账户用量详情",

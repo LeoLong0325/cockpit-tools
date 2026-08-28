@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Způsobilý k doporučení ({{count}})",
       "filterEligibleTitle": "Zobrazit účty způsobilé k doporučení"
     },
+    "sessions": {
+      "view": "Zobrazit relace zařízení",
+      "title": "Aktivní relace",
+      "device": "Zařízení",
+      "created": "Vytvořeno",
+      "expires": "Vyprší",
+      "revoke": "Odvolat",
+      "empty": "Žádné aktivní relace",
+      "loadFailed": "Nepodařilo se načíst relace: {{error}}",
+      "revokeFailed": "Nepodařilo se odvolat relaci: {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "Desktopová aplikace",
+      "typeUnknown": "Neznámé zařízení",
+      "relativeJustNow": "Právě teď",
+      "relativeMinutes": "před {{count}} min",
+      "relativeHours": "před {{count}} h",
+      "relativeDays": "před {{count}} dny",
+      "relativeMonths": "před cca {{count}} měs.",
+      "relativeYears": "před cca {{count}} r."
+    },
     "usage": {
       "viewUsage": "Zobrazit využití",
       "title": "Využití účtu",

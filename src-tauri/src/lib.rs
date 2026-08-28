@@ -900,6 +900,8 @@ pub fn run() {
             commands::cursor::fetch_cursor_aggregated_usage,
             commands::cursor::fetch_cursor_usage_events,
             commands::cursor::fetch_cursor_user_analytics,
+            commands::cursor::fetch_cursor_auth_sessions,
+            commands::cursor::revoke_cursor_auth_session,
             commands::cursor::update_cursor_account_tags,
             commands::cursor::get_cursor_accounts_index_path,
             commands::cursor::cursor_oauth_login_start,

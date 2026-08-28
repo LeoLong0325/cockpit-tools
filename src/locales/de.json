@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Empfehlungsberechtigt ({{count}})",
       "filterEligibleTitle": "Konten mit Empfehlungsberechtigung anzeigen"
     },
+    "sessions": {
+      "view": "Gerätesitzungen anzeigen",
+      "title": "Aktive Sitzungen",
+      "device": "Gerät",
+      "created": "Erstellt",
+      "expires": "Läuft ab",
+      "revoke": "Widerrufen",
+      "empty": "Keine aktiven Sitzungen",
+      "loadFailed": "Sitzungen konnten nicht geladen werden: {{error}}",
+      "revokeFailed": "Sitzung konnte nicht widerrufen werden: {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "Desktop-App",
+      "typeUnknown": "Unbekanntes Gerät",
+      "relativeJustNow": "Gerade eben",
+      "relativeMinutes": "vor {{count}} Minuten",
+      "relativeHours": "vor {{count}} Stunden",
+      "relativeDays": "vor {{count}} Tagen",
+      "relativeMonths": "vor etwa {{count}} Monaten",
+      "relativeYears": "vor etwa {{count}} Jahren"
+    },
     "usage": {
       "viewUsage": "Nutzung anzeigen",
       "title": "Kontonutzung",

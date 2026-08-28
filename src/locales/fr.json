@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Éligible parrainage ({{count}})",
       "filterEligibleTitle": "Afficher les comptes éligibles au parrainage"
     },
+    "sessions": {
+      "view": "Voir les sessions d’appareils",
+      "title": "Sessions actives",
+      "device": "Appareil",
+      "created": "Créée",
+      "expires": "Expire",
+      "revoke": "Révoquer",
+      "empty": "Aucune session active",
+      "loadFailed": "Échec du chargement des sessions : {{error}}",
+      "revokeFailed": "Échec de la révocation de la session : {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "Application de bureau",
+      "typeUnknown": "Appareil inconnu",
+      "relativeJustNow": "À l’instant",
+      "relativeMinutes": "il y a {{count}} minutes",
+      "relativeHours": "il y a {{count}} heures",
+      "relativeDays": "il y a {{count}} jours",
+      "relativeMonths": "il y a environ {{count}} mois",
+      "relativeYears": "il y a environ {{count}} ans"
+    },
     "usage": {
       "viewUsage": "Voir l'utilisation",
       "title": "Utilisation du compte",

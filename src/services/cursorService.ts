@@ -120,6 +120,24 @@ export async function fetchCursorUserAnalytics(
   });
 }
 
+export interface CursorAuthSession {
+  sessionId: string;
+  type: string;
+  createdAt: string;
+  expiresAt?: string | null;
+}
+
+export async function fetchCursorAuthSessions(accountId: string): Promise<CursorAuthSession[]> {
+  return await invoke('fetch_cursor_auth_sessions', { accountId });
+}
+
+export async function revokeCursorAuthSession(
+  accountId: string,
+  sessionId: string,
+): Promise<CursorAuthSession[]> {
+  return await invoke('revoke_cursor_auth_session', { accountId, sessionId });
+}
+
 export async function fetchAllCursorUsageEvents(
   accountId: string,
   startDate: number,

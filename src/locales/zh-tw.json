@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "邀請資格 ({{count}})",
       "filterEligibleTitle": "篩選有邀請資格的帳號"
     },
+    "sessions": {
+      "view": "查看裝置工作階段",
+      "title": "作用中工作階段",
+      "device": "裝置",
+      "created": "建立時間",
+      "expires": "到期",
+      "revoke": "撤銷",
+      "empty": "沒有作用中工作階段",
+      "loadFailed": "載入裝置工作階段失敗：{{error}}",
+      "revokeFailed": "撤銷工作階段失敗：{{error}}",
+      "typeWeb": "網頁",
+      "typeDesktop": "桌面應用程式",
+      "typeUnknown": "未知裝置",
+      "relativeJustNow": "剛剛",
+      "relativeMinutes": "{{count}} 分鐘前",
+      "relativeHours": "{{count}} 小時前",
+      "relativeDays": "{{count}} 天前",
+      "relativeMonths": "約 {{count}} 個月前",
+      "relativeYears": "約 {{count}} 年前"
+    },
     "usage": {
       "viewUsage": "查看用量",
       "title": "帳戶用量詳情",

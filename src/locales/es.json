@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Elegible para referidos ({{count}})",
       "filterEligibleTitle": "Mostrar cuentas elegibles para referidos"
     },
+    "sessions": {
+      "view": "Ver sesiones de dispositivos",
+      "title": "Sesiones activas",
+      "device": "Dispositivo",
+      "created": "Creada",
+      "expires": "Caduca",
+      "revoke": "Revocar",
+      "empty": "No hay sesiones activas",
+      "loadFailed": "No se pudieron cargar las sesiones: {{error}}",
+      "revokeFailed": "No se pudo revocar la sesión: {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "App de escritorio",
+      "typeUnknown": "Dispositivo desconocido",
+      "relativeJustNow": "Justo ahora",
+      "relativeMinutes": "hace {{count}} minutos",
+      "relativeHours": "hace {{count}} horas",
+      "relativeDays": "hace {{count}} días",
+      "relativeMonths": "hace unos {{count}} meses",
+      "relativeYears": "hace unos {{count}} años"
+    },
     "usage": {
       "viewUsage": "Ver uso",
       "title": "Uso de la cuenta",

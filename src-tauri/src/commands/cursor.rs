@@ -203,6 +203,21 @@ pub async fn fetch_cursor_user_analytics(
 }
 
 #[tauri::command]
+pub async fn fetch_cursor_auth_sessions(
+    account_id: String,
+) -> Result<Vec<cursor_account::CursorAuthSession>, String> {
+    cursor_account::fetch_cursor_auth_sessions(&account_id).await
+}
+
+#[tauri::command]
+pub async fn revoke_cursor_auth_session(
+    account_id: String,
+    session_id: String,
+) -> Result<Vec<cursor_account::CursorAuthSession>, String> {
+    cursor_account::revoke_cursor_auth_session(&account_id, &session_id).await
+}
+
+#[tauri::command]
 pub async fn update_cursor_account_tags(
     account_id: String,
     tags: Vec<String>,

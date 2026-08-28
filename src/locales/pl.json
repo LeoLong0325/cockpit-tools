@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Uprawniony do poleceń ({{count}})",
       "filterEligibleTitle": "Pokaż konta uprawnione do poleceń"
     },
+    "sessions": {
+      "view": "Pokaż sesje urządzeń",
+      "title": "Aktywne sesje",
+      "device": "Urządzenie",
+      "created": "Utworzono",
+      "expires": "Wygasa",
+      "revoke": "Unieważnij",
+      "empty": "Brak aktywnych sesji",
+      "loadFailed": "Nie udało się wczytać sesji: {{error}}",
+      "revokeFailed": "Nie udało się unieważnić sesji: {{error}}",
+      "typeWeb": "WWW",
+      "typeDesktop": "Aplikacja desktopowa",
+      "typeUnknown": "Nieznane urządzenie",
+      "relativeJustNow": "Przed chwilą",
+      "relativeMinutes": "{{count}} min temu",
+      "relativeHours": "{{count}} godz. temu",
+      "relativeDays": "{{count}} dni temu",
+      "relativeMonths": "ok. {{count}} mies. temu",
+      "relativeYears": "ok. {{count}} lat temu"
+    },
     "usage": {
       "viewUsage": "Zobacz użycie",
       "title": "Użycie konta",

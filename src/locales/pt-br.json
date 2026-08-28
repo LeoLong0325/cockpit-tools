@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Elegível para indicação ({{count}})",
       "filterEligibleTitle": "Mostrar contas elegíveis para indicação"
     },
+    "sessions": {
+      "view": "Ver sessões dos dispositivos",
+      "title": "Sessões ativas",
+      "device": "Dispositivo",
+      "created": "Criada",
+      "expires": "Expira",
+      "revoke": "Revogar",
+      "empty": "Nenhuma sessão ativa",
+      "loadFailed": "Falha ao carregar sessões: {{error}}",
+      "revokeFailed": "Falha ao revogar a sessão: {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "App para desktop",
+      "typeUnknown": "Dispositivo desconhecido",
+      "relativeJustNow": "Agora mesmo",
+      "relativeMinutes": "há {{count}} minutos",
+      "relativeHours": "há {{count}} horas",
+      "relativeDays": "há {{count}} dias",
+      "relativeMonths": "há cerca de {{count}} meses",
+      "relativeYears": "há cerca de {{count}} anos"
+    },
     "usage": {
       "viewUsage": "Ver uso",
       "title": "Uso da conta",

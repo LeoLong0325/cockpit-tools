@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Доступен реферал ({{count}})",
       "filterEligibleTitle": "Показать аккаунты с правом приглашения"
     },
+    "sessions": {
+      "view": "Показать сеансы устройств",
+      "title": "Активные сеансы",
+      "device": "Устройство",
+      "created": "Создан",
+      "expires": "Истекает",
+      "revoke": "Отозвать",
+      "empty": "Нет активных сеансов",
+      "loadFailed": "Не удалось загрузить сеансы: {{error}}",
+      "revokeFailed": "Не удалось отозвать сеанс: {{error}}",
+      "typeWeb": "Веб",
+      "typeDesktop": "Приложение для ПК",
+      "typeUnknown": "Неизвестное устройство",
+      "relativeJustNow": "Только что",
+      "relativeMinutes": "{{count}} мин. назад",
+      "relativeHours": "{{count}} ч. назад",
+      "relativeDays": "{{count}} дн. назад",
+      "relativeMonths": "около {{count}} мес. назад",
+      "relativeYears": "около {{count}} г. назад"
+    },
     "usage": {
       "viewUsage": "Просмотр использования",
       "title": "Использование аккаунта",

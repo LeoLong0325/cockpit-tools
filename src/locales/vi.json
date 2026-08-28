@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "Đủ điều kiện mời ({{count}})",
       "filterEligibleTitle": "Hiển thị tài khoản đủ điều kiện mời"
     },
+    "sessions": {
+      "view": "Xem phiên thiết bị",
+      "title": "Phiên đang hoạt động",
+      "device": "Thiết bị",
+      "created": "Tạo lúc",
+      "expires": "Hết hạn",
+      "revoke": "Thu hồi",
+      "empty": "Không có phiên đang hoạt động",
+      "loadFailed": "Không tải được phiên: {{error}}",
+      "revokeFailed": "Không thu hồi được phiên: {{error}}",
+      "typeWeb": "Web",
+      "typeDesktop": "Ứng dụng máy tính",
+      "typeUnknown": "Thiết bị không xác định",
+      "relativeJustNow": "Vừa xong",
+      "relativeMinutes": "{{count}} phút trước",
+      "relativeHours": "{{count}} giờ trước",
+      "relativeDays": "{{count}} ngày trước",
+      "relativeMonths": "khoảng {{count}} tháng trước",
+      "relativeYears": "khoảng {{count}} năm trước"
+    },
     "usage": {
       "viewUsage": "Xem mức sử dụng",
       "title": "Mức sử dụng tài khoản",

@@ -28,12 +28,14 @@ import {
   Gift,
   BarChart3,
   Tags,
+  MonitorSmartphone,
 } from 'lucide-react';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
 import * as cursorService from '../services/cursorService';
 import { TagEditModal } from '../components/TagEditModal';
 import { ExportJsonModal } from '../components/ExportJsonModal';
 import { CursorReferralModal } from '../components/CursorReferralModal';
+import { CursorSessionsModal } from '../components/CursorSessionsModal';
 import { CursorAccountUsageModal } from '../components/CursorUsageModals';
 import { ModalErrorMessage } from '../components/ModalErrorMessage';
 import { MfaQuickCodeSelect } from '../components/MfaQuickCodeSelect';
@@ -130,6 +132,11 @@ export function CursorAccountsPage() {
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralError, setReferralError] = useState<string | null>(null);
   const [referralEligibleOnly, setReferralEligibleOnly] = useState(false);
+  const [sessionsModalAccountId, setSessionsModalAccountId] = useState<string | null>(null);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<cursorService.CursorAuthSession[]>([]);
+  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
   const [taggedOnly, setTaggedOnly] = useState(false);
   const [filterTypes, setFilterTypes] = useState<string[]>(() =>
     readAccountsOverviewFilterPersistenceEnabled(CURSOR_FILTER_PERSISTENCE_SCOPE)
@@ -301,30 +308,64 @@ export function CursorAccountsPage() {
     }
   }, [setMessage, t]);
 
-  const handleOpenReferral = useCallback(async (accountId: string) => {
-    setReferralModalAccountId(accountId);
-    setReferralLoading(true);
-    setReferralError(null);
-    try {
-      await cursorService.fetchCursorReferralStatus(accountId);
-      await store.fetchAccounts();
-    } catch (error) {
-      setReferralError(
-        t('cursor.referral.loadFailed', {
-          error: String(error).replace(/^Error:\s*/, ''),
-          defaultValue: '加载邀请奖励失败: {{error}}',
-        }),
-      );
-    } finally {
-      setReferralLoading(false);
-    }
-  }, [store, t]);
-
   const closeReferralModal = useCallback(() => {
     setReferralModalAccountId(null);
     setReferralError(null);
     setReferralLoading(false);
   }, []);
+
+  const handleOpenSessions = useCallback(async (accountId: string) => {
+    setSessionsModalAccountId(accountId);
+    setSessionsLoading(true);
+    setSessionsError(null);
+    setRevokingSessionId(null);
+    try {
+      const next = await cursorService.fetchCursorAuthSessions(accountId);
+      setSessions(Array.isArray(next) ? next : []);
+    } catch (error) {
+      setSessions([]);
+      setSessionsError(
+        t('cursor.sessions.loadFailed', {
+          error: String(error).replace(/^Error:\s*/, ''),
+          defaultValue: '加载设备会话失败: {{error}}',
+        }),
+      );
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [t]);
+
+  const closeSessionsModal = useCallback(() => {
+    setSessionsModalAccountId(null);
+    setSessionsError(null);
+    setSessionsLoading(false);
+    setSessions([]);
+    setRevokingSessionId(null);
+  }, []);
+
+  const handleRevokeSession = useCallback(async (sessionId: string) => {
+    if (!sessionsModalAccountId || !sessionId) return;
+    setRevokingSessionId(sessionId);
+    setSessionsError(null);
+    try {
+      const next = await cursorService.revokeCursorAuthSession(sessionsModalAccountId, sessionId);
+      setSessions(Array.isArray(next) ? next : []);
+    } catch (error) {
+      setSessionsError(
+        t('cursor.sessions.revokeFailed', {
+          error: String(error).replace(/^Error:\s*/, ''),
+          defaultValue: '撤销会话失败: {{error}}',
+        }),
+      );
+    } finally {
+      setRevokingSessionId(null);
+    }
+  }, [sessionsModalAccountId, t]);
+
+  const sessionsModalAccount = useMemo(
+    () => accounts.find((account) => account.id === sessionsModalAccountId) ?? null,
+    [accounts, sessionsModalAccountId],
+  );
 
   const handleOpenUsage = useCallback((accountId: string) => {
     setUsageModalAccountId(accountId);
@@ -939,16 +980,14 @@ export function CursorAccountsPage() {
               >
                 <BarChart3 size={14} />
               </button>
-              {hasCursorReferralEligibility(account) ? (
-                <button
-                  className="card-action-btn"
-                  onClick={() => handleOpenReferral(account.id)}
-                  disabled={referralLoading && referralModalAccountId === account.id}
-                  title={t('cursor.referral.view', '查看邀请奖励')}
-                >
-                  <Gift size={14} className={referralLoading && referralModalAccountId === account.id ? 'loading-spinner' : ''} />
-                </button>
-              ) : null}
+              <button
+                className="card-action-btn"
+                onClick={() => handleOpenSessions(account.id)}
+                disabled={sessionsLoading && sessionsModalAccountId === account.id}
+                title={t('cursor.sessions.view', '查看设备会话')}
+              >
+                <MonitorSmartphone size={14} className={sessionsLoading && sessionsModalAccountId === account.id ? 'loading-spinner' : ''} />
+              </button>
               <button
                 className="card-action-btn"
                 onClick={() => handleOpenDashboard(account.id)}
@@ -1143,16 +1182,14 @@ export function CursorAccountsPage() {
               >
                 <BarChart3 size={14} />
               </button>
-              {hasCursorReferralEligibility(account) ? (
-                <button
-                  className="action-btn"
-                  onClick={() => handleOpenReferral(account.id)}
-                  disabled={referralLoading && referralModalAccountId === account.id}
-                  title={t('cursor.referral.view', '查看邀请奖励')}
-                >
-                  <Gift size={14} className={referralLoading && referralModalAccountId === account.id ? 'loading-spinner' : ''} />
-                </button>
-              ) : null}
+              <button
+                className="action-btn"
+                onClick={() => handleOpenSessions(account.id)}
+                disabled={sessionsLoading && sessionsModalAccountId === account.id}
+                title={t('cursor.sessions.view', '查看设备会话')}
+              >
+                <MonitorSmartphone size={14} className={sessionsLoading && sessionsModalAccountId === account.id ? 'loading-spinner' : ''} />
+              </button>
               <button
                 className="action-btn"
                 onClick={() => handleOpenDashboard(account.id)}
@@ -1670,6 +1707,18 @@ export function CursorAccountsPage() {
         loading={referralLoading}
         errorMessage={referralError}
         onClose={closeReferralModal}
+      />
+
+      <CursorSessionsModal
+        isOpen={!!sessionsModalAccountId}
+        title={t('cursor.sessions.title', '活跃会话')}
+        accountLabel={sessionsModalAccount ? resolveDisplayEmail(sessionsModalAccount) : ''}
+        sessions={sessions}
+        loading={sessionsLoading}
+        revokingSessionId={revokingSessionId}
+        errorMessage={sessionsError}
+        onRevoke={handleRevokeSession}
+        onClose={closeSessionsModal}
       />
 
       <TagEditModal

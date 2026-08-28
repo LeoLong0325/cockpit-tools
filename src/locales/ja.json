@@ -3675,6 +3675,26 @@
       "filterEligibleWithCount": "招待資格 ({{count}})",
       "filterEligibleTitle": "招待資格のあるアカウントを表示"
     },
+    "sessions": {
+      "view": "デバイスセッションを表示",
+      "title": "アクティブセッション",
+      "device": "デバイス",
+      "created": "作成日時",
+      "expires": "有効期限",
+      "revoke": "取り消す",
+      "empty": "アクティブなセッションはありません",
+      "loadFailed": "セッションの読み込みに失敗しました: {{error}}",
+      "revokeFailed": "セッションの取り消しに失敗しました: {{error}}",
+      "typeWeb": "ウェブ",
+      "typeDesktop": "デスクトップアプリ",
+      "typeUnknown": "不明なデバイス",
+      "relativeJustNow": "たった今",
+      "relativeMinutes": "{{count}}分前",
+      "relativeHours": "{{count}}時間前",
+      "relativeDays": "{{count}}日前",
+      "relativeMonths": "約{{count}}か月前",
+      "relativeYears": "約{{count}}年前"
+    },
     "usage": {
       "viewUsage": "使用量を表示",
       "title": "アカウント使用量",

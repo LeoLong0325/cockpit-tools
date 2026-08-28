@@ -1,6 +1,6 @@
 use base64::Engine as _;
 use rusqlite::{Connection, OptionalExtension};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -2393,6 +2393,20 @@ const CURSOR_USAGE_EVENT_KIND_FREE_CREDIT: &str = "USAGE_EVENT_KIND_FREE_CREDIT"
 const CURSOR_FILTERED_USAGE_EVENTS_URL: &str =
     "https://cursor.com/api/dashboard/get-filtered-usage-events";
 const CURSOR_STRIPE_SESSION_URL: &str = "https://cursor.com/api/stripeSession";
+const CURSOR_AUTH_SESSIONS_URL: &str = "https://cursor.com/api/auth/sessions";
+const CURSOR_AUTH_SESSIONS_REVOKE_URL: &str = "https://cursor.com/api/auth/sessions/revoke";
+const CURSOR_AUTH_SESSIONS_REFERER: &str = "https://cursor.com/dashboard/settings";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CursorAuthSession {
+    pub session_id: String,
+    #[serde(rename = "type")]
+    pub session_type: String,
+    pub created_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<String>,
+}
 
 fn parse_usage_timestamp_ms(value: &serde_json::Value) -> Option<i64> {
     if let Some(n) = value.as_i64() {
@@ -2787,6 +2801,129 @@ pub async fn fetch_cursor_user_analytics(
         body,
     )
     .await
+}
+
+fn parse_cursor_auth_sessions(raw: &serde_json::Value) -> Vec<CursorAuthSession> {
+    let Some(list) = raw
+        .get("sessions")
+        .and_then(|value| value.as_array())
+    else {
+        return Vec::new();
+    };
+    list.iter()
+        .filter_map(|item| {
+            let session_id = item
+                .get("sessionId")
+                .or_else(|| item.get("session_id"))
+                .and_then(|value| value.as_str())
+                .map(str::trim)
+                .filter(|value| !value.is_empty())?
+                .to_string();
+            let session_type = item
+                .get("type")
+                .or_else(|| item.get("sessionType"))
+                .or_else(|| item.get("session_type"))
+                .and_then(|value| value.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            let created_at = item
+                .get("createdAt")
+                .or_else(|| item.get("created_at"))
+                .and_then(|value| value.as_str())
+                .unwrap_or("")
+                .to_string();
+            let expires_at = item
+                .get("expiresAt")
+                .or_else(|| item.get("expires_at"))
+                .and_then(|value| value.as_str())
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToString::to_string);
+            Some(CursorAuthSession {
+                session_id,
+                session_type,
+                created_at,
+                expires_at,
+            })
+        })
+        .collect()
+}
+
+fn is_safe_session_id(session_id: &str) -> bool {
+    let trimmed = session_id.trim();
+    !trimmed.is_empty()
+        && trimmed.len() <= 128
+        && trimmed
+            .chars()
+            .all(|ch| ch.is_ascii_hexdigit() || ch == '-' || ch == '_')
+}
+
+async fn get_json_for_account(
+    account: &CursorAccount,
+    url: &str,
+    referer: &str,
+) -> Result<serde_json::Value, String> {
+    let client = build_cursor_http_client()?;
+    let cookie = account_dashboard_cookie(account)?;
+    let response = client
+        .get(url)
+        .header("Accept", "application/json")
+        .header("Cookie", &cookie)
+        .header("Origin", "https://cursor.com")
+        .header("Referer", referer)
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        )
+        .timeout(std::time::Duration::from_secs(40))
+        .send()
+        .await
+        .map_err(|e| format!("请求 Cursor 会话接口失败: {}", e))?;
+
+    let status = response.status().as_u16();
+    if status == 401 || status == 403 {
+        return Err(format!(
+            "Cursor 会话已过期或未认证，请重新导入账号 (HTTP {})",
+            status
+        ));
+    }
+    if status != 200 {
+        return Err(format!("Cursor 会话接口返回异常状态码: {}", status));
+    }
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("读取 Cursor 会话响应失败: {}", e))?;
+    serde_json::from_str::<serde_json::Value>(&body)
+        .map_err(|e| format!("解析 Cursor 会话 JSON 失败: {}", e))
+}
+
+pub async fn fetch_cursor_auth_sessions(account_id: &str) -> Result<Vec<CursorAuthSession>, String> {
+    let account = load_account(account_id)
+        .ok_or_else(|| format!("Cursor account not found: {}", account_id))?;
+    let raw = get_json_for_account(&account, CURSOR_AUTH_SESSIONS_URL, CURSOR_AUTH_SESSIONS_REFERER)
+        .await?;
+    Ok(parse_cursor_auth_sessions(&raw))
+}
+
+pub async fn revoke_cursor_auth_session(
+    account_id: &str,
+    session_id: &str,
+) -> Result<Vec<CursorAuthSession>, String> {
+    if !is_safe_session_id(session_id) {
+        return Err("会话 ID 无效".to_string());
+    }
+    let account = load_account(account_id)
+        .ok_or_else(|| format!("Cursor account not found: {}", account_id))?;
+    post_dashboard_json_body_for_account(
+        &account,
+        CURSOR_AUTH_SESSIONS_REVOKE_URL,
+        CURSOR_AUTH_SESSIONS_REFERER,
+        serde_json::json!({ "sessionId": session_id.trim() }),
+    )
+    .await?;
+    fetch_cursor_auth_sessions(account_id).await
 }
 
 fn json_get_i64(value: &serde_json::Value, keys: &[&str]) -> Option<i64> {
@@ -4189,5 +4326,55 @@ mod dashboard_navigation_tests {
             cursor_dashboard_navigation_action(&random),
             CursorDashboardNavigationAction::DenySilently
         ));
+    }
+}
+
+#[cfg(test)]
+mod auth_sessions_tests {
+    use super::{is_safe_session_id, parse_cursor_auth_sessions};
+    use serde_json::json;
+
+    #[test]
+    fn parse_sessions_maps_official_fields() {
+        let raw = json!({
+            "sessions": [
+                {
+                    "sessionId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "type": "SESSION_TYPE_WEB",
+                    "createdAt": "2026-08-20T05:38:29.000Z",
+                    "expiresAt": "2026-10-19T05:38:29.000Z"
+                },
+                {
+                    "sessionId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "type": "SESSION_TYPE_CLIENT",
+                    "createdAt": "2026-08-20T05:38:52.000Z",
+                    "expiresAt": "2026-10-19T05:38:52.000Z"
+                },
+                {
+                    "sessionId": "",
+                    "type": "SESSION_TYPE_WEB",
+                    "createdAt": "2026-08-21T00:00:00.000Z"
+                }
+            ]
+        });
+        let sessions = parse_cursor_auth_sessions(&raw);
+        assert_eq!(sessions.len(), 2);
+        assert_eq!(sessions[0].session_type, "SESSION_TYPE_WEB");
+        assert_eq!(sessions[1].session_type, "SESSION_TYPE_CLIENT");
+        assert_eq!(sessions[0].created_at, "2026-08-20T05:38:29.000Z");
+        assert_eq!(
+            sessions[1].expires_at.as_deref(),
+            Some("2026-10-19T05:38:52.000Z")
+        );
+    }
+
+    #[test]
+    fn session_id_rejects_path_injection() {
+        assert!(is_safe_session_id(
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ));
+        assert!(!is_safe_session_id("../sessions"));
+        assert!(!is_safe_session_id(""));
+        assert!(!is_safe_session_id("id with space"));
     }
 }
