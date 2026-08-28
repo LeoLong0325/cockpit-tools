@@ -22,16 +22,9 @@ function parseSessionDate(value: string): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function formatCreatedAt(date: Date, locale: string): string {
-  return date.toLocaleString(locale, {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
+function formatCreatedAt(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
 export function CursorSessionsModal(props: CursorSessionsModalProps) {
@@ -46,7 +39,7 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
     onRevoke,
     onClose,
   } = props;
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   useEscClose(isOpen, onClose);
 
   const rows = useMemo(
@@ -67,10 +60,10 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
                   /^SESSION_TYPE_/,
                   '',
                 ),
-          createdAt: created ? formatCreatedAt(created, i18n.language) : '—',
+          createdAt: created ? formatCreatedAt(created) : '—',
         };
       }),
-    [i18n.language, sessions, t],
+    [sessions, t],
   );
 
   if (!isOpen) return null;
