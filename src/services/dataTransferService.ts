@@ -427,7 +427,7 @@ async function loadAccountRegistry(): Promise<AccountRegistry> {
         return [platform, accounts] as const;
       } catch (error) {
         console.warn(`[DataTransfer] 读取账号失败，已跳过: ${platform}`, error);
-        return [platform, []] as const;
+        return [platform, [] as TransferAccountRecord[]] as const;
       }
     }),
   );
