@@ -1,7 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { DataTransferSelection, exportDataTransferJson } from './dataTransferService';
 import { ALL_PLATFORM_IDS, PlatformId } from '../types/platform';
-import { getWebdavSyncSettings, uploadAutoBackupToWebdav } from './webdavSyncService';
 
 export type AutoBackupMode = 'full' | 'accounts' | 'config';
 export type AutoBackupTrigger = 'auto' | 'manual';
@@ -275,29 +274,43 @@ export async function createManagedBackup(params: {
   };
 }
 
-export async function runAutoBackupCycle(): Promise<ManagedBackupResult | null> {
-  const settings = await getAutoBackupSettings();
-  const selection = getSelectionFromAutoBackupSettings(settings);
+export interface AutoBackupCycleResult {
+  ran: boolean;
+  file_name: string | null;
+  path: string | null;
+  executed_at: string | null;
+  deleted_files: string[];
+  skipped_reason: string | null;
+  warnings: string[];
+}
 
-  if (!settings.enabled || !hasSelection(selection) || !isAutoBackupDue(settings)) {
-    return null;
+let autoBackupSchedulerStarted = false;
+
+export function ensureAutoBackupScheduler(): void {
+  if (autoBackupSchedulerStarted || typeof window === 'undefined') {
+    return;
   }
+  autoBackupSchedulerStarted = true;
 
-  const result = await createManagedBackup({
-    trigger: 'auto',
-    selection,
-    retentionDays: settings.retention_days,
-    markAsLastRun: true,
-  });
+  const startDelayMs = 15 * 1000;
+  const pollIntervalMs = 15 * 60 * 1000;
 
-  try {
-    const webdavSettings = await getWebdavSyncSettings();
-    if (webdavSettings.enabled && webdavSettings.username.trim() && webdavSettings.has_password) {
-      await uploadAutoBackupToWebdav(result.file_name);
-    }
-  } catch (error) {
-    console.warn('[WebDAV] Auto backup upload failed', error);
+  window.setTimeout(() => {
+    void runAutoBackupCycle().catch((error) => {
+      console.warn('[AutoBackup] 定期备份执行失败:', error);
+    });
+    window.setInterval(() => {
+      void runAutoBackupCycle().catch((error) => {
+        console.warn('[AutoBackup] 定期备份执行失败:', error);
+      });
+    }, pollIntervalMs);
+  }, startDelayMs);
+}
+
+export async function runAutoBackupCycle(): Promise<AutoBackupCycleResult> {
+  const result = await invoke<AutoBackupCycleResult>('run_auto_backup_cycle');
+  if (result.ran) {
+    dispatchAutoBackupStateChanged();
   }
-
   return result;
 }

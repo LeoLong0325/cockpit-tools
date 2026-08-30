@@ -246,6 +246,8 @@ function estimatePayloadCount(payload: AccountTransferPlatformPayload): number {
   return 1;
 }
 
+const TRANSFER_PLATFORM_IDS = Object.keys(PLATFORM_ADAPTERS) as PlatformId[];
+
 async function exportPlatformPayload(platform: PlatformId): Promise<AccountTransferPlatformPayload> {
   const adapter = PLATFORM_ADAPTERS[platform];
   const accounts = await adapter.listAccounts();
@@ -268,10 +270,22 @@ async function exportPlatformPayload(platform: PlatformId): Promise<AccountTrans
   };
 }
 
+async function exportPlatformPayloadSafe(platform: PlatformId): Promise<AccountTransferPlatformPayload> {
+  try {
+    return await exportPlatformPayload(platform);
+  } catch (error) {
+    console.warn(`[AccountTransfer] 平台导出失败，已跳过: ${platform}`, error);
+    return {
+      account_count: 0,
+      exported_data: [],
+    };
+  }
+}
+
 export async function buildAccountTransferBundle(): Promise<AccountTransferBundle> {
   const entries = await Promise.all(
-    ALL_PLATFORM_IDS.map(async (platform) => {
-      const payload = await exportPlatformPayload(platform);
+    TRANSFER_PLATFORM_IDS.map(async (platform) => {
+      const payload = await exportPlatformPayloadSafe(platform);
       return [platform, payload] as const;
     }),
   );
@@ -291,7 +305,7 @@ export async function buildAccountTransferBundle(): Promise<AccountTransferBundl
     version: ACCOUNT_TRANSFER_VERSION,
     exported_at: new Date().toISOString(),
     summary: {
-      platform_count: ALL_PLATFORM_IDS.length,
+      platform_count: TRANSFER_PLATFORM_IDS.length,
       account_count: accountCount,
     },
     platforms,

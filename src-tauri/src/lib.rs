@@ -252,6 +252,7 @@ pub fn run() {
             modules::wakeup_scheduler::ensure_started(app.handle().clone());
             modules::codex_wakeup_scheduler::ensure_started(app.handle().clone());
             modules::codex_wakeup_scheduler::trigger_startup_tasks_if_needed(app.handle().clone());
+            commands::system::ensure_auto_backup_started();
 
             #[cfg(target_os = "macos")]
             apply_macos_activation_policy(&app.handle());
@@ -480,6 +481,7 @@ pub fn run() {
             commands::system::list_auto_backup_files,
             commands::system::delete_auto_backup_file,
             commands::system::cleanup_auto_backup_files,
+            commands::system::run_auto_backup_cycle,
             commands::system::open_auto_backup_dir,
             commands::system::get_webdav_sync_settings,
             commands::system::save_webdav_sync_settings,

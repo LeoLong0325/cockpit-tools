@@ -422,8 +422,13 @@ function buildAccountRegistry(
 async function loadAccountRegistry(): Promise<AccountRegistry> {
   const entries = await Promise.all(
     ALL_PLATFORM_IDS.map(async (platform) => {
-      const accounts = await ACCOUNT_LOADERS[platform]();
-      return [platform, accounts] as const;
+      try {
+        const accounts = await ACCOUNT_LOADERS[platform]();
+        return [platform, accounts] as const;
+      } catch (error) {
+        console.warn(`[DataTransfer] 读取账号失败，已跳过: ${platform}`, error);
+        return [platform, []] as const;
+      }
     }),
   );
 
@@ -990,8 +995,13 @@ async function exportConfigBundle(registry: AccountRegistry): Promise<DataTransf
     getCodexWakeupCliStatus(),
     Promise.all(
       INSTANCE_PLATFORMS.map(async (platform) => {
-        const store = await invoke<RawInstanceStore>('data_transfer_get_instance_store', { platform });
-        return [platform, exportInstanceStore(platform, store, registry)] as const;
+        try {
+          const store = await invoke<RawInstanceStore>('data_transfer_get_instance_store', { platform });
+          return [platform, exportInstanceStore(platform, store, registry)] as const;
+        } catch (error) {
+          console.warn(`[DataTransfer] 实例配置导出失败，已跳过: ${platform}`, error);
+          return null;
+        }
       }),
     ),
   ]);
@@ -1002,9 +1012,9 @@ async function exportConfigBundle(registry: AccountRegistry): Promise<DataTransf
     account_groups: exportAccountGroups(accountGroups, registry),
     codex_account_groups: exportCodexAccountGroups(codexAccountGroups, registry),
     codex_model_providers: codexModelProviders,
-    instance_stores: Object.fromEntries(instanceStoreEntries) as Partial<
-      Record<InstancePlatform, ExportedInstanceStore>
-    >,
+    instance_stores: Object.fromEntries(
+      instanceStoreEntries.filter((entry): entry is readonly [InstancePlatform, ExportedInstanceStore] => entry != null),
+    ) as Partial<Record<InstancePlatform, ExportedInstanceStore>>,
     antigravity_wakeup: exportAntigravityWakeupState(registry),
     codex_wakeup: exportCodexWakeupState(
       codexWakeupState,

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -20,6 +21,7 @@ use crate::modules::websocket;
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const AUTO_BACKUP_DIR_NAME: &str = "backups";
+static AUTO_BACKUP_STARTED: AtomicBool = AtomicBool::new(false);
 
 /// 网络服务配置（前端使用）
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1493,6 +1495,109 @@ pub fn update_auto_backup_last_run(
     };
     config::save_user_config(&new_config)?;
     build_auto_backup_settings(&new_config)
+}
+
+pub async fn run_auto_backup_cycle_internal(
+) -> Result<modules::auto_backup::AutoBackupCycleResult, String> {
+    let _guard = match modules::auto_backup::try_begin_cycle() {
+        Ok(guard) => guard,
+        Err(_) => return Ok(modules::auto_backup::skipped("in_progress")),
+    };
+    let config = config::get_user_config();
+    let include_accounts = config.auto_backup_include_accounts;
+    let include_config = config.auto_backup_include_config;
+    if !modules::auto_backup::is_auto_backup_due(
+        config.auto_backup_enabled,
+        include_accounts,
+        include_config,
+        config.auto_backup_last_backup_at.as_deref(),
+        chrono::Utc::now(),
+    ) {
+        let reason = if !config.auto_backup_enabled {
+            "disabled"
+        } else if !include_accounts && !include_config {
+            "empty_selection"
+        } else {
+            "not_due"
+        };
+        return Ok(modules::auto_backup::skipped(reason));
+    }
+
+    let executed_at = chrono::Utc::now();
+    let (content, warnings) =
+        modules::auto_backup::build_backup_bundle(include_accounts, include_config, executed_at)?;
+    let file_name = modules::auto_backup::format_backup_file_name(
+        "auto",
+        include_accounts,
+        include_config,
+        executed_at,
+    );
+    let path = write_auto_backup_file(file_name.clone(), content)?;
+    let deleted_files = cleanup_auto_backup_files(config.auto_backup_retention_days)?;
+    update_auto_backup_last_run(Some(executed_at.to_rfc3339()))?;
+
+    crate::modules::logger::log_info(&format!(
+        "[AutoBackup] 自动备份完成: file={file_name}, warnings={}, deleted={}",
+        warnings.len(),
+        deleted_files.len()
+    ));
+
+    if config.webdav_sync_enabled
+        && !config.webdav_sync_username.trim().is_empty()
+        && !config.webdav_sync_password.is_empty()
+    {
+        match upload_auto_backup_to_webdav(file_name.clone()).await {
+            Ok(result) => crate::modules::logger::log_info(&format!(
+                "[AutoBackup] WebDAV 上传完成: file={file_name}, remote_dir={}",
+                result.remote_dir
+            )),
+            Err(error) => crate::modules::logger::log_warn(&format!(
+                "[AutoBackup] WebDAV 上传失败，本地备份已保留: file={file_name}, error={error}"
+            )),
+        }
+    }
+
+    Ok(modules::auto_backup::AutoBackupCycleResult {
+        ran: true,
+        file_name: Some(file_name),
+        path: Some(path),
+        executed_at: Some(executed_at.to_rfc3339()),
+        deleted_files,
+        warnings,
+        skipped_reason: None,
+    })
+}
+
+#[tauri::command]
+pub async fn run_auto_backup_cycle() -> Result<modules::auto_backup::AutoBackupCycleResult, String> {
+    run_auto_backup_cycle_internal().await
+}
+
+pub fn ensure_auto_backup_started() {
+    if AUTO_BACKUP_STARTED.swap(true, Ordering::SeqCst) {
+        return;
+    }
+
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(modules::auto_backup::STARTUP_DELAY).await;
+        loop {
+            match run_auto_backup_cycle_internal().await {
+                Ok(result) if result.ran => {}
+                Ok(result) => {
+                    if result.skipped_reason.as_deref() != Some("not_due") {
+                        crate::modules::logger::log_info(&format!(
+                            "[AutoBackup] 本轮跳过: reason={}",
+                            result.skipped_reason.unwrap_or_else(|| "unknown".to_string())
+                        ));
+                    }
+                }
+                Err(error) => {
+                    crate::modules::logger::log_warn(&format!("[AutoBackup] 自动备份失败: {error}"))
+                }
+            }
+            tokio::time::sleep(modules::auto_backup::POLL_INTERVAL).await;
+        }
+    });
 }
 
 #[tauri::command]

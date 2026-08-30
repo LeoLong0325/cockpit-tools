@@ -1,6 +1,7 @@
 pub mod account;
 pub mod account_index_repair;
 pub mod announcement;
+pub mod auto_backup;
 pub mod antigravity_credential;
 pub mod antigravity_legacy_instance;
 pub mod antigravity_paths;

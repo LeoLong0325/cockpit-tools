@@ -54,7 +54,7 @@ import {
   normalizeExternalProviderImportPayload,
   type ExternalProviderImportPayload,
 } from './utils/externalProviderImport';
-import { runAutoBackupCycle } from './services/scheduledBackupService';
+import { ensureAutoBackupScheduler } from './services/scheduledBackupService';
 import { prepareCodexLocalAccessForRestart } from './services/codexLocalAccessService';
 
 const DashboardPage = lazy(() =>
@@ -1755,41 +1755,7 @@ function MainApp() {
   }, []);
 
   useEffect(() => {
-    const AUTO_BACKUP_STARTUP_DELAY_MS = 5 * 60 * 1000;
-    const AUTO_BACKUP_POLL_INTERVAL_MS = 60 * 60 * 1000;
-    let startupTimerId: number | undefined;
-    let intervalId: number | undefined;
-    let inFlight = false;
-
-    const checkAutoBackup = async () => {
-      if (inFlight) {
-        return;
-      }
-      inFlight = true;
-      try {
-        await runAutoBackupCycle();
-      } catch (error) {
-        console.warn('[AutoBackup] 定期备份执行失败:', error);
-      } finally {
-        inFlight = false;
-      }
-    };
-
-    startupTimerId = window.setTimeout(() => {
-      void checkAutoBackup();
-      intervalId = window.setInterval(() => {
-        void checkAutoBackup();
-      }, AUTO_BACKUP_POLL_INTERVAL_MS);
-    }, AUTO_BACKUP_STARTUP_DELAY_MS);
-
-    return () => {
-      if (startupTimerId !== undefined) {
-        window.clearTimeout(startupTimerId);
-      }
-      if (intervalId !== undefined) {
-        window.clearInterval(intervalId);
-      }
-    };
+    ensureAutoBackupScheduler();
   }, []);
 
   // Check for updates on startup

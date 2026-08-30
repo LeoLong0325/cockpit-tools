@@ -7,6 +7,12 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [Unreleased]
+
+### Fixed
+- **Scheduled backups no longer depend on the main window staying open**: the scheduler now runs in the backend process, checks about 20 seconds after startup and every 15 minutes after that, and continues while the app is minimized to the tray. A failed platform export is skipped instead of aborting the whole backup.
+
+---
 ## [0.26.5] - 2026-06-20
 
 ### Added
