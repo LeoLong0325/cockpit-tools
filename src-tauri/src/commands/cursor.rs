@@ -126,6 +126,7 @@ pub async fn add_cursor_account_with_token(
             cursor_free_credit_usage_raw: None,
             status: None,
             status_reason: None,
+            tags: None,
         };
         cursor_account::upsert_account(payload)?
     };

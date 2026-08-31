@@ -189,7 +189,7 @@ fn antigravity_export_json(ids: &[String]) -> Result<String, String> {
     struct SimpleAccount {
         email: String,
         refresh_token: String,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
         tags: Vec<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         notes: Option<String>,

@@ -841,6 +841,9 @@ fn apply_payload(
     }
     account.status = payload.status;
     account.status_reason = payload.status_reason;
+    if let Some(tags) = payload.tags {
+        account.tags = normalize_exported_tags(tags);
+    }
     account.last_used = now_ts();
 }
 
@@ -1027,6 +1030,45 @@ fn extract_string(obj: &serde_json::Map<String, Value>, keys: &[&str]) -> Option
     None
 }
 
+fn normalize_exported_tags(tags: Vec<String>) -> Option<Vec<String>> {
+    let cleaned: Vec<String> = tags
+        .into_iter()
+        .map(|tag| tag.trim().to_string())
+        .filter(|tag| !tag.is_empty())
+        .collect();
+    if cleaned.is_empty() {
+        None
+    } else {
+        Some(cleaned)
+    }
+}
+
+fn extract_string_array(obj: &serde_json::Map<String, Value>, keys: &[&str]) -> Option<Vec<String>> {
+    for key in keys {
+        let Some(value) = obj.get(*key) else {
+            continue;
+        };
+        if value.is_null() {
+            return Some(Vec::new());
+        }
+        let Some(items) = value.as_array() else {
+            continue;
+        };
+        return Some(
+            items
+                .iter()
+                .filter_map(|item| {
+                    item.as_str()
+                        .map(str::trim)
+                        .filter(|text| !text.is_empty())
+                        .map(|text| text.to_string())
+                })
+                .collect(),
+        );
+    }
+    None
+}
+
 fn payload_from_import_value(raw: Value) -> Result<CursorImportPayload, String> {
     let obj = raw
         .as_object()
@@ -1118,6 +1160,7 @@ fn payload_from_import_value(raw: Value) -> Result<CursorImportPayload, String> 
     let auth_id = extract_string(obj, &["auth_id", "authId", "workos_id", "workosId"])
         .or_else(|| extract_auth_id_from_raw_value(cursor_auth_raw.as_ref()))
         .or_else(|| extract_auth_id_from_access_token(access_token.as_str()));
+    let tags = extract_string_array(obj, &["tags"]);
 
     Ok(CursorImportPayload {
         email,
@@ -1134,6 +1177,7 @@ fn payload_from_import_value(raw: Value) -> Result<CursorImportPayload, String> 
         cursor_free_credit_usage_raw,
         status,
         status_reason,
+        tags,
     })
 }
 
@@ -1262,6 +1306,17 @@ fn build_cursor_export_item(account: CursorAccount) -> Value {
             Value::String(membership_type),
         );
     }
+    obj.insert(
+        "tags".to_string(),
+        Value::Array(
+            account
+                .tags
+                .unwrap_or_default()
+                .into_iter()
+                .map(Value::String)
+                .collect(),
+        ),
+    );
     Value::Object(obj)
 }
 
@@ -1801,6 +1856,7 @@ pub fn read_local_cursor_auth() -> Result<Option<CursorImportPayload>, String> {
         cursor_free_credit_usage_raw: None,
         status: None,
         status_reason: None,
+        tags: None,
     }))
 }
 
@@ -2156,6 +2212,7 @@ fn build_payload_from_workos_session_token(
         cursor_free_credit_usage_raw: None,
         status: None,
         status_reason: None,
+        tags: None,
     }
 }
 
@@ -4440,5 +4497,56 @@ mod auth_sessions_tests {
         assert!(!is_safe_session_id("../sessions"));
         assert!(!is_safe_session_id(""));
         assert!(!is_safe_session_id("id with space"));
+    }
+}
+
+#[cfg(test)]
+mod cursor_export_tags_tests {
+    use super::{build_cursor_export_item, payload_from_import_value};
+    use serde_json::json;
+
+    fn sample_account(tags: Option<Vec<&str>>) -> crate::models::cursor::CursorAccount {
+        serde_json::from_value(json!({
+            "id": "acc",
+            "email": "a@b.c",
+            "access_token": "token",
+            "created_at": 1,
+            "last_used": 1,
+            "tags": tags,
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn export_includes_account_tags() {
+        let item = build_cursor_export_item(sample_account(Some(vec!["vip", "work"])));
+        assert_eq!(item["tags"], json!(["vip", "work"]));
+    }
+
+    #[test]
+    fn export_always_writes_tags_field() {
+        let item = build_cursor_export_item(sample_account(None));
+        assert_eq!(item["tags"], json!([]));
+    }
+
+    #[test]
+    fn import_payload_reads_tags_when_present() {
+        let payload = payload_from_import_value(json!({
+            "email": "a@b.c",
+            "access_token": "tok",
+            "tags": ["vip", " work "]
+        }))
+        .unwrap();
+        assert_eq!(payload.tags, Some(vec!["vip".to_string(), "work".to_string()]));
+    }
+
+    #[test]
+    fn import_payload_keeps_tags_absent_when_missing() {
+        let payload = payload_from_import_value(json!({
+            "email": "a@b.c",
+            "access_token": "tok"
+        }))
+        .unwrap();
+        assert_eq!(payload.tags, None);
     }
 }

@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - **Scheduled backups no longer depend on the main window staying open**: the scheduler now runs in the backend process, checks about 20 seconds after startup and every 15 minutes after that, and continues while the app is minimized to the tray. A failed platform export is skipped instead of aborting the whole backup.
+- **Cursor backup and transfer JSON now keep account tags**: compact Cursor exports always write a `tags` field, and restoring that JSON applies the tags instead of dropping them.
 
 ---
 ## [0.26.5] - 2026-06-20

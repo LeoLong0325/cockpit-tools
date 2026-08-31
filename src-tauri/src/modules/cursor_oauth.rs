@@ -244,6 +244,7 @@ pub async fn complete_login(login_id: &str) -> Result<CursorImportPayload, Strin
                         cursor_free_credit_usage_raw: None,
                         status: None,
                         status_reason: None,
+                        tags: None,
                     });
                 }
 

@@ -106,6 +106,7 @@ pub struct CursorImportPayload {
     pub cursor_free_credit_usage_raw: Option<serde_json::Value>,
     pub status: Option<String>,
     pub status_reason: Option<String>,
+    pub tags: Option<Vec<String>>,
 }
 
 impl CursorAccount {
