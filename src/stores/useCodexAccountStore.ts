@@ -99,6 +99,9 @@ interface CodexAccountState {
   refreshQuota: (accountId: string) => Promise<CodexQuota>;
   refreshSubscriptionInfo: (accountId: string) => Promise<CodexAccount>;
   refreshAllQuotas: () => Promise<number>;
+  refreshAllQuotasBackground: () => Promise<number>;
+  refreshQuotasBatch: (accountIds: string[]) => Promise<number>;
+  forceRefreshTokens: (accountId: string) => Promise<CodexAccount>;
   hydrateAccountProfilesIfNeeded: (accountIds?: string[]) => Promise<void>;
   importFromLocal: () => Promise<CodexAccount>;
   importFromJson: (jsonContent: string) => Promise<CodexAccount[]>;
@@ -321,6 +324,27 @@ export const useCodexAccountStore = create<CodexAccountState>((set, get) => ({
     await get().fetchAccounts();
     await get().fetchCurrentAccount();
     return successCount;
+  },
+
+  refreshAllQuotasBackground: async () => {
+    const successCount = await codexService.refreshAllCodexQuotasBackground();
+    await get().fetchAccounts();
+    await get().fetchCurrentAccount();
+    return successCount;
+  },
+
+  refreshQuotasBatch: async (accountIds: string[]) => {
+    const successCount = await codexService.refreshCodexQuotasBatch(accountIds);
+    await get().fetchAccounts();
+    await get().fetchCurrentAccount();
+    return successCount;
+  },
+
+  forceRefreshTokens: async (accountId: string) => {
+    const account = await codexService.forceRefreshCodexTokens(accountId);
+    await get().fetchAccounts();
+    await get().fetchCurrentAccount();
+    return account;
   },
 
   hydrateAccountProfilesIfNeeded: async (accountIds?: string[]) => {

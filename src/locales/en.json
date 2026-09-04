@@ -1895,6 +1895,9 @@
     "refreshFailed": "Quota refresh failed: {{error}}",
     "refreshAllSuccess": "Refresh completed, {{count}} account(s) succeeded",
     "refreshAllPartialFailed": "Refresh completed, {{success}} / {{total}} account(s) succeeded and some failed",
+    "refreshTokens": "Refresh credentials",
+    "refreshTokensSuccess": "Account credentials refreshed",
+    "refreshTokensFailed": "Failed to refresh credentials: {{error}}",
     "switch": "Switch",
     "switched": "Switched to {{email}}",
     "switchFailed": "Switch failed: {{error}}",
@@ -2698,6 +2701,9 @@
       "hourly": "5-hour quota",
       "weekly": "Weekly quota",
       "weeklyBlocksHourly": "Weekly quota is 0, so the 5-hour quota is unavailable",
+      "windowStatsHint": "Requests, tokens, and account cost since this window last filled",
+      "windowAccountCostHint": "Account cost estimate by model price",
+      "windowUserCostHint": "User billing",
       "reset": "Reset",
       "resetCredits": "Resets {{count}}",
       "resetCreditsTitle": "Resets left for the 5-hour window: {{count}}",
@@ -2777,7 +2783,9 @@
     },
     "filter": {
       "plus": "PLUS ({{count}})",
-      "team": "TEAM ({{count}})"
+      "team": "TEAM ({{count}})",
+      "zeroQuota": "0% quota ({{count}})",
+      "expired": "Expired ({{count}})"
     },
     "sort": {
       "weekly": "Weekly quota",

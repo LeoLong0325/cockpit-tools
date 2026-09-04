@@ -1697,6 +1697,9 @@
     "refreshFailed": "Échec de l’actualisation du quota : {{error}}",
     "refreshAllSuccess": "Actualisation terminée, {{count}} compte(s) réussi(s)",
     "refreshAllPartialFailed": "Actualisation terminée, {{success}} / {{total}} compte(s) réussi(s), certains ont échoué",
+    "refreshTokens": "Actualiser les identifiants",
+    "refreshTokensSuccess": "Identifiants du compte actualisés",
+    "refreshTokensFailed": "Échec de l'actualisation des identifiants : {{error}}",
     "switch": "Basculer",
     "switched": "Basculé vers {{email}}",
     "switchFailed": "Échec du basculement : {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "Quota hebdomadaire",
       "reset": "Réinitialiser",
       "weeklyBlocksHourly": "Le quota hebdomadaire est à 0 ; le quota de 5 heures est donc indisponible",
+      "windowStatsHint": "Requêtes, jetons et coût du compte depuis le dernier remplissage de cette fenêtre",
+      "windowAccountCostHint": "Coût du compte estimé selon le prix du modèle",
+      "windowUserCostHint": "Facturation utilisateur",
       "resetCredits": "Réinits {{count}}",
       "resetCreditsTitle": "Réinitialisations restantes pour la fenêtre de 5 heures : {{count}}",
       "resetCreditConfirm": "Confirmer ?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "PLUS ({{count}})​",
-      "team": "ÉQUIPE ({{count}})"
+      "team": "ÉQUIPE ({{count}})",
+      "zeroQuota": "Quota à 0% ({{count}})",
+      "expired": "Expiré ({{count}})"
     },
     "sort": {
       "weekly": "Quota hebdomadaire",

@@ -1697,6 +1697,9 @@
     "refreshFailed": "Odświeżenie limitu nie powiodło się: {{error}}",
     "refreshAllSuccess": "Odświeżanie zakończone, {{count}} kont(a) pomyślnie",
     "refreshAllPartialFailed": "Odświeżanie zakończone, {{success}} / {{total}} kont pomyślnie, część nieudana",
+    "refreshTokens": "Odśwież dane logowania",
+    "refreshTokensSuccess": "Odświeżono dane logowania konta",
+    "refreshTokensFailed": "Nie udało się odświeżyć danych logowania: {{error}}",
     "switch": "Przełącz",
     "switched": "Przełączono na {{email}}",
     "switchFailed": "Nie udało się przełączyć: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "Limit tygodniowy",
       "reset": "Resetuj",
       "weeklyBlocksHourly": "Limit tygodniowy wynosi 0, więc limit 5-godzinny jest niedostępny",
+      "windowStatsHint": "Żądania, tokeny i koszt konta od ostatniego zapełnienia tego okna",
+      "windowAccountCostHint": "Szacunkowy koszt konta według ceny modelu",
+      "windowUserCostHint": "Rozliczenie użytkownika",
       "resetCredits": "Resety {{count}}",
       "resetCreditsTitle": "Pozostałe resety okna 5 godzin: {{count}}",
       "resetCreditConfirm": "Potwierdzić?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "PLUS (__MASKA_0__)",
-      "team": "ZESPÓŁ (__MASKA_0__)"
+      "team": "ZESPÓŁ (__MASKA_0__)",
+      "zeroQuota": "Limit 0% ({{count}})",
+      "expired": "Wygasło ({{count}})"
     },
     "sort": {
       "weekly": "Limit tygodniowy",

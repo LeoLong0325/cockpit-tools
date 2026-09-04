@@ -1697,6 +1697,9 @@
     "refreshFailed": "配額重新整理失敗：{{error}}",
     "refreshAllSuccess": "重新整理完成，成功 {{count}} 個帳號",
     "refreshAllPartialFailed": "重新整理完成，成功 {{success}} / {{total}} 個帳號，部分失敗",
+    "refreshTokens": "重新整理憑證",
+    "refreshTokensSuccess": "已重新整理帳號憑證",
+    "refreshTokensFailed": "重新整理憑證失敗: {{error}}",
     "switch": "切換",
     "switched": "已切換至 {{email}}",
     "switchFailed": "切換失敗: {{error}}",
@@ -2175,6 +2178,9 @@
       "weekly": "週配額",
       "reset": "重置",
       "weeklyBlocksHourly": "週額度為 0，因此 5 小時額度已不可用",
+      "windowStatsHint": "從本視窗滿額到現在的請求數、token 和帳號計費",
+      "windowAccountCostHint": "帳號計費（依模型價格估算）",
+      "windowUserCostHint": "使用者計費",
       "resetCredits": "重置 {{count}}",
       "resetCreditsTitle": "可用於重置目前 5 小時視窗的剩餘次數：{{count}}",
       "resetCreditConfirm": "確認重置?",
@@ -2225,7 +2231,9 @@
     },
     "filter": {
       "plus": "加上（{{count}}）",
-      "team": "團隊 ({{count}})"
+      "team": "團隊 ({{count}})",
+      "zeroQuota": "0% 額度 ({{count}})",
+      "expired": "已過期 ({{count}})"
     },
     "sort": {
       "weekly": "按週配額",

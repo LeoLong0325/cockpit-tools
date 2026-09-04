@@ -1697,6 +1697,9 @@
     "refreshFailed": "Obnovení kvóty selhalo: {{error}}",
     "refreshAllSuccess": "Obnovení dokončeno, úspěšných účtů: {{count}}",
     "refreshAllPartialFailed": "Obnovení dokončeno, {{success}} / {{total}} účtů úspěšných, některé selhaly",
+    "refreshTokens": "Obnovit přihlašovací údaje",
+    "refreshTokensSuccess": "Přihlašovací údaje účtu byly obnoveny",
+    "refreshTokensFailed": "Obnovení přihlašovacích údajů selhalo: {{error}}",
     "switch": "Přepnout",
     "switched": "Přepnuto na {{email}}",
     "switchFailed": "Přepnutí se nezdařilo: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "Týdenní kvóta",
       "reset": "Reset​",
       "weeklyBlocksHourly": "Týdenní kvóta je 0, proto není 5hodinová kvóta dostupná",
+      "windowStatsHint": "Požadavky, tokeny a náklady účtu od posledního naplnění tohoto okna",
+      "windowAccountCostHint": "Odhadované náklady účtu podle ceny modelu",
+      "windowUserCostHint": "Vyúčtování uživatele",
       "resetCredits": "Resety {{count}}",
       "resetCreditsTitle": "Zbývající resety pro 5hodinové okno: {{count}}",
       "resetCreditConfirm": "Potvrdit?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "PLUS ({{count}})​",
-      "team": "TÝM ({{count}})"
+      "team": "TÝM ({{count}})",
+      "zeroQuota": "Kvóta 0 % ({{count}})",
+      "expired": "Vypršelo ({{count}})"
     },
     "sort": {
       "weekly": "Týdenní kvóta",

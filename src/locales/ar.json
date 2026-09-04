@@ -1743,6 +1743,9 @@
     "refreshFailed": "فشل تحديث الحصة: {{error}}",
     "refreshAllSuccess": "اكتمل التحديث، نجح {{count}} حساب",
     "refreshAllPartialFailed": "اكتمل التحديث، نجح {{success}} / {{total}} حساب وفشل بعضها",
+    "refreshTokens": "تحديث بيانات الاعتماد",
+    "refreshTokensSuccess": "تم تحديث بيانات اعتماد الحساب",
+    "refreshTokensFailed": "فشل تحديث بيانات الاعتماد: {{error}}",
     "switch": "تبديل",
     "switched": "تم التبديل إلى {{email}}",
     "switchFailed": "فشل التبديل: {{error}}",
@@ -2104,6 +2107,9 @@
       "weekly": "الحصة الأسبوعية",
       "reset": "إعادة ضبط",
       "weeklyBlocksHourly": "الحصة الأسبوعية 0، لذا حصة 5 ساعات غير متاحة",
+      "windowStatsHint": "الطلبات والرموز وتكلفة الحساب منذ امتلاء هذه النافذة",
+      "windowAccountCostHint": "تكلفة الحساب المقدرة حسب سعر النموذج",
+      "windowUserCostHint": "فوترة المستخدم",
       "resetCredits": "مرات الضبط {{count}}",
       "resetCreditsTitle": "مرات متبقية لإعادة ضبط نافذة 5 ساعات: {{count}}",
       "resetCreditConfirm": "تأكيد؟",
@@ -2154,7 +2160,9 @@
     },
     "filter": {
       "plus": "زائد ({{count}})",
-      "team": "الفريق ({{count}})"
+      "team": "الفريق ({{count}})",
+      "zeroQuota": "حصة 0% ({{count}})",
+      "expired": "منتهي ({{count}})"
     },
     "sort": {
       "weekly": "الحصة الأسبوعية",

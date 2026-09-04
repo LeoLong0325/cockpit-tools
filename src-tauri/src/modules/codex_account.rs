@@ -8,12 +8,17 @@ use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION};
 #[cfg(target_os = "macos")]
 #[cfg(all(target_os = "macos", not(test)))]
 use sha2::{Digest, Sha256};
+use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use toml_edit::{value, Document};
+
+thread_local! {
+    static CODEX_ACCOUNT_SAVE_GUARD: Cell<bool> = const { Cell::new(false) };
+}
 
 static CODEX_QUOTA_ALERT_LAST_SENT: std::sync::LazyLock<Mutex<HashMap<String, i64>>> =
     std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -2199,10 +2204,50 @@ fn load_account_with_summary(
     Ok(Some(account))
 }
 
+fn merge_account_preserving_newer_tokens(
+    existing: &CodexAccount,
+    incoming: CodexAccount,
+) -> CodexAccount {
+    let existing_updated = existing.token_updated_at.unwrap_or(0);
+    let incoming_updated = incoming.token_updated_at.unwrap_or(0);
+    let existing_is_newer = existing.token_generation > incoming.token_generation
+        || (existing.token_generation == incoming.token_generation
+            && existing_updated > incoming_updated);
+    if !existing_is_newer {
+        return incoming;
+    }
+
+    logger::log_warn(&format!(
+        "Codex 跳过较旧的 Token 写回: account_id={}, existing_generation={}, incoming_generation={}",
+        incoming.id, existing.token_generation, incoming.token_generation
+    ));
+    let mut merged = incoming;
+    merged.tokens = existing.tokens.clone();
+    merged.token_generation = existing.token_generation;
+    merged.token_updated_at = existing.token_updated_at;
+    merged.token_source_mode = existing.token_source_mode.clone();
+    if !existing.requires_reauth {
+        merged.requires_reauth = false;
+        merged.reauth_reason = None;
+    }
+    merged
+}
+
 /// 保存单个账号详情
 pub fn save_account(account: &CodexAccount) -> Result<(), String> {
-    let path = get_accounts_dir().join(format!("{}.json", &account.id));
-    let content = crate::modules::secure_account_storage::serialize_account_file("codex", account)?;
+    let to_write = if CODEX_ACCOUNT_SAVE_GUARD.get() {
+        account.clone()
+    } else {
+        CODEX_ACCOUNT_SAVE_GUARD.set(true);
+        let merged = match load_account(&account.id) {
+            Some(existing) => merge_account_preserving_newer_tokens(&existing, account.clone()),
+            None => account.clone(),
+        };
+        CODEX_ACCOUNT_SAVE_GUARD.set(false);
+        merged
+    };
+    let path = get_accounts_dir().join(format!("{}.json", &to_write.id));
+    let content = crate::modules::secure_account_storage::serialize_account_file("codex", &to_write)?;
     write_string_atomic(&path, &content).map_err(|e| format!("写入账号详情失败: {}", e))?;
     Ok(())
 }
@@ -2986,8 +3031,15 @@ fn should_accept_authority_snapshot(
         return true;
     }
 
-    codex_oauth::is_token_expired(&account.tokens.access_token)
+    if codex_oauth::is_token_expired(&account.tokens.access_token)
         && !codex_oauth::is_token_expired(&snapshot.tokens.access_token)
+    {
+        return true;
+    }
+
+    let account_exp = codex_oauth::jwt_token_expiration_timestamp(&account.tokens.access_token);
+    let snapshot_exp = codex_oauth::jwt_token_expiration_timestamp(&snapshot.tokens.access_token);
+    matches!((account_exp, snapshot_exp), (Some(account_exp), Some(snapshot_exp)) if snapshot_exp > account_exp)
 }
 
 fn sync_account_from_authority_dir_if_current(
@@ -4161,6 +4213,41 @@ pub async fn prepare_account_for_injection_from_auth_dir(
 
 pub async fn prepare_account_for_injection(account_id: &str) -> Result<CodexAccount, String> {
     prepare_account_for_injection_from_store(account_id).await
+}
+
+/// 额度查询专用凭据准备：只在 access_token 过期时刷新，不走切号/启动链路。
+pub async fn prepare_account_for_quota_query(account_id: &str) -> Result<CodexAccount, String> {
+    let account = load_account(account_id).ok_or_else(|| format!("账号不存在: {}", account_id))?;
+    if account.is_api_key_auth() {
+        return Ok(account);
+    }
+
+    let lock = codex_token_lock_for(account_id);
+    let _guard = lock.lock().await;
+    let mut account =
+        load_account(account_id).ok_or_else(|| format!("账号不存在: {}", account_id))?;
+    if account.is_api_key_auth() {
+        return Ok(account);
+    }
+
+    if let Err(err) = sync_account_from_authority_sources(&mut account) {
+        logger::log_warn(&format!(
+            "Codex 额度查询前同步官方凭据失败，继续使用当前 access_token: account_id={}, error={}",
+            account.id, err
+        ));
+    }
+
+    if !codex_oauth::is_token_expired(&account.tokens.access_token) {
+        return Ok(account);
+    }
+    if account.requires_reauth {
+        return Err(account
+            .reauth_reason
+            .clone()
+            .unwrap_or_else(|| "账号需要重新授权".to_string()));
+    }
+
+    perform_managed_token_refresh(account, "额度查询前 access_token 已过期", false).await
 }
 
 /// 准备账号注入（账号中心模式）：
@@ -6200,6 +6287,7 @@ mod tests {
         extract_user_info, format_refresh_error_for_user, get_accounts_dir,
         get_accounts_storage_path, get_current_account_from_loaded, is_managed_auth_refresh_due,
         list_accounts_checked, load_account, load_account_index, looks_like_sub2api_export,
+        merge_account_preserving_newer_tokens,
         parse_auth_file_last_refresh, parse_codex_account_compat, parse_line_delimited_json_values,
         read_api_provider_from_config_toml, read_quick_config_from_config_toml,
         resolve_api_provider_config, save_account, save_account_index,
@@ -6426,6 +6514,29 @@ mod tests {
             access_token,
             refresh_token: Some(refresh_token.to_string()),
         }
+    }
+
+    #[test]
+    fn merge_account_preserves_newer_token_generation() {
+        let older = {
+            let mut account = build_test_oauth_account(CodexTokens {
+                id_token: "id-old".to_string(),
+                access_token: "at-old".to_string(),
+                refresh_token: Some("rt-old".to_string()),
+            });
+            account.token_generation = 1;
+            account.token_updated_at = Some(100);
+            account
+        };
+        let mut newer = older.clone();
+        newer.tokens.access_token = "at-new".to_string();
+        newer.token_generation = 3;
+        newer.token_updated_at = Some(300);
+
+        let merged = merge_account_preserving_newer_tokens(&newer, older);
+        assert_eq!(merged.tokens.access_token, "at-new");
+        assert_eq!(merged.token_generation, 3);
+        assert_eq!(merged.token_updated_at, Some(300));
     }
 
     fn build_test_oauth_account(tokens: CodexTokens) -> CodexAccount {

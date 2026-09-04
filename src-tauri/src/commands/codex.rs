@@ -709,6 +709,36 @@ pub async fn refresh_all_codex_quotas(app: AppHandle) -> Result<i32, String> {
     Ok(success_count as i32)
 }
 
+#[tauri::command]
+pub async fn refresh_all_codex_quotas_background(app: AppHandle) -> Result<i32, String> {
+    let results = codex_quota::refresh_all_quotas_for_background().await?;
+    let success_count = results.iter().filter(|(_, r)| r.is_ok()).count();
+    if success_count > 0 {
+        run_codex_post_refresh_checks(&app).await;
+    }
+    let _ = crate::modules::tray::update_tray_menu(&app);
+    Ok(success_count as i32)
+}
+
+#[tauri::command]
+pub async fn refresh_codex_quotas_batch(
+    app: AppHandle,
+    account_ids: Vec<String>,
+) -> Result<i32, String> {
+    let results = codex_quota::refresh_quotas_for_account_ids(account_ids).await?;
+    let success_count = results.iter().filter(|(_, r)| r.is_ok()).count();
+    if success_count > 0 {
+        run_codex_post_refresh_checks(&app).await;
+    }
+    let _ = crate::modules::tray::update_tray_menu(&app);
+    Ok(success_count as i32)
+}
+
+#[tauri::command]
+pub async fn force_refresh_codex_tokens(account_id: String) -> Result<CodexAccount, String> {
+    codex_account::force_refresh_managed_account(&account_id, "手动刷新凭据").await
+}
+
 async fn save_codex_oauth_tokens(
     tokens: CodexTokens,
     reauth_account_id: Option<&str>,

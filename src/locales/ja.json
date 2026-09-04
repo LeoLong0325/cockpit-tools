@@ -1697,6 +1697,9 @@
     "refreshFailed": "クォータの更新に失敗しました: {{error}}",
     "refreshAllSuccess": "更新完了、{{count}} アカウント成功",
     "refreshAllPartialFailed": "更新完了、{{success}} / {{total}} アカウント成功、一部失敗",
+    "refreshTokens": "認証情報を更新",
+    "refreshTokensSuccess": "アカウントの認証情報を更新しました",
+    "refreshTokensFailed": "認証情報の更新に失敗しました: {{error}}",
     "switch": "切替",
     "switched": "{{email}} に切り替えました",
     "switchFailed": "切り替え失敗: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "週次クォータ",
       "reset": "リセット",
       "weeklyBlocksHourly": "週クォータが 0 のため、5時間クォータは利用できません",
+      "windowStatsHint": "このウィンドウが満額になってから現在までのリクエスト数、トークン、アカウント課金",
+      "windowAccountCostHint": "モデル価格に基づくアカウント課金の見積もり",
+      "windowUserCostHint": "ユーザー課金",
       "resetCredits": "リセット {{count}}",
       "resetCreditsTitle": "5時間枠の残りリセット回数: {{count}}",
       "resetCreditConfirm": "確認?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "プラス ({{count}})",
-      "team": "チーム ({{count}})"
+      "team": "チーム ({{count}})",
+      "zeroQuota": "残量 0% ({{count}})",
+      "expired": "期限切れ ({{count}})"
     },
     "sort": {
       "weekly": "週間クォータ",

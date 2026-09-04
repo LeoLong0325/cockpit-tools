@@ -41,6 +41,7 @@ import {
   isCodexChatCompletionsApiKeyAccount,
   isCodexNewApiAccount,
 } from "../types/codex";
+import { placeCodexMonthlyCreditsLast } from "../utils/codexQuotaItemOrder";
 import {
   formatClaudeResetTime,
   getClaudeAccountDisplayEmail,
@@ -145,6 +146,15 @@ export interface UnifiedQuotaMetric {
   total?: number;
   left?: number;
   hintText?: string;
+  windowStats?: {
+    requestCount: number;
+    inputTokens: number;
+    cachedInputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    estimatedCostUsd: number;
+    userCostUsd?: number | null;
+  };
 }
 
 export interface UnifiedAccountPresentation {
@@ -740,7 +750,7 @@ export function buildCodexAccountPresentation(
     displayName,
     planLabel: planBadge.label,
     planClass: planBadge.className,
-    quotaItems,
+    quotaItems: placeCodexMonthlyCreditsLast(quotaItems),
   };
 }
 

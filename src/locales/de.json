@@ -1697,6 +1697,9 @@
     "refreshFailed": "Kontingent-Aktualisierung fehlgeschlagen: {{error}}",
     "refreshAllSuccess": "Aktualisierung abgeschlossen, {{count}} Konto/Konten erfolgreich",
     "refreshAllPartialFailed": "Aktualisierung abgeschlossen, {{success}} / {{total}} Konten erfolgreich, einige fehlgeschlagen",
+    "refreshTokens": "Anmeldedaten aktualisieren",
+    "refreshTokensSuccess": "Anmeldedaten wurden aktualisiert",
+    "refreshTokensFailed": "Aktualisieren der Anmeldedaten fehlgeschlagen: {{error}}",
     "switch": "Wechseln",
     "switched": "Gewechselt zu {{email}}",
     "switchFailed": "Wechsel fehlgeschlagen: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "Wöchentliches Kontingent",
       "reset": "Zurücksetzen",
       "weeklyBlocksHourly": "Das Wochenkontingent ist 0, daher ist das 5-Stunden-Kontingent nicht verfügbar",
+      "windowStatsHint": "Anfragen, Token und Kontokosten seit der letzten Auffüllung dieses Fensters",
+      "windowAccountCostHint": "Kontokosten nach Modellpreis geschätzt",
+      "windowUserCostHint": "Nutzerabrechnung",
       "resetCredits": "Rücksetz. {{count}}",
       "resetCreditsTitle": "Verbleibende Resets für das 5-Stunden-Fenster: {{count}}",
       "resetCreditConfirm": "Bestätigen?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "PLUS ({{count}})​",
-      "team": "TEAM ({{count}})​"
+      "team": "TEAM ({{count}})​",
+      "zeroQuota": "0% Kontingent ({{count}})",
+      "expired": "Abgelaufen ({{count}})"
     },
     "sort": {
       "weekly": "Wöchentliches Kontingent",

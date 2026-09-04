@@ -239,6 +239,21 @@ export async function refreshAllCodexQuotas(): Promise<number> {
   return await invoke('refresh_all_codex_quotas');
 }
 
+/** 后台串行刷新所有账号配额，降低限流。 */
+export async function refreshAllCodexQuotasBackground(): Promise<number> {
+  return await invoke('refresh_all_codex_quotas_background');
+}
+
+/** 按账号 ID 批量刷新配额 */
+export async function refreshCodexQuotasBatch(accountIds: string[]): Promise<number> {
+  return await invoke('refresh_codex_quotas_batch', { accountIds });
+}
+
+/** 强制刷新账号 Token，不启动客户端 */
+export async function forceRefreshCodexTokens(accountId: string): Promise<CodexAccount> {
+  return await invoke('force_refresh_codex_tokens', { accountId });
+}
+
 /** 新 OAuth 流程：开始登录 */
 export async function startCodexOAuthLogin(): Promise<CodexOAuthLoginStartResponse> {
   return await invoke('codex_oauth_login_start');

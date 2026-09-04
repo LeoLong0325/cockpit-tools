@@ -1697,6 +1697,9 @@
     "refreshFailed": "할당량 새로고침 실패: {{error}}",
     "refreshAllSuccess": "새로고침 완료, {{count}}개 계정 성공",
     "refreshAllPartialFailed": "새로고침 완료, {{success}} / {{total}}개 계정 성공, 일부 실패",
+    "refreshTokens": "자격 증명 새로고침",
+    "refreshTokensSuccess": "계정 자격 증명을 새로고침했습니다",
+    "refreshTokensFailed": "자격 증명 새로고침 실패: {{error}}",
     "switch": "전환",
     "switched": "{{email}}(으)로 전환했습니다",
     "switchFailed": "전환 실패: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "주간 쿼터",
       "reset": "재설정",
       "weeklyBlocksHourly": "주간 할당량이 0이라 5시간 할당량을 사용할 수 없습니다",
+      "windowStatsHint": "이 창이 가득 찬 이후의 요청 수, 토큰, 계정 비용",
+      "windowAccountCostHint": "모델 가격으로 추정한 계정 비용",
+      "windowUserCostHint": "사용자 과금",
       "resetCredits": "재설정 {{count}}",
       "resetCreditsTitle": "5시간 창에 남은 재설정 횟수: {{count}}",
       "resetCreditConfirm": "확인?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "플러스({{count}})",
-      "team": "팀({{count}})"
+      "team": "팀({{count}})",
+      "zeroQuota": "한도 0% ({{count}})",
+      "expired": "만료됨 ({{count}})"
     },
     "sort": {
       "weekly": "주간 할당량",

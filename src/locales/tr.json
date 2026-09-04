@@ -1697,6 +1697,9 @@
     "refreshFailed": "Kota yenileme başarısız: {{error}}",
     "refreshAllSuccess": "Yenileme tamamlandı, {{count}} hesap başarılı",
     "refreshAllPartialFailed": "Yenileme tamamlandı, {{success}} / {{total}} hesap başarılı, bazıları başarısız",
+    "refreshTokens": "Kimlik bilgilerini yenile",
+    "refreshTokensSuccess": "Hesap kimlik bilgileri yenilendi",
+    "refreshTokensFailed": "Kimlik bilgileri yenilenemedi: {{error}}",
     "switch": "Değiştir",
     "switched": "{{email}} hesabına geçildi",
     "switchFailed": "Değiştirme başarısız: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "Haftalık kota",
       "reset": "Sıfırla",
       "weeklyBlocksHourly": "Haftalık kota 0 olduğu için 5 saatlik kota kullanılamaz",
+      "windowStatsHint": "Bu pencere dolduğundan beri istek, belirteç ve hesap maliyeti",
+      "windowAccountCostHint": "Model fiyatına göre hesap maliyeti tahmini",
+      "windowUserCostHint": "Kullanıcı faturalandırması",
       "resetCredits": "Sıfırlama {{count}}",
       "resetCreditsTitle": "5 saatlik pencere için kalan sıfırlama: {{count}}",
       "resetCreditConfirm": "Onayla?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "ARTI ({{count}})",
-      "team": "TAKIM ({{count}})"
+      "team": "TAKIM ({{count}})",
+      "zeroQuota": "%0 kota ({{count}})",
+      "expired": "Süresi doldu ({{count}})"
     },
     "sort": {
       "weekly": "Haftalık kota",

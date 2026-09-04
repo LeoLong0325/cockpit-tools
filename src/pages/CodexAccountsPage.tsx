@@ -103,6 +103,14 @@ import {
 } from "../types/codex";
 import { filterCodexLocalAccessAccountIds } from "../utils/codexLocalAccessAccounts";
 import { isBlockingCodexQuotaError } from "../utils/codexQuotaError";
+import {
+  CODEX_EXPIRED_FILTER_VALUE,
+  CODEX_ZERO_QUOTA_FILTER_VALUE,
+  isCodexOverviewAccountSubscriptionExpired,
+  isCodexOverviewAccountZeroQuota,
+  matchesCodexOverviewSpecialFilter,
+} from "../utils/codexAccountOverview";
+import { CodexQuotaMiniRows } from "../components/codex/CodexQuotaMiniRows";
 import { buildCodexAccountPresentation } from "../presentation/platformAccountPresentation";
 
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
@@ -905,6 +913,9 @@ export function CodexAccountsPage() {
   );
   const [refreshingSubscriptionAccountId, setRefreshingSubscriptionAccountId] =
     useState<string | null>(null);
+  const [refreshingTokensAccountId, setRefreshingTokensAccountId] = useState<
+    string | null
+  >(null);
   const [resettingResetCreditAccountId, setResettingResetCreditAccountId] =
     useState<string | null>(null);
   const [resetCreditConfirmAccountId, setResetCreditConfirmAccountId] =
@@ -2173,6 +2184,7 @@ export function CodexAccountsPage() {
     switchAccount,
     refreshQuota,
     refreshSubscriptionInfo,
+    forceRefreshTokens,
     hydrateAccountProfilesIfNeeded,
     updateAccountName,
     updateApiKeyCredentials,
@@ -2399,6 +2411,30 @@ export function CodexAccountsPage() {
     setResetCreditConfirmActionLocked(false);
     setResetCreditConfirmError(null);
   }, [resettingResetCreditAccountId, setResetCreditConfirmError]);
+
+  const handleRefreshTokens = useCallback(
+    async (accountId: string) => {
+      setRefreshingTokensAccountId(accountId);
+      try {
+        await forceRefreshTokens(accountId);
+        setMessage({
+          text: t("codex.refreshTokensSuccess", "已刷新账号凭据"),
+          tone: "success",
+        });
+      } catch (error) {
+        setMessage({
+          text: t("codex.refreshTokensFailed", {
+            error: String(error).replace(/^Error:\s*/, ""),
+            defaultValue: `刷新凭据失败: ${String(error).replace(/^Error:\s*/, "")}`,
+          }),
+          tone: "error",
+        });
+      } finally {
+        setRefreshingTokensAccountId(null);
+      }
+    },
+    [forceRefreshTokens, setMessage, t],
+  );
 
   const handleConfirmConsumeResetCredit = useCallback(async () => {
     const account = resetCreditConfirmAccount;
@@ -6713,6 +6749,8 @@ export function CodexAccountsPage() {
       TEAM: 0,
       ENTERPRISE: 0,
       ERROR: 0,
+      ZERO_QUOTA: 0,
+      EXPIRED: 0,
     };
     overviewAccounts.forEach((a) => {
       if (!isAbnormalAccount(a)) {
@@ -6721,6 +6759,8 @@ export function CodexAccountsPage() {
       const tier = resolvePlanKey(a);
       if (tier in counts) counts[tier as keyof typeof counts] += 1;
       if (isAbnormalAccount(a)) counts.ERROR += 1;
+      if (isCodexOverviewAccountZeroQuota(a)) counts.ZERO_QUOTA += 1;
+      if (isCodexOverviewAccountSubscriptionExpired(a)) counts.EXPIRED += 1;
     });
     return counts;
   }, [isAbnormalAccount, overviewAccounts, resolvePlanKey]);
@@ -6733,6 +6773,20 @@ export function CodexAccountsPage() {
       { value: "TEAM", label: `TEAM (${tierCounts.TEAM})` },
       { value: "ENTERPRISE", label: `ENTERPRISE (${tierCounts.ENTERPRISE})` },
       { value: "ERROR", label: `ERROR (${tierCounts.ERROR})` },
+      {
+        value: CODEX_ZERO_QUOTA_FILTER_VALUE,
+        label: t("codex.filter.zeroQuota", {
+          count: tierCounts.ZERO_QUOTA,
+          defaultValue: "0% 额度 ({{count}})",
+        }),
+      },
+      {
+        value: CODEX_EXPIRED_FILTER_VALUE,
+        label: t("codex.filter.expired", {
+          count: tierCounts.EXPIRED,
+          defaultValue: "已过期 ({{count}})",
+        }),
+      },
       buildValidAccountsFilterOption(t, tierCounts.VALID),
     ],
     [t, tierCounts],
@@ -6829,12 +6883,13 @@ export function CodexAccountsPage() {
         oauthBindingFilterTypes,
       );
       if (selectedTypes.size > 0) {
-        result = result.filter((account) => {
-          if (selectedTypes.has("ERROR") && isAbnormalAccount(account)) {
-            return true;
-          }
-          return selectedTypes.has(resolvePlanKey(account));
-        });
+        result = result.filter((account) =>
+          matchesCodexOverviewSpecialFilter(
+            account,
+            selectedTypes,
+            isAbnormalAccount,
+          ),
+        );
       }
     }
 
@@ -6878,7 +6933,7 @@ export function CodexAccountsPage() {
     oauthBindingSortBy,
     oauthBindingSortDirection,
     oauthBindingTagFilter,
-    resolvePlanKey,
+    isAbnormalAccount,
     resolvePresentation,
   ]);
 
@@ -7621,12 +7676,9 @@ export function CodexAccountsPage() {
         result = result.filter((account) => !isAbnormalAccount(account));
       }
       if (selectedTypes.size > 0) {
-        result = result.filter((a) => {
-          if (selectedTypes.has("ERROR") && isAbnormalAccount(a)) {
-            return true;
-          }
-          return selectedTypes.has(resolvePlanKey(a));
-        });
+        result = result.filter((a) =>
+          matchesCodexOverviewSpecialFilter(a, selectedTypes, isAbnormalAccount),
+        );
       }
     }
     if (tagFilter.length > 0) {
@@ -7671,7 +7723,6 @@ export function CodexAccountsPage() {
     isAbnormalAccount,
     normalizeTag,
     overviewAccounts,
-    resolvePlanKey,
     resolvePresentation,
     searchQuery,
     tagFilter,
@@ -8462,40 +8513,9 @@ export function CodexAccountsPage() {
                     <strong>{cockpitApiAccountBalanceText}</strong>
                   </div>
                 )}
-                {quotaItems.map((item) => {
-                  const QuotaIcon =
-                    item.key === "secondary"
-                      ? Calendar
-                      : item.key === "code_review"
-                        ? BookOpen
-                        : item.key === "new_api_quota"
-                          ? Database
-                          : Clock;
-                  return (
-                    <div
-                      key={item.key}
-                      className="quota-item"
-                      title={item.hintText}
-                    >
-                      <div className="quota-header">
-                        <QuotaIcon size={14} />
-                        <span className="quota-label">{item.label}</span>
-                        <span className={`quota-pct ${item.quotaClass}`}>
-                          {item.valueText}
-                        </span>
-                      </div>
-                      <div className="quota-bar-track">
-                        <div
-                          className={`quota-bar ${item.quotaClass}`}
-                          style={{ width: `${item.percentage}%` }}
-                        />
-                      </div>
-                      {item.resetText && (
-                        <span className="quota-reset">{item.resetText}</span>
-                      )}
-                    </div>
-                  );
-                })}
+                {quotaItems.length > 0 && (
+                  <CodexQuotaMiniRows items={quotaItems} t={t} />
+                )}
                 {quotaItems.length === 0 && !cockpitApiAccountBalanceText && (
                   <div className="quota-empty">
                     {t("common.shared.quota.noData", "暂无配额数据")}
@@ -8623,6 +8643,23 @@ export function CodexAccountsPage() {
                     <Play size={14} />
                   )}
                 </button>
+                {!isApiKeyAccount && (
+                  <button
+                    className="card-action-btn"
+                    onClick={() => void handleRefreshTokens(account.id)}
+                    disabled={refreshingTokensAccountId === account.id}
+                    title={t("codex.refreshTokens", "刷新凭据")}
+                  >
+                    <KeyRound
+                      size={14}
+                      className={
+                        refreshingTokensAccountId === account.id
+                          ? "loading-spinner"
+                          : ""
+                      }
+                    />
+                  </button>
+                )}
                 {(!isApiKeyAccount ||
                   isNewApiAccount ||
                   canRefreshApiKeyUsage(account, apiKeyUsageProvider)) && (
@@ -9927,6 +9964,23 @@ export function CodexAccountsPage() {
                   <Play size={14} />
                 )}
               </button>
+              {!isApiKeyAccount && (
+                <button
+                  className="action-btn"
+                  onClick={() => void handleRefreshTokens(account.id)}
+                  disabled={refreshingTokensAccountId === account.id}
+                  title={t("codex.refreshTokens", "刷新凭据")}
+                >
+                  <KeyRound
+                    size={14}
+                    className={
+                      refreshingTokensAccountId === account.id
+                        ? "loading-spinner"
+                        : ""
+                    }
+                  />
+                </button>
+              )}
               {(!isApiKeyAccount ||
                 isNewApiAccount ||
                 canRefreshApiKeyUsage(account, apiKeyUsageProvider)) && (

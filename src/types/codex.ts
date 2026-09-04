@@ -546,6 +546,7 @@ export function getCodexPlanDisplayName(planType?: string): string {
   if (upper.includes("ENTERPRISE")) return "ENTERPRISE";
   if (upper.includes("PLUS")) return "PLUS";
   if (upper.includes("PRO")) return "PRO";
+  if (upper.includes("API")) return "API";
   return upper;
 }
 
@@ -564,10 +565,29 @@ function normalizeCodexPlanKey(planType?: string): string {
   return normalized;
 }
 
+export function getCodexEffectivePlanKey(account: CodexAccount): string {
+  const planKey = normalizeCodexPlanKey(account.plan_type);
+  if (planKey === "free" || isCodexApiKeyAccount(account)) {
+    return planKey;
+  }
+
+  const subscriptionExpiry = parseCodexSubscriptionDate(
+    account.subscription_active_until,
+  );
+  if (subscriptionExpiry && subscriptionExpiry.getTime() <= Date.now()) {
+    return "free";
+  }
+  return planKey;
+}
+
 export function isCodexExplicitFreePlanType(planType?: string): boolean {
   const normalized = (planType || "").trim();
   if (!normalized) return false;
   return normalizeCodexPlanKey(planType) === "free";
+}
+
+export function isCodexEffectiveFreePlan(account: CodexAccount): boolean {
+  return getCodexEffectivePlanKey(account) === "free";
 }
 
 function normalizeCodexAuthFilePlanType(
@@ -600,8 +620,12 @@ function getCodexPlanBadgeLabel(account: CodexAccount): string {
   if (isCodexNewApiAccount(account)) {
     return account.plan_type?.trim() || "Cockpit Api";
   }
-  const baseLabel = getCodexPlanDisplayName(account.plan_type);
-  if (normalizeCodexPlanKey(account.plan_type) !== "pro") {
+  if (isCodexApiKeyAccount(account)) {
+    return "API";
+  }
+  const effectivePlanKey = getCodexEffectivePlanKey(account);
+  const baseLabel = getCodexPlanDisplayName(effectivePlanKey);
+  if (effectivePlanKey !== "pro") {
     return baseLabel;
   }
 
@@ -620,7 +644,7 @@ function getCodexPlanBadgeClass(account: CodexAccount): string {
   if (isCodexNewApiAccount(account)) {
     return "api-key new-api-exclusive";
   }
-  const baseClass = normalizeCodexPlanKey(account.plan_type);
+  const baseClass = getCodexEffectivePlanKey(account);
   if (baseClass === "plus") {
     return "plus codex-plus";
   }
@@ -653,7 +677,7 @@ export function getCodexPlanBadgePresentation(
 }
 
 export function getCodexPlanFilterKey(account: CodexAccount): string {
-  return normalizeCodexPlanKey(account.plan_type).toUpperCase();
+  return getCodexEffectivePlanKey(account).toUpperCase();
 }
 
 export function isCodexTeamLikePlan(planType?: string): boolean {

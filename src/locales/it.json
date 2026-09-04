@@ -1697,6 +1697,9 @@
     "refreshFailed": "Aggiornamento quota non riuscito: {{error}}",
     "refreshAllSuccess": "Aggiornamento completato, {{count}} account riusciti",
     "refreshAllPartialFailed": "Aggiornamento completato, {{success}} / {{total}} account riusciti, alcuni non riusciti",
+    "refreshTokens": "Aggiorna credenziali",
+    "refreshTokensSuccess": "Credenziali dell'account aggiornate",
+    "refreshTokensFailed": "Aggiornamento credenziali non riuscito: {{error}}",
     "switch": "Cambia",
     "switched": "Passato a {{email}}",
     "switchFailed": "Cambio non riuscito: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "Quota settimanale",
       "reset": "Reimposta",
       "weeklyBlocksHourly": "La quota settimanale è 0, quindi la quota di 5 ore non è disponibile",
+      "windowStatsHint": "Richieste, token e costo account dall'ultimo riempimento di questa finestra",
+      "windowAccountCostHint": "Costo account stimato in base al prezzo del modello",
+      "windowUserCostHint": "Fatturazione utente",
       "resetCredits": "Reset {{count}}",
       "resetCreditsTitle": "Reset rimasti per la finestra di 5 ore: {{count}}",
       "resetCreditConfirm": "Confermare?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "PIÙ ({{count}})",
-      "team": "SQUADRA ({{count}})"
+      "team": "SQUADRA ({{count}})",
+      "zeroQuota": "Quota allo 0% ({{count}})",
+      "expired": "Scaduto ({{count}})"
     },
     "sort": {
       "weekly": "Quota settimanale",

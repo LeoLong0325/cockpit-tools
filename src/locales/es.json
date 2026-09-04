@@ -1697,6 +1697,9 @@
     "refreshFailed": "Error al actualizar la cuota: {{error}}",
     "refreshAllSuccess": "Actualización completada, {{count}} cuenta(s) correctas",
     "refreshAllPartialFailed": "Actualización completada, {{success}} / {{total}} cuentas correctas y algunas fallaron",
+    "refreshTokens": "Actualizar credenciales",
+    "refreshTokensSuccess": "Credenciales de la cuenta actualizadas",
+    "refreshTokensFailed": "Error al actualizar las credenciales: {{error}}",
     "switch": "Cambiar",
     "switched": "Cambiado a {{email}}",
     "switchFailed": "Error al cambiar: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "Cuota semanal",
       "reset": "Reinicio",
       "weeklyBlocksHourly": "La cuota semanal es 0, por eso la cuota de 5 horas no está disponible",
+      "windowStatsHint": "Solicitudes, tokens y coste de la cuenta desde que esta ventana se llenó",
+      "windowAccountCostHint": "Coste de la cuenta estimado por precio del modelo",
+      "windowUserCostHint": "Facturación del usuario",
       "resetCredits": "Reinicios {{count}}",
       "resetCreditsTitle": "Reinicios restantes para la ventana de 5 horas: {{count}}",
       "resetCreditConfirm": "¿Confirmar?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "MÁS ({{count}})",
-      "team": "EQUIPO ({{count}})"
+      "team": "EQUIPO ({{count}})",
+      "zeroQuota": "Cuota al 0% ({{count}})",
+      "expired": "Caducado ({{count}})"
     },
     "sort": {
       "weekly": "Cuota semanal",

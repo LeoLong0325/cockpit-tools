@@ -1697,6 +1697,9 @@
     "refreshFailed": "Не удалось обновить квоту: {{error}}",
     "refreshAllSuccess": "Обновление завершено, успешно: {{count}} аккаунт(ов)",
     "refreshAllPartialFailed": "Обновление завершено, успешно: {{success}} / {{total}}, часть с ошибками",
+    "refreshTokens": "Обновить учётные данные",
+    "refreshTokensSuccess": "Учётные данные аккаунта обновлены",
+    "refreshTokensFailed": "Не удалось обновить учётные данные: {{error}}",
     "switch": "Переключить",
     "switched": "Переключено на {{email}}",
     "switchFailed": "Ошибка переключения: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "Недельная квота",
       "reset": "Сброс",
       "weeklyBlocksHourly": "Недельная квота равна 0, поэтому 5-часовая квота недоступна",
+      "windowStatsHint": "Запросы, токены и стоимость аккаунта с момента последнего заполнения этого окна",
+      "windowAccountCostHint": "Стоимость аккаунта по цене модели",
+      "windowUserCostHint": "Биллинг пользователя",
       "resetCredits": "Сбросы {{count}}",
       "resetCreditsTitle": "Осталось сбросов для 5-часового окна: {{count}}",
       "resetCreditConfirm": "Подтвердить?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "ПЛЮС ({{count}})",
-      "team": "КОМАНДА ({{count}})"
+      "team": "КОМАНДА ({{count}})",
+      "zeroQuota": "Квота 0% ({{count}})",
+      "expired": "Истёк срок ({{count}})"
     },
     "sort": {
       "weekly": "Недельная квота",

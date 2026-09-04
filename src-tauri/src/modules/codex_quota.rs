@@ -1416,7 +1416,7 @@ async fn refresh_account_quota_once(
     account_id: &str,
     options: RefreshQuotaOptions,
 ) -> Result<CodexQuota, String> {
-    let mut account = codex_account::prepare_account_for_injection(account_id).await?;
+    let mut account = codex_account::prepare_account_for_quota_query(account_id).await?;
     if account.is_api_key_auth() {
         if is_new_api_account(&account) {
             let result = match fetch_new_api_quota(&account).await {
@@ -1570,23 +1570,34 @@ pub async fn refresh_account_subscription_info(
     }
 }
 
-/// 刷新所有账号配额
-pub async fn refresh_all_quotas() -> Result<Vec<(String, Result<CodexQuota, String>)>, String> {
+async fn refresh_quotas_for_account_ids_with_concurrency(
+    account_ids: Vec<String>,
+    max_concurrent: usize,
+) -> Result<Vec<(String, Result<CodexQuota, String>)>, String> {
     use futures::future::join_all;
+    use std::collections::HashSet;
     use std::sync::Arc;
     use tokio::sync::Semaphore;
 
-    const MAX_CONCURRENT: usize = 5;
-    let accounts: Vec<_> = codex_account::list_accounts()
+    let mut seen = HashSet::new();
+    let unique_ids: Vec<String> = account_ids
         .into_iter()
-        .filter(|account| !account.is_api_key_auth() || is_new_api_account(account))
+        .filter(|account_id| seen.insert(account_id.clone()))
         .collect();
 
-    let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT));
-    let tasks: Vec<_> = accounts
+    if max_concurrent <= 1 {
+        let mut results = Vec::with_capacity(unique_ids.len());
+        for account_id in unique_ids {
+            let result = refresh_account_quota(&account_id).await;
+            results.push((account_id, result));
+        }
+        return Ok(results);
+    }
+
+    let semaphore = Arc::new(Semaphore::new(max_concurrent.max(1)));
+    let tasks: Vec<_> = unique_ids
         .into_iter()
-        .map(|account| {
-            let account_id = account.id;
+        .map(|account_id| {
             let semaphore = semaphore.clone();
             async move {
                 let _permit = semaphore
@@ -1608,6 +1619,31 @@ pub async fn refresh_all_quotas() -> Result<Vec<(String, Result<CodexQuota, Stri
     }
 
     Ok(results)
+}
+
+fn quota_refreshable_account_ids() -> Vec<String> {
+    codex_account::list_accounts()
+        .into_iter()
+        .filter(|account| !account.is_api_key_auth() || is_new_api_account(account))
+        .map(|account| account.id)
+        .collect()
+}
+
+pub async fn refresh_quotas_for_account_ids(
+    account_ids: Vec<String>,
+) -> Result<Vec<(String, Result<CodexQuota, String>)>, String> {
+    refresh_quotas_for_account_ids_with_concurrency(account_ids, 5).await
+}
+
+/// 刷新所有账号配额
+pub async fn refresh_all_quotas() -> Result<Vec<(String, Result<CodexQuota, String>)>, String> {
+    refresh_quotas_for_account_ids(quota_refreshable_account_ids()).await
+}
+
+/// 后台额度刷新改为串行，降低短时间限流。
+pub async fn refresh_all_quotas_for_background(
+) -> Result<Vec<(String, Result<CodexQuota, String>)>, String> {
+    refresh_quotas_for_account_ids_with_concurrency(quota_refreshable_account_ids(), 1).await
 }
 
 #[cfg(test)]

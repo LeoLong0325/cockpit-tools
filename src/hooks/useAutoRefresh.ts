@@ -136,7 +136,9 @@ export function useAutoRefresh() {
   const fetchAccounts = useAccountStore((state) => state.fetchAccounts);
   const fetchCurrentAccount = useAccountStore((state) => state.fetchCurrentAccount);
 
-  const refreshAllCodexQuotas = useCodexAccountStore((state) => state.refreshAllQuotas);
+  const refreshAllCodexQuotas = useCodexAccountStore(
+    (state) => state.refreshAllQuotasBackground,
+  );
   const fetchCodexAccounts = useCodexAccountStore((state) => state.fetchAccounts);
   const fetchCurrentCodexAccount = useCodexAccountStore((state) => state.fetchCurrentAccount);
 

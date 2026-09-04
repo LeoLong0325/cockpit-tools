@@ -1697,6 +1697,9 @@
     "refreshFailed": "Làm mới quota thất bại: {{error}}",
     "refreshAllSuccess": "Làm mới hoàn tất, {{count}} tài khoản thành công",
     "refreshAllPartialFailed": "Làm mới hoàn tất, {{success}} / {{total}} tài khoản thành công và một số thất bại",
+    "refreshTokens": "Làm mới thông tin xác thực",
+    "refreshTokensSuccess": "Đã làm mới thông tin xác thực tài khoản",
+    "refreshTokensFailed": "Làm mới thông tin xác thực thất bại: {{error}}",
     "switch": "Chuyển",
     "switched": "Đã chuyển sang {{email}}",
     "switchFailed": "Chuyển thất bại: {{error}}",
@@ -2058,6 +2061,9 @@
       "weekly": "Hạn mức tuần",
       "reset": "Đặt lại",
       "weeklyBlocksHourly": "Hạn mức tuần là 0 nên hạn mức 5 giờ không khả dụng",
+      "windowStatsHint": "Số yêu cầu, token và chi phí tài khoản kể từ khi cửa sổ này đầy",
+      "windowAccountCostHint": "Chi phí tài khoản ước tính theo giá mô hình",
+      "windowUserCostHint": "Thanh toán người dùng",
       "resetCredits": "Lượt đặt lại {{count}}",
       "resetCreditsTitle": "Lượt đặt lại còn lại cho cửa sổ 5 giờ: {{count}}",
       "resetCreditConfirm": "Xác nhận?",
@@ -2108,7 +2114,9 @@
     },
     "filter": {
       "plus": "CỘNG VỚI ({{count}})",
-      "team": "ĐỘI ({{count}})"
+      "team": "ĐỘI ({{count}})",
+      "zeroQuota": "Hạn mức 0% ({{count}})",
+      "expired": "Hết hạn ({{count}})"
     },
     "sort": {
       "weekly": "Hạn mức tuần",

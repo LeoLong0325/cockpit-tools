@@ -1743,6 +1743,9 @@
     "refreshFailed": "Penyegaran kuota gagal: {{error}}",
     "refreshAllSuccess": "Penyegaran selesai, {{count}} akun berhasil",
     "refreshAllPartialFailed": "Penyegaran selesai, {{success}} / {{total}} akun berhasil dan beberapa gagal",
+    "refreshTokens": "Segarkan kredensial",
+    "refreshTokensSuccess": "Kredensial akun telah disegarkan",
+    "refreshTokensFailed": "Gagal menyegarkan kredensial: {{error}}",
     "switch": "Ganti",
     "switched": "Beralih ke {{email}}",
     "switchFailed": "Penggantian gagal: {{error}}",
@@ -2224,6 +2227,9 @@
       "weekly": "Kuota mingguan",
       "reset": "Setel ulang",
       "weeklyBlocksHourly": "Kuota mingguan 0, jadi kuota 5 jam tidak tersedia",
+      "windowStatsHint": "Permintaan, token, dan biaya akun sejak jendela ini penuh",
+      "windowAccountCostHint": "Perkiraan biaya akun berdasarkan harga model",
+      "windowUserCostHint": "Tagihan pengguna",
       "resetCredits": "Reset {{count}}",
       "resetCreditsTitle": "Sisa reset untuk jendela 5 jam: {{count}}",
       "resetCreditConfirm": "Konfirmasi?",
@@ -2282,7 +2288,9 @@
     },
     "filter": {
       "plus": "PLUS ({{count}})​",
-      "team": "TEAM ({{count}})​"
+      "team": "TEAM ({{count}})​",
+      "zeroQuota": "Kuota 0% ({{count}})",
+      "expired": "Kedaluwarsa ({{count}})"
     },
     "sort": {
       "weekly": "Kuota mingguan",
