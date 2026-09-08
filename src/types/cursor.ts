@@ -19,6 +19,7 @@ export interface CursorAccount {
   cursor_free_credit_usage_raw?: unknown;
   cursor_sand_usage_raw?: unknown;
   cursor_referral_raw?: unknown;
+  cursor_welcome_back_raw?: unknown;
   cursor_last_usage_event_at?: number | null;
 
   status?: string | null;
@@ -213,6 +214,68 @@ export function getCursorPlanBadgeClass(
     default:
       return 'unknown';
   }
+}
+
+export type CursorWelcomeBackOffer = {
+  canActivate: boolean;
+  previousPlanTier: string | null;
+  couponId: string | null;
+  promoTypeId: string | null;
+  redemptionFlow: string | null;
+};
+
+export function getCursorWelcomeBackOffer(
+  account: CursorAccount,
+): CursorWelcomeBackOffer | null {
+  const raw = account.cursor_welcome_back_raw;
+  if (!raw || typeof raw !== 'object') return null;
+
+  const root = raw as Record<string, unknown>;
+  const canActivate = pickBoolean(root, 'canActivate', 'can_activate') === true;
+  const previousPlanTier = pickString(
+    root,
+    'previousPlanTier',
+    'previous_plan_tier',
+    'planTier',
+    'plan_tier',
+  );
+  const couponId = pickString(root, 'couponId', 'coupon_id');
+  const promoTypeId = pickString(root, 'promoTypeId', 'promo_type_id');
+  const redemptionFlow = pickString(root, 'redemptionFlow', 'redemption_flow');
+
+  return {
+    canActivate,
+    previousPlanTier,
+    couponId,
+    promoTypeId,
+    redemptionFlow,
+  };
+}
+
+export function hasCursorWelcomeBackOffer(account: CursorAccount): boolean {
+  return (
+    getCursorPlanBadge(account) === 'FREE' &&
+    getCursorWelcomeBackOffer(account)?.canActivate === true
+  );
+}
+
+export function getCursorWelcomeBackPlanLabel(account: CursorAccount): string | null {
+  const tier = getCursorWelcomeBackOffer(account)?.previousPlanTier;
+  if (!tier) return null;
+  return getCursorPlanDisplayName({
+    ...account,
+    membership_type: tier,
+    subscription_status: null,
+  });
+}
+
+export function resolveCursorAccountPlanBadgeClass(account: CursorAccount): string {
+  if (isCursorAccountPastDue(account)) return 'past-due';
+  if (hasCursorWelcomeBackOffer(account)) {
+    const tier = getCursorWelcomeBackOffer(account)?.previousPlanTier;
+    if (tier) return getCursorPlanBadgeClass(tier);
+  }
+  return getCursorPlanBadgeClass(account.membership_type, account);
 }
 
 export function getCursorAccountDisplayEmail(account: CursorAccount): string {

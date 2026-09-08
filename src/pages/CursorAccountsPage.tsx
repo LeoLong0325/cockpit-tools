@@ -29,6 +29,7 @@ import {
   BarChart3,
   Tags,
   MonitorSmartphone,
+  TicketPercent,
 } from 'lucide-react';
 import { useCursorAccountStore } from '../stores/useCursorAccountStore';
 import * as cursorService from '../services/cursorService';
@@ -46,8 +47,10 @@ import { SingleSelectFilterDropdown } from '../components/SingleSelectFilterDrop
 import {
   getCursorPlanBadge,
   getCursorPlanDisplayName,
-  getCursorPlanBadgeClass,
+  resolveCursorAccountPlanBadgeClass,
   getCursorAccountDisplayEmail,
+  hasCursorWelcomeBackOffer,
+  getCursorWelcomeBackPlanLabel,
   getCursorOnDemandSummary,
   getCursorUsage,
   getCursorReferralStatus,
@@ -132,6 +135,7 @@ export function CursorAccountsPage() {
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralError, setReferralError] = useState<string | null>(null);
   const [referralEligibleOnly, setReferralEligibleOnly] = useState(false);
+  const [welcomeBackEligibleOnly, setWelcomeBackEligibleOnly] = useState(false);
   const [sessionsModalAccountId, setSessionsModalAccountId] = useState<string | null>(null);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
@@ -139,6 +143,7 @@ export function CursorAccountsPage() {
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
   const [savingSessionNoteId, setSavingSessionNoteId] = useState<string | null>(null);
   const [taggedOnly, setTaggedOnly] = useState(false);
+  const [welcomeBackLoadingId, setWelcomeBackLoadingId] = useState<string | null>(null);
   const [filterTypes, setFilterTypes] = useState<string[]>(() =>
     readAccountsOverviewFilterPersistenceEnabled(CURSOR_FILTER_PERSISTENCE_SCOPE)
       ? readAccountsOverviewFilterStringArray(CURSOR_FILTER_PERSISTENCE_SCOPE, FILTER_TYPES_FIELD)
@@ -250,6 +255,11 @@ export function CursorAccountsPage() {
     [accounts],
   );
 
+  const welcomeBackEligibleCount = useMemo(
+    () => accounts.filter((account) => hasCursorWelcomeBackOffer(account)).length,
+    [accounts],
+  );
+
   const taggedAccountCount = useMemo(
     () => accounts.filter((account) => (account.tags || []).some((tag) => normalizeTag(tag))).length,
     [accounts, normalizeTag],
@@ -274,11 +284,20 @@ export function CursorAccountsPage() {
   );
 
   const resolvePlanBadgeClass = useCallback(
-    (account: CursorAccount) =>
-      isCursorAccountPastDue(account)
-        ? 'past-due'
-        : getCursorPlanBadgeClass(account.membership_type, account),
+    (account: CursorAccount) => resolveCursorAccountPlanBadgeClass(account),
     [],
+  );
+
+  const resolvePlanBadgeTitle = useCallback(
+    (account: CursorAccount) => {
+      if (!hasCursorWelcomeBackOffer(account)) return undefined;
+      const plan = getCursorWelcomeBackPlanLabel(account) || 'Pro';
+      return t('cursor.welcomeBack.badgeTitle', {
+        plan,
+        defaultValue: 'Comeback 可恢复 {{plan}}',
+      });
+    },
+    [t],
   );
 
   const resolveDisplayEmail = useCallback(
@@ -306,6 +325,37 @@ export function CursorAccountsPage() {
           defaultValue: '打开主页失败: {{error}}',
         }),
       });
+    }
+  }, [setMessage, t]);
+
+  const handleOpenWelcomeBackCheckout = useCallback(async (accountId: string) => {
+    setWelcomeBackLoadingId(accountId);
+    try {
+      const url = (await cursorService.fetchCursorWelcomeBackCheckout(accountId)).trim();
+      if (!url) {
+        throw new Error('empty url');
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch {
+        // 打开链接已足够，复制失败不阻断。
+      }
+      setMessage({
+        text: t('cursor.welcomeBack.checkoutReady', {
+          url,
+          defaultValue: '已复制支付链接并打开: {{url}}',
+        }),
+      });
+    } catch (error) {
+      setMessage({
+        tone: 'error',
+        text: t('cursor.welcomeBack.checkoutFailed', {
+          error: String(error).replace(/^Error:\s*/, ''),
+          defaultValue: '获取支付链接失败: {{error}}',
+        }),
+      });
+    } finally {
+      setWelcomeBackLoadingId(null);
     }
   }, [setMessage, t]);
 
@@ -782,6 +832,10 @@ export function CursorAccountsPage() {
       result = result.filter((account) => hasCursorReferralEligibility(account));
     }
 
+    if (welcomeBackEligibleOnly) {
+      result = result.filter((account) => hasCursorWelcomeBackOffer(account));
+    }
+
     if (taggedOnly) {
       result = result.filter((account) => (account.tags || []).some((tag) => normalizeTag(tag)));
     }
@@ -789,7 +843,7 @@ export function CursorAccountsPage() {
     result.sort(compareAccountsBySort);
 
     return result;
-  }, [accounts, compareAccountsBySort, filterTypes, isAbnormalAccount, normalizeTag, referralEligibleOnly, resolvePlanKey, searchQuery, tagFilter, taggedOnly]);
+  }, [accounts, compareAccountsBySort, filterTypes, isAbnormalAccount, normalizeTag, referralEligibleOnly, resolvePlanKey, searchQuery, tagFilter, taggedOnly, welcomeBackEligibleOnly]);
 
   const filteredIds = useMemo(() => filteredAccounts.map((account) => account.id), [filteredAccounts]);
   const exportSelectionCount = getScopedSelectedCount(filteredIds);
@@ -901,7 +955,12 @@ export function CursorAccountsPage() {
                 {t('accounts.status.forbidden')}
               </span>
             )}
-            <span className={`tier-badge ${resolvePlanBadgeClass(account)}`}>{planLabel}</span>
+            <span
+              className={`tier-badge ${resolvePlanBadgeClass(account)}`}
+              title={resolvePlanBadgeTitle(account)}
+            >
+              {planLabel}
+            </span>
           </div>
 
           <div className="account-sub-line">
@@ -1043,6 +1102,19 @@ export function CursorAccountsPage() {
               >
                 <Home size={14} />
               </button>
+              {hasCursorWelcomeBackOffer(account) && (
+                <button
+                  className="card-action-btn"
+                  onClick={() => handleOpenWelcomeBackCheckout(account.id)}
+                  disabled={isBanned || welcomeBackLoadingId === account.id}
+                  title={t('cursor.welcomeBack.getCheckout', '获取 Comeback 支付链接')}
+                >
+                  <TicketPercent
+                    size={14}
+                    className={welcomeBackLoadingId === account.id ? 'loading-spinner' : ''}
+                  />
+                </button>
+              )}
               <button
                 className="card-action-btn export-btn"
                 onClick={() => handleExportByIds([account.id], resolveSingleExportBaseName(account))}
@@ -1119,7 +1191,14 @@ export function CursorAccountsPage() {
               )}
             </div>
           </td>
-          <td><span className={`tier-badge ${resolvePlanBadgeClass(account)}`}>{planLabel}</span></td>
+          <td>
+            <span
+              className={`tier-badge ${resolvePlanBadgeClass(account)}`}
+              title={resolvePlanBadgeTitle(account)}
+            >
+              {planLabel}
+            </span>
+          </td>
           <td>
             {hasQuotaData ? (
               <div className="quota-item windsurf-table-credit-item">
@@ -1245,6 +1324,19 @@ export function CursorAccountsPage() {
               >
                 <Home size={14} />
               </button>
+              {hasCursorWelcomeBackOffer(account) && (
+                <button
+                  className="action-btn"
+                  onClick={() => handleOpenWelcomeBackCheckout(account.id)}
+                  disabled={isBanned || welcomeBackLoadingId === account.id}
+                  title={t('cursor.welcomeBack.getCheckout', '获取 Comeback 支付链接')}
+                >
+                  <TicketPercent
+                    size={14}
+                    className={welcomeBackLoadingId === account.id ? 'loading-spinner' : ''}
+                  />
+                </button>
+              )}
               <button
                 className="action-btn"
                 onClick={() => handleExportByIds([account.id], resolveSingleExportBaseName(account))}
@@ -1382,6 +1474,20 @@ export function CursorAccountsPage() {
             {referralEligibleCount > 0
               ? t('cursor.referral.filterEligibleWithCount', '邀请资格 ({{count}})', { count: referralEligibleCount })
               : t('cursor.referral.filterEligible', '邀请资格')}
+          </button>
+
+          <button
+            type="button"
+            className={`tag-filter-btn ${welcomeBackEligibleOnly ? 'active' : ''}`}
+            onClick={() => setWelcomeBackEligibleOnly((prev) => !prev)}
+            disabled={welcomeBackEligibleCount === 0 && !welcomeBackEligibleOnly}
+            title={t('cursor.welcomeBack.filterEligibleTitle', '只看有 Comeback 的账号')}
+            aria-label={t('cursor.welcomeBack.filterEligibleTitle', '只看有 Comeback 的账号')}
+          >
+            <TicketPercent size={14} />
+            {welcomeBackEligibleCount > 0
+              ? t('cursor.welcomeBack.filterEligibleWithCount', 'Comeback 优惠 ({{count}})', { count: welcomeBackEligibleCount })
+              : t('cursor.welcomeBack.filterEligible', 'Comeback 优惠')}
           </button>
 
           <SingleSelectFilterDropdown

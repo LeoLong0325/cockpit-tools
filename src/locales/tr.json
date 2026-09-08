@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Davet uygun ({{count}})",
       "filterEligibleTitle": "Davet uygun hesapları göster"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback, {{plan}} planını geri getirebilir",
+      "getCheckout": "Comeback ödeme bağlantısını al",
+      "checkoutReady": "Ödeme bağlantısı kopyalandı ve açıldı: {{url}}",
+      "checkoutFailed": "Ödeme bağlantısı alınamadı: {{error}}",
+      "filterEligible": "Comeback teklifi",
+      "filterEligibleWithCount": "Comeback teklifi ({{count}})",
+      "filterEligibleTitle": "Yalnızca Comeback teklifi olan hesapları göster"
+    },
     "sessions": {
       "view": "Cihaz oturumlarını görüntüle",
       "title": "Aktif oturumlar",

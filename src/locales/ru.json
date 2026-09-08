@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Доступен реферал ({{count}})",
       "filterEligibleTitle": "Показать аккаунты с правом приглашения"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback может восстановить {{plan}}",
+      "getCheckout": "Получить ссылку на оплату Comeback",
+      "checkoutReady": "Ссылка на оплату скопирована и открыта: {{url}}",
+      "checkoutFailed": "Не удалось получить ссылку на оплату: {{error}}",
+      "filterEligible": "Предложение Comeback",
+      "filterEligibleWithCount": "Предложение Comeback ({{count}})",
+      "filterEligibleTitle": "Показать только аккаунты с предложением Comeback"
+    },
     "sessions": {
       "view": "Показать сеансы устройств",
       "title": "Активные сеансы",

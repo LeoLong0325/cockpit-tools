@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Uprawniony do poleceń ({{count}})",
       "filterEligibleTitle": "Pokaż konta uprawnione do poleceń"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback może przywrócić {{plan}}",
+      "getCheckout": "Pobierz link płatności Comeback",
+      "checkoutReady": "Skopiowano i otwarto link płatności: {{url}}",
+      "checkoutFailed": "Nie udało się pobrać linku płatności: {{error}}",
+      "filterEligible": "Oferta Comeback",
+      "filterEligibleWithCount": "Oferta Comeback ({{count}})",
+      "filterEligibleTitle": "Pokaż tylko konta z ofertą Comeback"
+    },
     "sessions": {
       "view": "Pokaż sesje urządzeń",
       "title": "Aktywne sesje",

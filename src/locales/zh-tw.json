@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "邀請資格 ({{count}})",
       "filterEligibleTitle": "篩選有邀請資格的帳號"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback 可恢復 {{plan}}",
+      "getCheckout": "取得 Comeback 支付連結",
+      "checkoutReady": "已複製支付連結並打開: {{url}}",
+      "checkoutFailed": "取得支付連結失敗: {{error}}",
+      "filterEligible": "Comeback 優惠",
+      "filterEligibleWithCount": "Comeback 優惠 ({{count}})",
+      "filterEligibleTitle": "只看有 Comeback 的帳號"
+    },
     "sessions": {
       "view": "查看裝置工作階段",
       "title": "作用中工作階段",

@@ -34,6 +34,8 @@ pub struct CursorAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor_referral_raw: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor_welcome_back_raw: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor_free_credit_usage_raw: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor_sand_usage_raw: Option<serde_json::Value>,

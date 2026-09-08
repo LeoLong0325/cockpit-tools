@@ -3982,6 +3982,15 @@
       "filterEligibleWithCount": "邀请资格 ({{count}})",
       "filterEligibleTitle": "筛选有邀请资格的账号"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback 可恢复 {{plan}}",
+      "getCheckout": "获取 Comeback 支付链接",
+      "checkoutReady": "已复制支付链接并打开: {{url}}",
+      "checkoutFailed": "获取支付链接失败: {{error}}",
+      "filterEligible": "Comeback 优惠",
+      "filterEligibleWithCount": "Comeback 优惠 ({{count}})",
+      "filterEligibleTitle": "只看有 Comeback 的账号"
+    },
     "sessions": {
       "view": "查看设备会话",
       "title": "活跃会话",

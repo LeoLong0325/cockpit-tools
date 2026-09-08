@@ -3830,6 +3830,15 @@
       "filterEligibleWithCount": "Layak referral ({{count}})",
       "filterEligibleTitle": "Tampilkan akun yang layak referral"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback dapat memulihkan {{plan}}",
+      "getCheckout": "Ambil tautan pembayaran Comeback",
+      "checkoutReady": "Tautan pembayaran disalin dan dibuka: {{url}}",
+      "checkoutFailed": "Gagal mengambil tautan pembayaran: {{error}}",
+      "filterEligible": "Penawaran Comeback",
+      "filterEligibleWithCount": "Penawaran Comeback ({{count}})",
+      "filterEligibleTitle": "Hanya tampilkan akun dengan penawaran Comeback"
+    },
     "sessions": {
       "view": "Lihat sesi perangkat",
       "title": "Sesi aktif",

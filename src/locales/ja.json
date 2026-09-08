@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "招待資格 ({{count}})",
       "filterEligibleTitle": "招待資格のあるアカウントを表示"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback で {{plan}} に復帰できます",
+      "getCheckout": "Comeback の支払いリンクを取得",
+      "checkoutReady": "支払いリンクをコピーして開きました: {{url}}",
+      "checkoutFailed": "支払いリンクの取得に失敗しました: {{error}}",
+      "filterEligible": "カムバック対象",
+      "filterEligibleWithCount": "カムバック対象 ({{count}})",
+      "filterEligibleTitle": "Comeback 対象アカウントのみ表示"
+    },
     "sessions": {
       "view": "デバイスセッションを表示",
       "title": "アクティブセッション",

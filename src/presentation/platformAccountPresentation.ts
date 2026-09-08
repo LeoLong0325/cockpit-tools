@@ -74,7 +74,7 @@ import {
   getCursorGrokBotUsage,
   getCursorOnDemandSummary,
   getCursorPlanDisplayName,
-  getCursorPlanBadgeClass,
+  resolveCursorAccountPlanBadgeClass,
   getCursorUsage,
   isCursorAccountBanned,
   resolveCursorCreditGrantsQuotaDisplay,
@@ -1617,7 +1617,7 @@ export function buildCursorAccountPresentation(
     id: account.id,
     displayName: getCursorAccountDisplayEmail(account),
     planLabel,
-    planClass: getCursorPlanBadgeClass(account.membership_type, account),
+    planClass: resolveCursorAccountPlanBadgeClass(account),
     isBanned: isCursorAccountBanned(account),
     quotaItems,
   };

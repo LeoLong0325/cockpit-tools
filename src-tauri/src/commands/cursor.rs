@@ -156,6 +156,14 @@ pub async fn open_cursor_stripe_billing(app: AppHandle, account_id: String) -> R
 }
 
 #[tauri::command]
+pub async fn fetch_cursor_welcome_back_checkout(
+    app: AppHandle,
+    account_id: String,
+) -> Result<String, String> {
+    cursor_account::fetch_cursor_welcome_back_checkout(&app, &account_id).await
+}
+
+#[tauri::command]
 pub async fn fetch_cursor_aggregated_usage(
     account_id: String,
     start_date: u64,

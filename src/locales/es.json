@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Elegible para referidos ({{count}})",
       "filterEligibleTitle": "Mostrar cuentas elegibles para referidos"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback puede restaurar {{plan}}",
+      "getCheckout": "Obtener enlace de pago Comeback",
+      "checkoutReady": "Enlace de pago copiado y abierto: {{url}}",
+      "checkoutFailed": "No se pudo obtener el enlace de pago: {{error}}",
+      "filterEligible": "Oferta Comeback",
+      "filterEligibleWithCount": "Oferta Comeback ({{count}})",
+      "filterEligibleTitle": "Mostrar solo cuentas con oferta Comeback"
+    },
     "sessions": {
       "view": "Ver sesiones de dispositivos",
       "title": "Sesiones activas",

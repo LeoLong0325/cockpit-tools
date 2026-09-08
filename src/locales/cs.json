@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Způsobilý k doporučení ({{count}})",
       "filterEligibleTitle": "Zobrazit účty způsobilé k doporučení"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback může obnovit {{plan}}",
+      "getCheckout": "Získat platební odkaz Comeback",
+      "checkoutReady": "Platební odkaz zkopírován a otevřen: {{url}}",
+      "checkoutFailed": "Nepodařilo se získat platební odkaz: {{error}}",
+      "filterEligible": "Nabídka Comeback",
+      "filterEligibleWithCount": "Nabídka Comeback ({{count}})",
+      "filterEligibleTitle": "Zobrazit jen účty s nabídkou Comeback"
+    },
     "sessions": {
       "view": "Zobrazit relace zařízení",
       "title": "Aktivní relace",

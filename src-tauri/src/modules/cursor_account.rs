@@ -543,6 +543,10 @@ fn merge_duplicate_account(primary: &mut CursorAccount, duplicate: &CursorAccoun
     fill_if_none(&mut primary.sign_up_type, &duplicate.sign_up_type);
     fill_if_none(&mut primary.cursor_auth_raw, &duplicate.cursor_auth_raw);
     fill_if_none(&mut primary.cursor_usage_raw, &duplicate.cursor_usage_raw);
+    fill_if_none(
+        &mut primary.cursor_welcome_back_raw,
+        &duplicate.cursor_welcome_back_raw,
+    );
     fill_if_none(&mut primary.status, &duplicate.status);
     fill_if_none(&mut primary.status_reason, &duplicate.status_reason);
 
@@ -919,6 +923,7 @@ pub fn upsert_account(payload: CursorImportPayload) -> Result<CursorAccount, Str
         cursor_usage_raw: payload.cursor_usage_raw.clone(),
         cursor_credit_grants_raw: payload.cursor_credit_grants_raw.clone(),
         cursor_referral_raw: None,
+        cursor_welcome_back_raw: None,
         cursor_free_credit_usage_raw: payload.cursor_free_credit_usage_raw.clone(),
         cursor_sand_usage_raw: None,
         cursor_last_usage_event_at: None,
@@ -1604,6 +1609,14 @@ pub async fn open_cursor_dashboard(
     app: &tauri::AppHandle,
     account_id: &str,
 ) -> Result<(), String> {
+    open_cursor_authenticated_window(app, account_id, "https://cursor.com/cn").await
+}
+
+async fn open_cursor_authenticated_window(
+    app: &tauri::AppHandle,
+    account_id: &str,
+    start_url: &str,
+) -> Result<(), String> {
     use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
     let account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
@@ -1631,7 +1644,7 @@ pub async fn open_cursor_dashboard(
         app,
         "cursor_dashboard",
         WebviewUrl::External(
-            "https://cursor.com/cn"
+            start_url
                 .parse()
                 .map_err(|e| format!("无效的 Dashboard URL: {}", e))?,
         ),
@@ -1733,6 +1746,248 @@ pub async fn open_cursor_stripe_billing(
         &Arc::new(Mutex::new(CursorDashboardExternalOpenDeduper::default())),
     );
     Ok(())
+}
+
+fn is_free_cursor_membership(membership_type: Option<&str>) -> bool {
+    normalize_non_empty(membership_type)
+        .map(|value| value.eq_ignore_ascii_case("free"))
+        .unwrap_or(false)
+}
+
+fn welcome_back_can_activate(value: &serde_json::Value) -> bool {
+    value
+        .get("canActivate")
+        .or_else(|| value.get("can_activate"))
+        .and_then(|item| item.as_bool())
+        == Some(true)
+}
+
+fn extract_http_url(value: &str) -> Option<String> {
+    let trimmed = value.trim().trim_matches('"').trim();
+    if trimmed.starts_with("https://") || trimmed.starts_with("http://") {
+        Some(trimmed.to_string())
+    } else {
+        None
+    }
+}
+
+fn extract_checkout_url_from_json(value: &serde_json::Value) -> Option<String> {
+    match value {
+        serde_json::Value::String(text) => extract_http_url(text),
+        serde_json::Value::Object(map) => {
+            for key in [
+                "url",
+                "checkoutUrl",
+                "checkout_url",
+                "sessionUrl",
+                "session_url",
+                "redirectUrl",
+                "redirect_url",
+                "paymentUrl",
+                "payment_url",
+                "href",
+            ] {
+                if let Some(found) = map.get(key).and_then(extract_checkout_url_from_json) {
+                    return Some(found);
+                }
+            }
+            for key in ["checkout", "data", "result", "payload"] {
+                if let Some(found) = map.get(key).and_then(extract_checkout_url_from_json) {
+                    return Some(found);
+                }
+            }
+            None
+        }
+        _ => None,
+    }
+}
+
+fn is_preferred_checkout_url(url: &str) -> bool {
+    let Ok(parsed) = url::Url::parse(url) else {
+        return false;
+    };
+    let host = parsed.host_str().unwrap_or("").to_ascii_lowercase();
+    cursor_dashboard_should_open_in_browser_host(&host)
+}
+
+fn is_cursor_api_welcome_back_url(url: &str) -> bool {
+    url.contains("cursor.com/api/auth/welcome-back")
+}
+
+fn is_cursor_web_welcome_back_url(url: &str) -> bool {
+    let Ok(parsed) = url::Url::parse(url) else {
+        return false;
+    };
+    let host = parsed.host_str().unwrap_or("").to_ascii_lowercase();
+    if !cursor_dashboard_cursor_host(&host) || is_cursor_api_welcome_back_url(url) {
+        return false;
+    }
+    let path = parsed.path().to_ascii_lowercase();
+    path.contains("welcome-back") || path.contains("checkout")
+}
+
+fn is_allowed_welcome_back_checkout_url(url: &str) -> bool {
+    is_preferred_checkout_url(url) || is_cursor_web_welcome_back_url(url)
+}
+
+fn resolve_welcome_back_checkout_url(final_url: &str, body: &str) -> Result<String, String> {
+    if is_preferred_checkout_url(final_url) {
+        return Ok(final_url.to_string());
+    }
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(body) {
+        if let Some(url) = extract_checkout_url_from_json(&json) {
+            if is_allowed_welcome_back_checkout_url(&url) {
+                return Ok(url);
+            }
+        }
+    }
+    if let Some(url) = extract_http_url(body) {
+        if is_allowed_welcome_back_checkout_url(&url) {
+            return Ok(url);
+        }
+    }
+    if is_cursor_web_welcome_back_url(final_url) {
+        return Ok(final_url.to_string());
+    }
+    Err("未获取到 Comeback 支付链接".to_string())
+}
+
+async fn get_cursor_web_json_with_client(
+    client: &reqwest::Client,
+    cookie: &str,
+    url: &str,
+    referer: &str,
+) -> Result<serde_json::Value, String> {
+    let response = client
+        .get(url)
+        .header("Accept", "*/*")
+        .header("Cookie", cookie)
+        .header("Origin", "https://cursor.com")
+        .header("Referer", referer)
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        )
+        .send()
+        .await
+        .map_err(|e| format!("请求 Cursor 接口失败: {}", e))?;
+
+    let status = response.status().as_u16();
+    if status == 401 || status == 403 {
+        return Err(format!(
+            "Cursor 会话已过期或未认证，请重新导入账号 (HTTP {})",
+            status
+        ));
+    }
+    if status != 200 {
+        return Err(format!("Cursor 接口返回异常状态码: {}", status));
+    }
+
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("读取 Cursor 接口响应失败: {}", e))?;
+    serde_json::from_str::<serde_json::Value>(&body)
+        .map_err(|e| format!("解析 Cursor 接口 JSON 失败: {}", e))
+}
+
+async fn fetch_welcome_back_offer_with_client(
+    client: &reqwest::Client,
+    account: &CursorAccount,
+) -> Result<serde_json::Value, String> {
+    let cookie = account_dashboard_cookie(account)?;
+    match get_cursor_web_json_with_client(
+        client,
+        &cookie,
+        CURSOR_WELCOME_BACK_OFFER_URL,
+        CURSOR_WELCOME_BACK_REFERER,
+    )
+    .await
+    {
+        Ok(response) => Ok(response),
+        Err(err) if is_cursor_session_error(&err) => Err(err),
+        Err(err) if err.contains("403") || err.contains("404") => {
+            Ok(serde_json::json!({ "canActivate": false }))
+        }
+        Err(err) => Err(err),
+    }
+}
+
+async fn fetch_welcome_back_checkout_url(account: &CursorAccount) -> Result<String, String> {
+    let client = build_cursor_http_client()?;
+    let cookie = account_dashboard_cookie(account)?;
+    let response = client
+        .get(CURSOR_WELCOME_BACK_CHECKOUT_URL)
+        .header("Accept", "*/*")
+        .header("Cookie", &cookie)
+        .header("Origin", "https://cursor.com")
+        .header("Referer", CURSOR_WELCOME_BACK_REFERER)
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        )
+        .timeout(std::time::Duration::from_secs(40))
+        .send()
+        .await
+        .map_err(|e| format!("请求 Comeback 支付链接失败: {}", e))?;
+
+    let status = response.status().as_u16();
+    if status == 401 || status == 403 {
+        return Err("Cursor 会话已过期或未认证，请重新导入账号".to_string());
+    }
+
+    let final_url = response.url().to_string();
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("读取 Comeback 支付链接响应失败: {}", e))?;
+
+    if status != 200 && status != 201 && !is_preferred_checkout_url(&final_url) {
+        if let Ok(url) = resolve_welcome_back_checkout_url(&final_url, &body) {
+            return Ok(url);
+        }
+        return Err(format!("Comeback 支付接口返回异常状态码: {}", status));
+    }
+
+    resolve_welcome_back_checkout_url(&final_url, &body)
+}
+
+pub async fn fetch_cursor_welcome_back_checkout(
+    app: &tauri::AppHandle,
+    account_id: &str,
+) -> Result<String, String> {
+    let account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
+    if !is_free_cursor_membership(account.membership_type.as_deref()) {
+        return Err("Comeback 优惠仅对 FREE 账号有效".to_string());
+    }
+
+    logger::log_info(&format!(
+        "[Cursor WelcomeBack] 请求支付链接: account_id={}, email={}",
+        account.id, account.email
+    ));
+    let url_str = fetch_welcome_back_checkout_url(&account).await?;
+    if !is_allowed_welcome_back_checkout_url(&url_str) {
+        return Err("Comeback 支付链接无效".to_string());
+    }
+    logger::log_info(&format!(
+        "[Cursor WelcomeBack] 支付链接获取成功: account_id={}",
+        account.id
+    ));
+
+    let url = url_str
+        .parse::<url::Url>()
+        .map_err(|e| format!("Comeback 支付链接解析失败: {}", e))?;
+    let host = url.host_str().unwrap_or("").to_ascii_lowercase();
+    if cursor_dashboard_cursor_host(&host) && !is_preferred_checkout_url(&url_str) {
+        open_cursor_authenticated_window(app, account_id, &url_str).await?;
+    } else {
+        cursor_dashboard_open_external(
+            app,
+            &url,
+            &Arc::new(Mutex::new(CursorDashboardExternalOpenDeduper::default())),
+        );
+    }
+    Ok(url_str)
 }
 
 // ---------------------------------------------------------------------------
@@ -1962,6 +2217,9 @@ const CURSOR_CREDIT_GRANTS_BALANCE_URL: &str =
     "https://cursor.com/api/dashboard/get-credit-grants-balance";
 const CURSOR_CLIENT_VISIBLE_CREDIT_GRANTS_URL: &str =
     "https://cursor.com/api/dashboard/get-client-visible-credit-grants";
+const CURSOR_WELCOME_BACK_OFFER_URL: &str = "https://cursor.com/api/auth/welcome-back-offer";
+const CURSOR_WELCOME_BACK_CHECKOUT_URL: &str = "https://cursor.com/api/auth/welcome-back?checkout=1";
+const CURSOR_WELCOME_BACK_REFERER: &str = "https://cursor.com/activate/welcome-back/offer";
 const CURSOR_P2P_REFERRAL_STATUS_URL: &str =
     "https://cursor.com/api/dashboard/get-p2p-referral-status";
 const CURSOR_SAND_USAGE_STATUS_URL: &str =
@@ -3774,6 +4032,31 @@ async fn refresh_account_async_once(account_id: &str) -> Result<CursorAccount, S
         }
     }
 
+    if is_free_cursor_membership(account.membership_type.as_deref()) {
+        match fetch_welcome_back_offer_with_client(&client, &account).await {
+            Ok(offer) => {
+                let can_activate = welcome_back_can_activate(&offer);
+                account.cursor_welcome_back_raw = Some(offer);
+                logger::log_info(&format!(
+                    "[Cursor Refresh] Comeback 优惠拉取成功: id={}, canActivate={}",
+                    account.id, can_activate
+                ));
+            }
+            Err(err) => {
+                logger::log_warn(&format!(
+                    "[Cursor Refresh] Comeback 优惠拉取失败: id={}, error={}",
+                    account.id, err
+                ));
+            }
+        }
+    } else if account.cursor_welcome_back_raw.is_some() {
+        account.cursor_welcome_back_raw = None;
+        logger::log_info(&format!(
+            "[Cursor Refresh] 非 FREE 账号，已清除 Comeback 优惠: id={}",
+            account.id
+        ));
+    }
+
     let sand_access = match sand_access_result {
         Ok(access) => Some(access),
         Err(err) if is_cursor_session_error(&err) => {
@@ -4497,6 +4780,71 @@ mod auth_sessions_tests {
         assert!(!is_safe_session_id("../sessions"));
         assert!(!is_safe_session_id(""));
         assert!(!is_safe_session_id("id with space"));
+    }
+}
+
+#[cfg(test)]
+mod welcome_back_tests {
+    use super::{
+        extract_checkout_url_from_json, is_free_cursor_membership,
+        resolve_welcome_back_checkout_url, welcome_back_can_activate,
+    };
+    use serde_json::json;
+
+    #[test]
+    fn free_membership_only() {
+        assert!(is_free_cursor_membership(Some("free")));
+        assert!(is_free_cursor_membership(Some("FREE")));
+        assert!(!is_free_cursor_membership(Some("pro")));
+        assert!(!is_free_cursor_membership(Some("free_trial")));
+        assert!(!is_free_cursor_membership(None));
+    }
+
+    #[test]
+    fn offer_reads_can_activate() {
+        assert!(welcome_back_can_activate(&json!({ "canActivate": true })));
+        assert!(!welcome_back_can_activate(&json!({ "canActivate": false })));
+        assert!(!welcome_back_can_activate(&json!({})));
+    }
+
+    #[test]
+    fn json_checkout_url() {
+        assert_eq!(
+            extract_checkout_url_from_json(&json!({
+                "checkoutUrl": "https://checkout.stripe.com/c/pay/cs_test"
+            })),
+            Some("https://checkout.stripe.com/c/pay/cs_test".into())
+        );
+    }
+
+    #[test]
+    fn resolve_prefers_stripe_final_url() {
+        let url = resolve_welcome_back_checkout_url(
+            "https://checkout.stripe.com/c/pay/cs_test",
+            "not-json",
+        )
+        .unwrap();
+        assert!(url.contains("stripe.com"));
+    }
+
+    #[test]
+    fn resolve_rejects_unrelated_https_url() {
+        let err = resolve_welcome_back_checkout_url(
+            "https://example.com/track",
+            "https://example.com/pay",
+        )
+        .unwrap_err();
+        assert!(err.contains("未获取到"));
+    }
+
+    #[test]
+    fn resolve_accepts_cursor_landing_page() {
+        let url = resolve_welcome_back_checkout_url(
+            "https://cursor.com/activate/welcome-back/offer",
+            "<html></html>",
+        )
+        .unwrap();
+        assert!(url.contains("welcome-back"));
     }
 }
 

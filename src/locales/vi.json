@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Đủ điều kiện mời ({{count}})",
       "filterEligibleTitle": "Hiển thị tài khoản đủ điều kiện mời"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback có thể khôi phục {{plan}}",
+      "getCheckout": "Lấy liên kết thanh toán Comeback",
+      "checkoutReady": "Đã sao chép và mở liên kết thanh toán: {{url}}",
+      "checkoutFailed": "Không lấy được liên kết thanh toán: {{error}}",
+      "filterEligible": "Ưu đãi Comeback",
+      "filterEligibleWithCount": "Ưu đãi Comeback ({{count}})",
+      "filterEligibleTitle": "Chỉ xem tài khoản có ưu đãi Comeback"
+    },
     "sessions": {
       "view": "Xem phiên thiết bị",
       "title": "Phiên đang hoạt động",

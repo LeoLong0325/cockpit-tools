@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Empfehlungsberechtigt ({{count}})",
       "filterEligibleTitle": "Konten mit Empfehlungsberechtigung anzeigen"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback kann {{plan}} wiederherstellen",
+      "getCheckout": "Comeback-Zahlungslink abrufen",
+      "checkoutReady": "Zahlungslink kopiert und geöffnet: {{url}}",
+      "checkoutFailed": "Zahlungslink konnte nicht abgerufen werden: {{error}}",
+      "filterEligible": "Comeback-Angebot",
+      "filterEligibleWithCount": "Comeback-Angebot ({{count}})",
+      "filterEligibleTitle": "Nur Konten mit Comeback-Angebot anzeigen"
+    },
     "sessions": {
       "view": "Gerätesitzungen anzeigen",
       "title": "Aktive Sitzungen",

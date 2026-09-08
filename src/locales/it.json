@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Idoneo referral ({{count}})",
       "filterEligibleTitle": "Mostra account idonei al referral"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback può ripristinare {{plan}}",
+      "getCheckout": "Ottieni il link di pagamento Comeback",
+      "checkoutReady": "Link di pagamento copiato e aperto: {{url}}",
+      "checkoutFailed": "Impossibile ottenere il link di pagamento: {{error}}",
+      "filterEligible": "Offerta Comeback",
+      "filterEligibleWithCount": "Offerta Comeback ({{count}})",
+      "filterEligibleTitle": "Mostra solo gli account con offerta Comeback"
+    },
     "sessions": {
       "view": "Vedi sessioni dei dispositivi",
       "title": "Sessioni attive",

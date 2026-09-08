@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Éligible parrainage ({{count}})",
       "filterEligibleTitle": "Afficher les comptes éligibles au parrainage"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback peut rétablir {{plan}}",
+      "getCheckout": "Obtenir le lien de paiement Comeback",
+      "checkoutReady": "Lien de paiement copié et ouvert : {{url}}",
+      "checkoutFailed": "Échec de récupération du lien de paiement : {{error}}",
+      "filterEligible": "Offre Comeback",
+      "filterEligibleWithCount": "Offre Comeback ({{count}})",
+      "filterEligibleTitle": "Afficher uniquement les comptes avec une offre Comeback"
+    },
     "sessions": {
       "view": "Voir les sessions d’appareils",
       "title": "Sessions actives",

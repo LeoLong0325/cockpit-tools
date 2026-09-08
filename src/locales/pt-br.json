@@ -3684,6 +3684,15 @@
       "filterEligibleWithCount": "Elegível para indicação ({{count}})",
       "filterEligibleTitle": "Mostrar contas elegíveis para indicação"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback pode restaurar {{plan}}",
+      "getCheckout": "Obter link de pagamento Comeback",
+      "checkoutReady": "Link de pagamento copiado e aberto: {{url}}",
+      "checkoutFailed": "Falha ao obter o link de pagamento: {{error}}",
+      "filterEligible": "Oferta Comeback",
+      "filterEligibleWithCount": "Oferta Comeback ({{count}})",
+      "filterEligibleTitle": "Mostrar apenas contas com oferta Comeback"
+    },
     "sessions": {
       "view": "Ver sessões dos dispositivos",
       "title": "Sessões ativas",

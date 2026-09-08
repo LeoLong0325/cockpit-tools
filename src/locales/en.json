@@ -3982,6 +3982,15 @@
       "filterEligibleWithCount": "Referral eligible ({{count}})",
       "filterEligibleTitle": "Show accounts eligible for referrals"
     },
+    "welcomeBack": {
+      "badgeTitle": "Comeback can restore {{plan}}",
+      "getCheckout": "Get Comeback checkout link",
+      "checkoutReady": "Copied and opened checkout link: {{url}}",
+      "checkoutFailed": "Failed to get checkout link: {{error}}",
+      "filterEligible": "Comeback",
+      "filterEligibleWithCount": "Comeback ({{count}})",
+      "filterEligibleTitle": "Show accounts with a Comeback offer"
+    },
     "sessions": {
       "view": "View devices",
       "title": "Active Sessions",

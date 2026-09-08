@@ -3730,6 +3730,15 @@
       "filterEligibleWithCount": "مؤهل للدعوة ({{count}})",
       "filterEligibleTitle": "عرض الحسابات المؤهلة للدعوة"
     },
+    "welcomeBack": {
+      "badgeTitle": "يمكن لـ Comeback استعادة {{plan}}",
+      "getCheckout": "الحصول على رابط دفع Comeback",
+      "checkoutReady": "تم نسخ رابط الدفع وفتحه: {{url}}",
+      "checkoutFailed": "فشل الحصول على رابط الدفع: {{error}}",
+      "filterEligible": "عرض Comeback",
+      "filterEligibleWithCount": "عرض Comeback ({{count}})",
+      "filterEligibleTitle": "عرض الحسابات التي لديها عرض Comeback فقط"
+    },
     "sessions": {
       "view": "عرض جلسات الأجهزة",
       "title": "الجلسات النشطة",
