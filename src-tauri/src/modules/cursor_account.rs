@@ -3198,14 +3198,7 @@ fn parse_cursor_auth_sessions(raw: &serde_json::Value) -> Vec<CursorAuthSession>
                 .map(str::trim)
                 .filter(|value| !value.is_empty())?
                 .to_string();
-            let session_type = item
-                .get("type")
-                .or_else(|| item.get("sessionType"))
-                .or_else(|| item.get("session_type"))
-                .and_then(|value| value.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_string();
+            let session_type = parse_cursor_auth_session_type(item);
             let created_at = item
                 .get("createdAt")
                 .or_else(|| item.get("created_at"))
@@ -3236,6 +3229,56 @@ fn is_safe_session_id(session_id: &str) -> bool {
         && trimmed
             .chars()
             .all(|ch| ch.is_ascii_hexdigit() || ch == '-' || ch == '_')
+}
+
+fn parse_cursor_auth_session_type(item: &serde_json::Value) -> String {
+    let value = item
+        .get("type")
+        .or_else(|| item.get("sessionType"))
+        .or_else(|| item.get("session_type"));
+    if let Some(text) = value.and_then(|raw| raw.as_str()) {
+        return text.trim().to_string();
+    }
+    if let Some(n) = value.and_then(|raw| raw.as_i64()) {
+        return match n {
+            1 => "SESSION_TYPE_WEB".to_string(),
+            2 => "SESSION_TYPE_CLIENT".to_string(),
+            _ => n.to_string(),
+        };
+    }
+    String::new()
+}
+
+fn cursor_auth_session_revoke_type(session_type: &str) -> Result<String, String> {
+    let trimmed = session_type.trim();
+    if trimmed.is_empty() {
+        return Err("无法识别会话类型，无法撤销".to_string());
+    }
+    if trimmed == "SESSION_TYPE_WEB" || trimmed == "SESSION_TYPE_CLIENT" {
+        return Ok(trimmed.to_string());
+    }
+    let upper = trimmed.to_ascii_uppercase();
+    if upper == "1" || upper.contains("WEB") {
+        return Ok("SESSION_TYPE_WEB".to_string());
+    }
+    if upper == "2" || upper.contains("CLIENT") || upper.contains("DESKTOP") {
+        return Ok("SESSION_TYPE_CLIENT".to_string());
+    }
+    Err("无法识别会话类型，无法撤销".to_string())
+}
+
+fn cursor_auth_session_revoke_payload(
+    session_id: &str,
+    session_type: &str,
+) -> Result<serde_json::Value, String> {
+    Ok(serde_json::json!({
+        "sessionId": session_id.trim(),
+        "type": cursor_auth_session_revoke_type(session_type)?,
+    }))
+}
+
+fn cursor_auth_session_revoke_succeeded(raw: &serde_json::Value) -> bool {
+    raw.get("success").and_then(|value| value.as_bool()) == Some(true)
 }
 
 async fn get_json_for_account(
@@ -3289,19 +3332,36 @@ pub async fn fetch_cursor_auth_sessions(account_id: &str) -> Result<Vec<CursorAu
 pub async fn revoke_cursor_auth_session(
     account_id: &str,
     session_id: &str,
+    session_type: Option<&str>,
 ) -> Result<Vec<CursorAuthSession>, String> {
     if !is_safe_session_id(session_id) {
         return Err("会话 ID 无效".to_string());
     }
+    let session_id = session_id.trim();
+    let resolved_type = match session_type.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(value) => value.to_string(),
+        None => {
+            let sessions = fetch_cursor_auth_sessions(account_id).await?;
+            sessions
+                .iter()
+                .find(|item| item.session_id == session_id)
+                .map(|item| item.session_type.clone())
+                .ok_or_else(|| "会话不存在或已失效".to_string())?
+        }
+    };
     let account = load_account(account_id)
         .ok_or_else(|| format!("Cursor account not found: {}", account_id))?;
-    post_dashboard_json_body_for_account(
+    let payload = cursor_auth_session_revoke_payload(session_id, &resolved_type)?;
+    let raw = post_dashboard_json_body_for_account(
         &account,
         CURSOR_AUTH_SESSIONS_REVOKE_URL,
         CURSOR_AUTH_SESSIONS_REFERER,
-        serde_json::json!({ "sessionId": session_id.trim() }),
+        payload,
     )
     .await?;
+    if !cursor_auth_session_revoke_succeeded(&raw) {
+        return Err("撤销未生效，接口未确认成功".to_string());
+    }
     fetch_cursor_auth_sessions(account_id).await
 }
 
@@ -4735,7 +4795,10 @@ mod dashboard_navigation_tests {
 
 #[cfg(test)]
 mod auth_sessions_tests {
-    use super::{is_safe_session_id, parse_cursor_auth_sessions};
+    use super::{
+        cursor_auth_session_revoke_payload, cursor_auth_session_revoke_succeeded,
+        cursor_auth_session_revoke_type, is_safe_session_id, parse_cursor_auth_sessions,
+    };
     use serde_json::json;
 
     #[test]
@@ -4770,6 +4833,50 @@ mod auth_sessions_tests {
             sessions[1].expires_at.as_deref(),
             Some("2026-10-19T05:38:52.000Z")
         );
+    }
+
+    #[test]
+    fn parse_sessions_maps_numeric_type() {
+        let raw = json!({
+            "sessions": [
+                {
+                    "sessionId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "type": 1,
+                    "createdAt": "2026-09-08T03:27:01.000Z"
+                },
+                {
+                    "session_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "type": 2,
+                    "created_at": "2026-09-08T03:22:29.000Z"
+                }
+            ]
+        });
+        let sessions = parse_cursor_auth_sessions(&raw);
+        assert_eq!(sessions[0].session_type, "SESSION_TYPE_WEB");
+        assert_eq!(sessions[1].session_type, "SESSION_TYPE_CLIENT");
+    }
+
+    #[test]
+    fn revoke_payload_requires_matching_type() {
+        let web = cursor_auth_session_revoke_payload(
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "SESSION_TYPE_WEB",
+        )
+        .unwrap();
+        assert_eq!(
+            web,
+            json!({
+                "sessionId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "type": "SESSION_TYPE_WEB"
+            })
+        );
+        assert_eq!(
+            cursor_auth_session_revoke_type("2").unwrap(),
+            "SESSION_TYPE_CLIENT"
+        );
+        assert!(cursor_auth_session_revoke_payload("id", "").is_err());
+        assert!(cursor_auth_session_revoke_succeeded(&json!({ "success": true })));
+        assert!(!cursor_auth_session_revoke_succeeded(&json!({})));
     }
 
     #[test]

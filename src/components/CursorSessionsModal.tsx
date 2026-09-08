@@ -16,7 +16,7 @@ interface CursorSessionsModalProps {
   revokingSessionId: string | null;
   savingSessionId?: string | null;
   errorMessage?: string | null;
-  onRevoke: (sessionId: string) => void;
+  onRevoke: (sessionId: string, sessionType: string) => void;
   onSaveNote: (sessionId: string, note: string) => void | Promise<void>;
   onClose: () => void;
 }
@@ -171,7 +171,7 @@ export function CursorSessionsModal(props: CursorSessionsModalProps) {
                           type="button"
                           className="cursor-sessions-revoke"
                           disabled={!!revokingSessionId}
-                          onClick={() => onRevoke(row.session.sessionId)}
+                          onClick={() => onRevoke(row.session.sessionId, row.session.type)}
                         >
                           {revokingSessionId === row.session.sessionId
                             ? t('common.loading', '加载中...')

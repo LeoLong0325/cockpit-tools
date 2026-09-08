@@ -222,8 +222,14 @@ pub async fn fetch_cursor_auth_sessions(
 pub async fn revoke_cursor_auth_session(
     account_id: String,
     session_id: String,
+    session_type: Option<String>,
 ) -> Result<Vec<cursor_account::CursorAuthSession>, String> {
-    cursor_account::revoke_cursor_auth_session(&account_id, &session_id).await
+    cursor_account::revoke_cursor_auth_session(
+        &account_id,
+        &session_id,
+        session_type.as_deref(),
+    )
+    .await
 }
 
 #[tauri::command]

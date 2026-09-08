@@ -138,8 +138,13 @@ export async function fetchCursorAuthSessions(accountId: string): Promise<Cursor
 export async function revokeCursorAuthSession(
   accountId: string,
   sessionId: string,
+  sessionType?: string,
 ): Promise<CursorAuthSession[]> {
-  return await invoke('revoke_cursor_auth_session', { accountId, sessionId });
+  return await invoke('revoke_cursor_auth_session', {
+    accountId,
+    sessionId,
+    sessionType: sessionType || undefined,
+  });
 }
 
 export async function fetchAllCursorUsageEvents(

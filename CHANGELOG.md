@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Cursor accounts can now detect Comeback offers**: refreshing a FREE account checks welcome-back eligibility; eligible cards keep the FREE label but use the restored-plan color, and gain a checkout-link action plus a Comeback-only filter.
 
 ### Fixed
+- **Cursor active-session revoke now sends the official session type**: posting only `sessionId` returned HTTP 200 but did not actually revoke the device. Revoke now includes `SESSION_TYPE_WEB` / `SESSION_TYPE_CLIENT` and treats a response without `success: true` as failure.
 - **Scheduled backups no longer depend on the main window staying open**: the scheduler now runs in the backend process, checks about 20 seconds after startup and every 15 minutes after that, and continues while the app is minimized to the tray. A failed platform export is skipped instead of aborting the whole backup.
 - **Cursor backup and transfer JSON now keep account tags**: compact Cursor exports always write a `tags` field, and restoring that JSON applies the tags instead of dropping them.
 

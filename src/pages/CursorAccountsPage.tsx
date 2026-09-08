@@ -425,12 +425,16 @@ export function CursorAccountsPage() {
     }
   }, [patchSessionNotes, sessionsModalAccountId, t]);
 
-  const handleRevokeSession = useCallback(async (sessionId: string) => {
+  const handleRevokeSession = useCallback(async (sessionId: string, sessionType?: string) => {
     if (!sessionsModalAccountId || !sessionId) return;
     setRevokingSessionId(sessionId);
     setSessionsError(null);
     try {
-      const next = await cursorService.revokeCursorAuthSession(sessionsModalAccountId, sessionId);
+      const next = await cursorService.revokeCursorAuthSession(
+        sessionsModalAccountId,
+        sessionId,
+        sessionType,
+      );
       setSessions(Array.isArray(next) ? next : []);
       try {
         const updated = await cursorService.updateCursorSessionNote(sessionsModalAccountId, sessionId, '');
